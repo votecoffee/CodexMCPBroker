@@ -14,13 +14,23 @@
     },
     {
       "path": ".gitignore",
-      "size": 124,
-      "sha256": "55cae7c854e9c77cafec71c3a8353056a1fd8702ca0586c1c6fdc6c961a5a4e7"
+      "size": 204,
+      "sha256": "e5c9ea61e88bab5d879093703230bb7106860e9b11b5081050806ec868b2b786"
+    },
+    {
+      "path": "AGENTS.md",
+      "size": 1177,
+      "sha256": "5f5814145a4949b6d67126d96f3cd772cd374b6fe53f8d74bfe8a771108203a3"
     },
     {
       "path": "APP_CONTRACT.md",
       "size": 5741,
       "sha256": "253eb08483e2f6f822b85551b36897d397435a1552a312598197e63693a3f3b9"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "size": 2156,
+      "sha256": "f5491007549cbbb041bb3dda004287fa16b63321a74939a65e017f26b2b433d5"
     },
     {
       "path": "examples/app-http.service.json",
@@ -69,8 +79,8 @@
     },
     {
       "path": "README.md",
-      "size": 8492,
-      "sha256": "36cfb7974f7b8c34dd2846a9ebfebcfcfab316450951ecd177918f8db369af51"
+      "size": 9263,
+      "sha256": "4b8073a4bd91cb08951b9f948c4d905f7c5e3c89b30853ca886d03a4353c50f2"
     },
     {
       "path": "requirements-dev-lock.txt",
