@@ -26,6 +26,8 @@ Initialization metadata checks cover optional and Unicode instructions, capabili
 
 Frontend pool tests verify bounded concurrent channels, sequential reuse, cancellation before/after dispatch, initialization and operation deadlines, cleanup under SDK cancellation, queue wakeup on shutdown, and isolation between pools. Failed writes must be redacted and returned once without replay or identity changes. Protocol checks count broker handshakes across repeated requests, exercise ownership over four channels and across fresh HTTP connections, and confirm that pool shutdown preserves the app's owned native session. The broker crash/recovery checks also run with reused frontend connections.
 
+Elicitation checks use synthetic forms and clients to verify accept, negative form values, decline, cancel, unsupported clients, invalid replies, URL/task rejection, bounded schemas/answers, fresh responses, inactive routes, cancellation and cleanup. Protocol checks traverse two stdio frontends, the HTTP broker and a disposable app, plus transient/exclusive HTTP apps. They verify origin-only delivery, no answer swapping between concurrent apps, zero fixture commits on rejected paths, and no late acceptance after an app timeout. HTTP session IDs must reject a different or omitted frontend identity, and restarted sessions must fail without replay. The native host's real confirmation UI remains a separate acceptance check.
+
 These tests do not operate native engineering applications or establish their migration readiness. Test counts and measurements belong in local run records rather than a permanent public validation log.
 
 ## Source package

@@ -10,13 +10,15 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
+from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
+from mcp.server.auth.provider import AccessToken
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 
 from . import __version__
 from .broker import Broker
 from .identity import CLIENT_HEADER, CLIENT_PATTERN, client_identity
-from .models import BrokerError, Settings, load_settings
+from .models import BrokerError, Settings, canonical_digest, load_settings
 from .surface import LocalBackend, create_surface
 
 
@@ -80,6 +82,18 @@ class ProtectedApp:
                 )
             token = client_identity.set(value or None)
             try:
+                # The SDK binds stateful MCP sessions to this affinity principal.
+                # Bearer authentication above remains the local-user boundary.
+                scope = {
+                    **scope,
+                    "user": AuthenticatedUser(
+                        AccessToken(
+                            token="validated-local-broker",
+                            client_id=canonical_digest({"frontend": value or None}),
+                            scopes=[],
+                        )
+                    ),
+                }
                 return await self.app(scope, receive, send)
             finally:
                 client_identity.reset(token)
@@ -95,8 +109,7 @@ def serve(state: Path) -> None:
 
         @asynccontextmanager
         async def lifespan(app):
-            # The SDK low-level lifespan runs once per stateless request. Discovery
-            # belongs to the ASGI process lifespan, not to each read/tool request.
+            # Discovery belongs to the ASGI process, independently of MCP sessions.
             await broker.start()
             try:
                 await broker.refresh()

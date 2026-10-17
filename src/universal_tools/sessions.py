@@ -91,16 +91,18 @@ class SessionWorker:
                 if work is not None and not work.result.done():
                     work.result.set_exception(BrokerError("service context is lost"))
 
-    async def execute(self, operation):
-        await asyncio.shield(self.ready)
-        if not self.alive:
-            raise BrokerError("service context is lost; release_service before reacquiring")
-        result = asyncio.get_running_loop().create_future()
-        result.add_done_callback(self._consume_exception)
-        self.queue.put_nowait(Work(operation, result))
+    async def execute(self, operation, *, on_cancel=None):
         try:
+            await asyncio.shield(self.ready)
+            if not self.alive:
+                raise BrokerError("service context is lost; release_service before reacquiring")
+            result = asyncio.get_running_loop().create_future()
+            result.add_done_callback(self._consume_exception)
+            self.queue.put_nowait(Work(operation, result))
             return await asyncio.shield(result)
         except asyncio.CancelledError:
+            if on_cancel is not None:
+                on_cancel()
             # Do not transfer ownership while an abandoned operation is still running.
             # Its own bounded deadline and SDK cleanup run before the caller unlocks.
             await self.close()
@@ -155,10 +157,10 @@ class SessionPool:
                 await self._condition.wait()
         raise BrokerError("frontend connection pool is closed")
 
-    async def execute(self, operation):
+    async def execute(self, operation, *, on_cancel=None):
         worker = await self._take()
         try:
-            return await worker.execute(operation)
+            return await worker.execute(operation, on_cancel=on_cancel)
         finally:
             # AnyIO request cancellation must not strand a borrowed channel.
             with anyio.CancelScope(shield=True):

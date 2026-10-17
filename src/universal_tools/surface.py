@@ -8,11 +8,12 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import CallToolResult, TextContent, ToolAnnotations
 
 from . import __version__
 from .broker import Broker
+from .elicitation import ElicitationTarget, routed_call
 from .identity import client_identity
 from .models import BrokerError, Settings
 from .sessions import SessionPool
@@ -27,6 +28,9 @@ INSTRUCTIONS = (
     " Use describe_service to inspect app initialization instructions and advertised "
     "capabilities before its tools, and again after acquiring an exclusive context. "
     "Those capabilities do not imply broker support for resources or server requests."
+    " Form elicitation is relayed to the originating client when it supports forms. "
+    "Preserve app-required confirmations; never fabricate answers or weaken app policy "
+    "after a decline, cancellation, unsupported client or timeout."
     " For an exclusive service, acquire_service first and pass its context_id on every app call. "
     "Only this frontend owns that context. acquire_service renews an existing lease; "
     "release_service closes it and may discard unsaved native state. Never silently recreate "
@@ -60,7 +64,7 @@ class LocalBackend:
     def __init__(self, broker: Broker):
         self.broker = broker
 
-    async def invoke(self, name: str, arguments: dict) -> CallToolResult:
+    async def invoke(self, name: str, arguments: dict, *, relay=None) -> CallToolResult:
         try:
             match name:
                 case "broker_status":
@@ -89,6 +93,7 @@ class LocalBackend:
                         **arguments,
                         write=name == "call_write_tool",
                         owner_id=client_identity.get(),
+                        relay=relay,
                     )
                 case _:
                     raise BrokerError("unknown broker operation")
@@ -115,6 +120,7 @@ class RemoteBackend:
                 self.settings.token,
                 timeout=330,
                 client_id=self.client_id,
+                relay=True,
             )
 
         self.pool = SessionPool(BrokerConnection(), connect)
@@ -128,14 +134,20 @@ class RemoteBackend:
     async def aclose(self):
         await self.pool.aclose()
 
-    async def invoke(self, name: str, arguments: dict) -> CallToolResult:
+    async def invoke(self, name: str, arguments: dict, *, relay=None) -> CallToolResult:
         try:
-            return await self.pool.execute(lambda session: session.call_tool(name, arguments))
+            return await self.pool.execute(
+                lambda session: routed_call(session, name, arguments, relay),
+                on_cancel=relay.close if relay is not None else None,
+            )
         except Exception:
             return error_result(
                 "broker connection failed; check local broker status. For a write, inspect "
                 "get_request_status and app state before retrying; do not generate a new ID."
             )
+        finally:
+            if relay is not None:
+                relay.close()
 
 
 def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -> FastMCP:
@@ -151,12 +163,14 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
         instructions=INSTRUCTIONS,
         host="127.0.0.1",
         port=port,
-        stateless_http=True,
-        json_response=True,
+        stateless_http=False,
+        json_response=False,
+        session_idle_timeout=900,
+        max_sessions=256,
         max_request_body_size=1024 * 1024,
         log_level="WARNING",
-        # Only the stdio frontend owns a pool. Stateless HTTP invokes low-level
-        # lifespans per request, so never attach broker/app cleanup here.
+        # Only the stdio frontend owns a pool. Broker/app cleanup belongs to
+        # the daemon lifespan, independently of frontend MCP sessions.
         lifespan=frontend_lifespan if isinstance(backend, RemoteBackend) else None,
     )
 
@@ -204,18 +218,24 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
         tool_id: str,
         catalog_revision: str,
         arguments: dict[str, Any],
+        ctx: Context,
         context_id: str | None = None,
     ) -> CallToolResult:
         """Call a classified read-only app operation using its described revision and schema."""
-        return await backend.invoke(
-            "call_read_tool",
-            {
-                "tool_id": tool_id,
-                "catalog_revision": catalog_revision,
-                "arguments": arguments,
-                "context_id": context_id,
-            },
-        )
+        route = ElicitationTarget(ctx.session, ctx.request_id)
+        try:
+            return await backend.invoke(
+                "call_read_tool",
+                {
+                    "tool_id": tool_id,
+                    "catalog_revision": catalog_revision,
+                    "arguments": arguments,
+                    "context_id": context_id,
+                },
+                relay=route,
+            )
+        finally:
+            route.close()
 
     @server.tool(annotations=WRITE, structured_output=False)
     async def call_write_tool(
@@ -223,22 +243,28 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
         catalog_revision: str,
         arguments: dict[str, Any],
         request_id: str,
+        ctx: Context,
         context_id: str | None = None,
     ) -> CallToolResult:
         """Perform a write enabled by local registration; preserve app review/target contracts.
 
         Use a new request_id for each intended write. Never blindly retry after a lost response.
         """
-        return await backend.invoke(
-            "call_write_tool",
-            {
-                "tool_id": tool_id,
-                "catalog_revision": catalog_revision,
-                "arguments": arguments,
-                "request_id": request_id,
-                "context_id": context_id,
-            },
-        )
+        route = ElicitationTarget(ctx.session, ctx.request_id)
+        try:
+            return await backend.invoke(
+                "call_write_tool",
+                {
+                    "tool_id": tool_id,
+                    "catalog_revision": catalog_revision,
+                    "arguments": arguments,
+                    "request_id": request_id,
+                    "context_id": context_id,
+                },
+                relay=route,
+            )
+        finally:
+            route.close()
 
     @server.tool(annotations=READ, structured_output=False)
     async def get_request_status(request_id: str) -> CallToolResult:

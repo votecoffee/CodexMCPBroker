@@ -16,6 +16,7 @@ from jsonschema import ValidationError
 from jsonschema.validators import validator_for
 from mcp.types import CallToolResult, Tool
 
+from .elicitation import ElicitationTarget, routed_call
 from .journal import WriteJournal
 from .metadata import BROKER_SUPPORT
 from .models import ID_PATTERN, BrokerError, ServiceManifest, canonical_digest, load_manifest
@@ -577,6 +578,7 @@ class Broker:
         request_id: str | None = None,
         context_id: str | None = None,
         owner_id: str | None = None,
+        relay: ElicitationTarget | None = None,
     ) -> CallToolResult:
         if self._closed:
             raise BrokerError("broker is closing")
@@ -630,14 +632,18 @@ class Broker:
                     )
                     self.journal.claim(request_id, fingerprint, tool_id)
                     claimed = True
-                result = await session.call_tool(entry.tool.name, arguments)
+                if relay is not None:
+                    relay.label = f"App {entry.id} requests input:\n"
+                result = await routed_call(session, entry.tool.name, arguments, relay)
                 if write:
                     self.journal.finish(request_id, "app_error" if result.isError else "completed")
                 return result
 
             try:
                 if lease:
-                    result = await lease.worker.execute(invoke)
+                    result = await lease.worker.execute(
+                        invoke, on_cancel=relay.close if relay is not None else None
+                    )
                     await self._renew(lease)
                     return result
                 async with asyncio.timeout(entry.manifest.timeout_seconds):

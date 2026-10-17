@@ -478,7 +478,7 @@ async def test_two_native_clients_cannot_overwrite_a_stale_notebook_revision(sta
 
 
 @asynccontextmanager
-async def exclusive_app(stack, *, timeout=3.0):
+async def exclusive_app(stack, *, timeout=3.0, audit_path=None):
     state, settings, _ = stack
     path = state / "services/stateful.json"
     assert not path.exists()
@@ -490,7 +490,8 @@ async def exclusive_app(stack, *, timeout=3.0):
             "transport": {
                 "type": "stdio",
                 "command": sys.executable,
-                "args": [str(Path(__file__).parent / "fixtures/stateful_mcp.py")],
+                "args": [str(Path(__file__).parent / "fixtures/stateful_mcp.py")]
+                + (["--audit", str(audit_path)] if audit_path is not None else []),
             },
             "session_mode": "exclusive",
             "allow_writes": True,
@@ -507,7 +508,12 @@ async def exclusive_app(stack, *, timeout=3.0):
             yield settings
         finally:
             path.unlink()
-            data(await admin.invoke("refresh_services", {}))
+            refreshed = await admin.invoke("refresh_services", {})
+            if refreshed.isError:
+                # A fixture-owned broker restart invalidates this old HTTP session.
+                # This is an explicit metadata retry, never a replay of an app write.
+                refreshed = await admin.invoke("refresh_services", {})
+            data(refreshed)
             reservation = OwnershipJournal(state / "ownership.sqlite3").get("stateful")
             if reservation:
                 # Reconcile disposable fixture state using the stopped-broker admin route.
@@ -793,6 +799,7 @@ async def test_crashed_broker_requires_stopped_admin_recovery_before_new_ownersh
         ]
         original = data(await remote_call(owner, "inspect", {}, context))
         await asyncio.to_thread(BROKER_TEST_OPERATIONS[state]["crash_restart"])
+        assert (await owner.invoke("list_services", {})).isError  # Old MCP session is gone.
         rows = data(await owner.invoke("list_services", {}))["services"]
         assert (
             next(row for row in rows if row["service_id"] == "stateful")["status"]
@@ -811,6 +818,7 @@ async def test_crashed_broker_requires_stopped_admin_recovery_before_new_ownersh
         with pytest.raises(BrokerError, match="already owns"):
             recover_context(state, "stateful", context, acknowledged=True)
         await asyncio.to_thread(BROKER_TEST_OPERATIONS[state]["recover"], "stateful", context)
+        assert (await other.invoke("broker_status", {})).isError  # Second restart, no replay.
         replacement = data(await other.invoke("acquire_service", {"service_id": "stateful"}))[
             "context_id"
         ]
