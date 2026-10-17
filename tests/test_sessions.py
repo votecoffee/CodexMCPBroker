@@ -396,3 +396,36 @@ async def test_bad_service_names_do_not_allocate_locks(stateful):
     with pytest.raises(BrokerError, match="invalid service_id"):
         await broker.service_session_status("../outside", owner_id=OWNER_A)
     assert len(broker._service_locks) == count
+
+
+async def test_sdk_style_cancellation_shields_cleanup_and_marks_write_uncertain(stateful):
+    broker, sessions = stateful
+    context = await acquire(broker)
+    engine = sessions[-1]
+    engine.unblock = asyncio.Event()
+    scopes = []
+    finished = asyncio.Event()
+
+    async def request():
+        try:
+            with anyio.CancelScope() as scope:
+                scopes.append(scope)
+                await invoke(broker, context, write=True, request_id="persistent-anyio-cancel")
+        finally:
+            finished.set()
+
+    async with anyio.create_task_group() as tasks:
+        tasks.start_soon(request)
+        await engine.started.wait()
+        scopes[0].cancel()
+        await asyncio.sleep(0.02)
+        assert not finished.is_set()
+        contender = asyncio.create_task(acquire(broker, OWNER_B))
+        await asyncio.sleep(0)
+        assert not contender.done()
+        engine.unblock.set()
+        await finished.wait()
+        with pytest.raises(BrokerError, match="another frontend"):
+            await contender
+    assert engine.closed
+    assert broker.request_status("persistent-anyio-cancel")["status"] == "uncertain"

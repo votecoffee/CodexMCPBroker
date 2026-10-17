@@ -13,6 +13,7 @@ from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from typing import Any
 
+import anyio
 from mcp import ClientSession
 
 from .models import BrokerError, ServiceManifest
@@ -93,4 +94,7 @@ class SessionWorker:
         if not self.closing:
             self.closing = True
             self.queue.put_nowait(None)
-        await asyncio.shield(self.task)
+        # SDK request responders use level-triggered AnyIO cancellation. Shield
+        # cleanup from that scope as well as shielding the actor from Task.cancel.
+        with anyio.CancelScope(shield=True):
+            await asyncio.shield(self.task)

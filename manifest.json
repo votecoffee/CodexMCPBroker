@@ -79,8 +79,8 @@
     },
     {
       "path": "pyproject.toml",
-      "size": 936,
-      "sha256": "b5f9a59edcfcf3ae28895e43abadaed4ab42b69bb093e2dc663039adb74b166e"
+      "size": 953,
+      "sha256": "96e7c58ea3e4a229825dfa5280d0fba52f19b7894035cc479c83622da095d472"
     },
     {
       "path": "README.md",
@@ -150,7 +150,7 @@
     {
       "path": "src/universal_tools/broker.py",
       "size": 22129,
-      "sha256": "133e3c2466823ccd230d5e03e1e6a3e3c913f06addbd0f36083a195513f2d6d7"
+      "sha256": "50dc25130ba83df8b460d81fe114b22a9a7f3f93e3a27af1c94e3924eff907b1"
     },
     {
       "path": "src/universal_tools/cli.py",
@@ -174,8 +174,8 @@
     },
     {
       "path": "src/universal_tools/journal.py",
-      "size": 2309,
-      "sha256": "4618c672f267c1c87244da7f3ef8b1dafc82c12c44922f38c0bd3d83aeb326b7"
+      "size": 2632,
+      "sha256": "f92bf8b5f5bd140028fbc4415b55faeab60f1ea28bf73673b8d8bd463eff2627"
     },
     {
       "path": "src/universal_tools/models.py",
@@ -184,8 +184,8 @@
     },
     {
       "path": "src/universal_tools/sessions.py",
-      "size": 3782,
-      "sha256": "8833b465fc311866990409408e1bb080d6b3b76cd2ae8a056e08c291103ace50"
+      "size": 4007,
+      "sha256": "3c2d7e2887c2a9a010c7c998a7f767a6f1793b6976ce51ce5e67c5aeeb507cd0"
     },
     {
       "path": "src/universal_tools/surface.py",
@@ -204,8 +204,8 @@
     },
     {
       "path": "tests/test_core.py",
-      "size": 11205,
-      "sha256": "8b8348744f94d246c0b303f46aa7caa3ade4f082d47dfc7481b369ddd693822f"
+      "size": 12058,
+      "sha256": "1cb793c4154ac87aff81f145ed30a05747b573672e13b85e9ab2132b4c3c56fb"
     },
     {
       "path": "tests/test_integration.py",
@@ -219,8 +219,8 @@
     },
     {
       "path": "tests/test_sessions.py",
-      "size": 14742,
-      "sha256": "02c94636c22be0500befbf652e976e630e144f57433b1bb71f3e7f43c7010664"
+      "size": 15893,
+      "sha256": "eafd64740a74eb5c49e9bd3b4a46f53e01f2d6c5ee345d128f6054eb6af28328"
     },
     {
       "path": "VERIFICATION.md",

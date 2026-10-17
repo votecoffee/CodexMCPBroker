@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -23,8 +24,16 @@ class WriteJournal:
                 tool_id TEXT NOT NULL, status TEXT NOT NULL,
                 created_at TEXT NOT NULL, updated_at TEXT NOT NULL)""")
 
+    @contextmanager
     def connect(self):
-        return sqlite3.connect(self.path, timeout=10)
+        db = sqlite3.connect(self.path, timeout=10)
+        try:
+            with db:
+                yield db
+        finally:
+            # sqlite3's transaction context manager commits/rolls back but does
+            # not close the connection. Do not depend on cyclic GC for Windows handles.
+            db.close()
 
     def claim(self, request_id: str, fingerprint: str, tool_id: str) -> None:
         if not 8 <= len(request_id) <= 128:

@@ -9,7 +9,7 @@ description = "Local MCP service discovery and routing for one reusable Codex pl
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.11"
-dependencies = ["mcp==1.30.0", "jsonschema==4.26.0"]
+dependencies = ["mcp==1.30.0", "jsonschema==4.26.0", "anyio==4.15.1"]
 
 [project.urls]
 Repository = "https://github.com/votecoffee/CodexMCPBroker"

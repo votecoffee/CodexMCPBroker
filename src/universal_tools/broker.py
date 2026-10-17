@@ -484,12 +484,12 @@ class Broker:
                     async with service_session(entry.manifest) as session:
                         return await invoke(session)
             except BaseException as error:
-                if lease and not lease.worker.alive:
-                    lease.lost = True
-                    await lease.worker.close()
                 if claimed:
                     # Even cancellation or process loss leaves a durable claim. Never retry it.
                     self.journal.finish(request_id, "uncertain")
+                if lease and not lease.worker.alive:
+                    lease.lost = True
+                    await lease.worker.close()
                 if isinstance(error, asyncio.CancelledError):
                     raise
                 reason = broker_reason(error)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import sqlite3
 import sys
 from contextlib import asynccontextmanager
 
@@ -150,6 +151,28 @@ def test_journal_survives_restart_and_never_reissues_claim(tmp_path):
         journal.claim("request-0001", "different", "app/echo")
     journal.finish("request-0001", "uncertain")
     assert journal.status("request-0001")["status"] == "uncertain"
+
+
+def test_journal_closes_database_handles_after_success_and_conflict(tmp_path, monkeypatch):
+    connect = sqlite3.connect
+    opened = []
+
+    def record(*args, **kwargs):
+        db = connect(*args, **kwargs)
+        opened.append(db)
+        return db
+
+    monkeypatch.setattr(sqlite3, "connect", record)
+    journal = WriteJournal(tmp_path / "journal.sqlite3")
+    journal.claim("closed-handles-001", "fingerprint", "app/edit")
+    journal.finish("closed-handles-001", "uncertain")
+    assert journal.status("closed-handles-001")["status"] == "uncertain"
+    with pytest.raises(BrokerError, match="already claimed"):
+        journal.claim("closed-handles-001", "fingerprint", "app/edit")
+    assert opened
+    for db in opened:
+        with pytest.raises(sqlite3.ProgrammingError, match="closed"):
+            db.execute("SELECT 1")
 
 
 class FakeSession:
