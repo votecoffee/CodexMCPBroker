@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "my-capability-app",
+  "display_name": "My Capability App",
+  "description": "An app that publishes a normalized, read-only inner capability catalog.",
+  "transport": {
+    "type": "stdio",
+    "command": "C:\\Path\\To\\App\\python.exe",
+    "args": ["-m", "app_mcp_server"],
+    "cwd": "C:\\Path\\To\\App",
+    "env_vars": []
+  },
+  "enabled": true,
+  "allow_writes": false,
+  "allowed_write_tools": [],
+  "session_mode": "exclusive",
+  "resource_id": "my-app-engine",
+  "capability_catalog": {
+    "schema_version": 1,
+    "tool": "list_broker_capabilities",
+    "arguments": {}
+  }
+}

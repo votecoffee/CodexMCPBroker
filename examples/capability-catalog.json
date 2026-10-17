@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "catalog_revision": "app-owned-extension-generation-1",
+  "capabilities": [
+    {
+      "id": "geometry.counterbore",
+      "description": "Create a counterbore using the app's normal preview and apply workflow.",
+      "tags": ["machining", "holes"],
+      "discovery": {
+        "tool": "describe_feature",
+        "arguments": {"name": "geometry.counterbore"}
+      }
+    }
+  ]
+}

@@ -6,7 +6,7 @@ import json
 import secrets
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import CallToolResult, TextContent, ToolAnnotations
@@ -28,6 +28,11 @@ INSTRUCTIONS = (
     " Use describe_service to inspect app initialization instructions and advertised "
     "capabilities before its tools, and again after acquiring an exclusive context. "
     "Those capabilities do not imply broker support for resources or server requests."
+    " Search results distinguish tools from discovery-only inner capabilities. "
+    "Use describe_capability with its capability_revision, then inspect and call the indicated "
+    "read-only app discovery tool before invoking native operations. Inner app catalog revisions "
+    "remain distinct from broker tool and capability revisions. After acquiring an exclusive "
+    "context, use refresh_capabilities to index its session-specific catalog for this frontend."
     " Form elicitation is relayed to the originating client when it supports forms. "
     "Preserve app-required confirmations; never fabricate answers or weaken app policy "
     "after a decline, cancellation, unsupported client or timeout."
@@ -74,7 +79,7 @@ class LocalBackend:
                 case "refresh_services":
                     result = await self.broker.refresh()
                 case "search_tools":
-                    result = self.broker.search(**arguments)
+                    result = self.broker.search(**arguments, owner_id=client_identity.get())
                 case "describe_tool":
                     result = self.broker.describe(**arguments)
                 case "get_request_status":
@@ -84,6 +89,8 @@ class LocalBackend:
                     | "acquire_service"
                     | "release_service"
                     | "service_session_status"
+                    | "describe_capability"
+                    | "refresh_capabilities"
                 ):
                     result = await getattr(self.broker, name)(
                         **arguments, owner_id=client_identity.get()
@@ -191,11 +198,49 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
 
     @server.tool(annotations=READ, structured_output=False)
     async def search_tools(
-        query: str = "", service_id: str | None = None, limit: int = 30
+        query: str = "",
+        service_id: str | None = None,
+        limit: int = 30,
+        kind: Literal["all", "tool", "capability"] = "all",
     ) -> CallToolResult:
-        """Find app operations by words in tool names/descriptions; optionally filter by app."""
+        """Find outer tools and opt-in discovery-only capabilities; filter by app or kind."""
         return await backend.invoke(
-            "search_tools", {"query": query, "service_id": service_id, "limit": limit}
+            "search_tools", {"query": query, "service_id": service_id, "limit": limit, "kind": kind}
+        )
+
+    @server.tool(annotations=READ, structured_output=False)
+    async def describe_capability(
+        service_id: str, capability_id: str, capability_revision: str
+    ) -> CallToolResult:
+        """Describe a searched inner capability and its read-only app discovery reference.
+
+        This cached, untrusted metadata is not an executable route or app authorization.
+        It does not connect to an app or renew a lease. Inspect the referenced native tool.
+        """
+        return await backend.invoke(
+            "describe_capability",
+            {
+                "service_id": service_id,
+                "capability_id": capability_id,
+                "capability_revision": capability_revision,
+            },
+        )
+
+    @server.tool(annotations=REFRESH, structured_output=False)
+    async def refresh_capabilities(
+        service_id: str, context_id: str | None = None
+    ) -> CallToolResult:
+        """Query a registered read-only catalog provider, without reloading app extensions.
+
+        Exclusive services require this frontend's active context. Its catalog stays private.
+        A valid probe renews that lease. Native execution/revision/approval rules still apply.
+        """
+        return await backend.invoke(
+            "refresh_capabilities",
+            {
+                "service_id": service_id,
+                "context_id": context_id,
+            },
         )
 
     @server.tool(annotations=READ, structured_output=False)

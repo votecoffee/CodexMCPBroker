@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-codex-tools"
-version = "0.7.0"
+version = "0.8.0"
 description = "Local MCP service discovery and routing for one reusable Codex plugin"
 readme = "README.md"
 license = {file = "LICENSE"}

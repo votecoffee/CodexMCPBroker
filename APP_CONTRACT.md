@@ -76,6 +76,14 @@ Search and description report each tool's effective `callable` flag. `describe_s
 
 No splitting, chunking, truncation or automatic replay is introduced. App-native batch/Undo and single-use review boundaries must remain intact. A local administrator must select a budget that the actual app, adapter and calling host also support. Updating policy or budgets changes the catalog revision and follows normal descriptor-change retirement rules for exclusive contexts. Finish and release existing work before reconfiguration.
 
+## Optional inner capability provider
+
+Broker 0.8 adds an optional `capability_catalog` registration object containing `schema_version: 1`, an exact read-only provider `tool` and its `arguments`. The provider must return the [normalized catalog contract](docs/capability-catalog.md); see its [registration example](examples/app-capabilities.service.json), [result example](examples/capability-catalog.json) and [schema](examples/capability-catalog.schema.json). Existing services default to no provider and receive no guessed metadata calls.
+
+Catalog entries are search hints with read-only native discovery references, never executable routes or authorization. Provider and reference tools must explicitly declare `readOnlyHint: true`; legacy overrides cannot enable automated probing. Native tool schemas and argument budgets still apply. Separate broker tool, broker capability-snapshot, app catalog and target/review revisions must remain distinct.
+
+Unowned refresh captures a shared installation-level catalog; a public provider must not expose secrets or private selections. Global refresh preserves that snapshot while an exclusive context exists and never queries the owner's provider. The active owner must explicitly call `refresh_capabilities(service_id, context_id)` for its private index, then use `describe_capability` with the searched revision. Description makes no app call and does not renew a lease. A valid owned probe renews it; invalid metadata clears the affected index without discarding a healthy context, while transport failures retain context-loss recovery rules. This does not reload app extensions or distribute their skills.
+
 ## Initialization guidance and advertised capabilities
 
 Broker 0.4 retains the `protocolVersion`, `serverInfo`, `capabilities` and optional `instructions` fields from the app's MCP `initialize` response. These fields follow the [MCP lifecycle contract](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle). `describe_service(service_id)` returns them under `initialization`, with the registered service ID, `metadata_source`, `metadata_revision` and `broker_support`. Optional empty instructions remain empty; absent instructions remain absent. The combined UTF-8 JSON snapshot must fit 128 KiB. Larger metadata fails initialization; instructions are never silently truncated. Root-level `_meta` and other initialization extensions are not exported.

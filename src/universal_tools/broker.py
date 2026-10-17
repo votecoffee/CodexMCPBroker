@@ -16,6 +16,7 @@ from jsonschema import ValidationError
 from jsonschema.validators import validator_for
 from mcp.types import CallToolResult, Tool
 
+from .capabilities import CapabilityState, read_catalog, tool_revision
 from .elicitation import ElicitationTarget, routed_call
 from .journal import WriteJournal
 from .metadata import BROKER_SUPPORT
@@ -29,6 +30,7 @@ from .models import (
     load_manifest,
 )
 from .ownership import OwnershipJournal, owner_digest
+from .schemas import check_schema
 from .sessions import SessionWorker
 from .transport import list_all_tools, service_session
 
@@ -42,32 +44,6 @@ def broker_reason(error: BaseException) -> BrokerError | None:
             if reason is not None:
                 return reason
     return None
-
-
-def check_schema(schema: dict) -> None:
-    if len(json.dumps(schema).encode("utf-8")) > 128 * 1024:
-        raise BrokerError("tool schema exceeds 128 KiB")
-
-    def visit(value):
-        if isinstance(value, dict):
-            for key, child in value.items():
-                if key in {"$ref", "$dynamicRef", "$recursiveRef"} and (
-                    not isinstance(child, str) or not child.startswith("#")
-                ):
-                    raise BrokerError("tool schemas cannot fetch external references")
-                visit(child)
-        elif isinstance(value, list):
-            for child in value:
-                visit(child)
-
-    visit(schema)
-    validator = validator_for(schema, default=None)
-    if validator is None:
-        # MCP schemas without a dialect declaration use the current default.
-        if "$schema" in schema:
-            raise BrokerError("unsupported JSON Schema dialect")
-        validator = validator_for(schema)
-    validator.check_schema(schema)
 
 
 @dataclass(frozen=True)
@@ -91,9 +67,7 @@ class CatalogTool:
 
     @property
     def revision(self) -> str:
-        return canonical_digest(
-            {"service": self.manifest.digest, "tool": self.tool.model_dump(mode="json")}
-        )
+        return tool_revision(self.manifest, self.tool)
 
     def describe(self) -> dict:
         return {
@@ -117,6 +91,7 @@ class Lease:
     expires: float
     worker: SessionWorker
     lost: bool = False
+    capability_state: CapabilityState | None = None
 
 
 class Broker:
@@ -133,6 +108,7 @@ class Broker:
         self._service_locks: dict[str, asyncio.Lock] = {}
         self._manifests: dict[str, ServiceManifest] = {}
         self._metadata: dict[str, dict] = {}
+        self._capabilities: dict[str, CapabilityState] = {}
         self._leases: dict[str, Lease] = {}
         self._reaper: asyncio.Task | None = None
         self._closed = False
@@ -253,6 +229,7 @@ class Broker:
             statuses = {}
             manifests = {}
             metadata = {}
+            capabilities = {}
             # Revocation/configuration changes retire owned workers before discovery.
             for service_id, lease in list(self._leases.items()):
                 async with self.lock(service_id):
@@ -301,6 +278,8 @@ class Broker:
                             if self._manifests.get(service_id) == manifest:
                                 if service_id in self._metadata:
                                     metadata[service_id] = self._metadata[service_id]
+                                if service_id in self._capabilities:
+                                    capabilities[service_id] = self._capabilities[service_id]
                         else:
                             async with asyncio.timeout(manifest.timeout_seconds):
                                 async with service_session(manifest) as session:
@@ -309,6 +288,11 @@ class Broker:
                                         "initialization": deepcopy(session.initialization),
                                         "observed_generation": self.generation + 1,
                                     }
+                                    if manifest.capability_catalog is not None:
+                                        capabilities[service_id] = await read_catalog(
+                                            session, manifest, tools
+                                        )
+                        self._registration_matches(manifest)
                     for tool in tools:
                         if not re.fullmatch(TOOL_NAME_PATTERN, tool.name):
                             raise BrokerError("app advertised an unsupported tool name")
@@ -329,9 +313,15 @@ class Broker:
                         "max_argument_bytes": manifest.max_argument_bytes,
                         "tool_count": len(entries),
                         "session_mode": manifest.session_mode,
+                        "capability_catalog": (
+                            capabilities.get(service_id, CapabilityState()).status("catalog")
+                            if manifest.capability_catalog is not None
+                            else {"status": "not_configured"}
+                        ),
                     }
                 except Exception as error:
                     metadata.pop(service_id, None)
+                    capabilities.pop(service_id, None)
                     lease = self._leases.get(service_id)
                     if lease and lease.worker.failed:
                         lease.lost = True
@@ -371,6 +361,11 @@ class Broker:
             self.catalog, self.services = catalog, statuses
             self._manifests = manifests
             self._metadata = metadata
+            self._capabilities = capabilities
+            for service_id, state in list(capabilities.items()):
+                state = self._bound_capability_state(manifests[service_id], state)
+                capabilities[service_id] = state
+                statuses[service_id]["capability_catalog"] = state.status("catalog")
             self.generation += 1
             return self.list_services()
 
@@ -379,20 +374,38 @@ class Broker:
             "generation": self.generation,
             "services": [self.services[key] for key in sorted(self.services)],
             "tool_count": len(self.catalog),
+            "capability_count": sum(
+                len(state.snapshot.document.capabilities)
+                for state in self._capabilities.values()
+                if state.snapshot is not None
+            ),
         }
 
-    def search(self, query: str = "", service_id: str | None = None, limit: int = 30) -> dict:
+    def search(
+        self,
+        query: str = "",
+        service_id: str | None = None,
+        limit: int = 30,
+        kind: str = "all",
+        *,
+        owner_id: str | None = None,
+    ) -> dict:
         if not 1 <= limit <= 100:
             raise BrokerError("limit must be between 1 and 100")
+        if kind not in {"all", "tool", "capability"}:
+            raise BrokerError("kind must be all, tool or capability")
         words = query.casefold().split()
         matches = []
         for entry in sorted(self.catalog.values(), key=lambda item: item.id):
+            if kind == "capability":
+                continue
             if service_id and entry.manifest.id != service_id:
                 continue
             haystack = f"{entry.id} {entry.tool.description or ''}".casefold()
             if all(word in haystack for word in words):
                 matches.append(
                     {
+                        "kind": "tool",
                         "tool_id": entry.id,
                         "description": entry.tool.description or "",
                         "classification": "read" if entry.read_only else "write_or_unknown",
@@ -400,6 +413,28 @@ class Broker:
                         "context_required": entry.manifest.session_mode == "exclusive",
                     }
                 )
+        if kind != "tool":
+            for manifest in sorted(self._manifests.values(), key=lambda item: item.id):
+                if manifest.capability_catalog is None:
+                    continue
+                if service_id and manifest.id != service_id:
+                    continue
+                try:
+                    state, source = self._capability_state(manifest, owner_id)
+                except BrokerError:
+                    continue
+                if state.snapshot is not None:
+                    for match in state.snapshot.matches(source):
+                        haystack = " ".join(
+                            [
+                                manifest.id,
+                                match["capability_id"],
+                                match["description"],
+                                *match["tags"],
+                            ]
+                        ).casefold()
+                        if all(word in haystack for word in words):
+                            matches.append(match)
         return {"matches": matches[:limit], "total": len(matches), "generation": self.generation}
 
     def describe(self, tool_id: str) -> dict:
@@ -417,6 +452,11 @@ class Broker:
             snapshot = self._metadata.get(service_id)
             if snapshot is None:
                 raise BrokerError("service metadata unavailable; refresh_services")
+            capability_state, capability_source = (
+                self._capability_state(manifest, owner_id)
+                if manifest.capability_catalog is not None
+                else (None, "catalog")
+            )
             result = {
                 "service_id": service_id,
                 "display_name": manifest.display_name,
@@ -437,6 +477,11 @@ class Broker:
                 **deepcopy(snapshot),
                 "trust": "untrusted_app_data",
                 "broker_support": dict(BROKER_SUPPORT),
+                "capability_catalog": (
+                    capability_state.status(capability_source)
+                    if capability_state is not None
+                    else {"status": "not_configured"}
+                ),
             }
             lease = self._leases.get(service_id)
             if (
@@ -456,6 +501,119 @@ class Broker:
                 {"service": manifest.digest, "initialization": result["initialization"]}
             )
             return result
+
+    def _capability_state(self, manifest, owner_id):
+        self._registration_matches(manifest)
+        lease = self._leases.get(manifest.id)
+        source = "catalog"
+        state = self._capabilities.get(manifest.id, CapabilityState())
+        if (
+            lease
+            and lease.owner == owner_id
+            and lease.worker.alive
+            and not lease.lost
+            and lease.expires > self._clock()
+        ):
+            source = "owned_session"
+            state = lease.capability_state or CapabilityState()
+        return self._bound_capability_state(manifest, state), source
+
+    def _bound_capability_state(self, manifest, state):
+        if state.snapshot is not None:
+            if any(
+                self.catalog.get(manifest.id + "/" + name) is None
+                or self.catalog[manifest.id + "/" + name].revision != revision
+                for name, revision in state.snapshot.bindings.items()
+            ):
+                state = CapabilityState(
+                    error="catalog discovery definitions changed; refresh_capabilities"
+                )
+        return state
+
+    async def describe_capability(
+        self,
+        service_id: str,
+        capability_id: str,
+        capability_revision: str,
+        *,
+        owner_id: str | None,
+    ) -> dict:
+        self._service_id(service_id)
+        async with self.lock(service_id):
+            if self._closed:
+                raise BrokerError("broker is closing")
+            manifest = self._manifests.get(service_id)
+            if manifest is None or manifest.capability_catalog is None:
+                raise BrokerError("service has no available capability_catalog provider")
+            state, source = self._capability_state(manifest, owner_id)
+            if state.snapshot is None:
+                raise BrokerError(state.error)
+            if state.snapshot.revision != capability_revision:
+                raise BrokerError("capability revision changed; search_tools again")
+            return state.snapshot.describe(capability_id, source)
+
+    async def refresh_capabilities(
+        self,
+        service_id: str,
+        context_id: str | None = None,
+        *,
+        owner_id: str | None,
+    ) -> dict:
+        self._service_id(service_id)
+        async with self._refresh_lock, self.lock(service_id):
+            if self._closed:
+                raise BrokerError("broker is closing")
+            manifest = self._manifests.get(service_id)
+            if manifest is None or manifest.capability_catalog is None:
+                raise BrokerError("service has no available capability_catalog provider")
+            self._registration_matches(manifest)
+            lease = None
+            if manifest.session_mode == "exclusive":
+                lease = await self._require_lease(service_id, context_id, self._owner(owner_id))
+                lease.capability_state = CapabilityState()
+            elif context_id is not None:
+                raise BrokerError("transient services do not accept a context_id")
+            else:
+                self._capabilities.pop(service_id, None)
+                self.services[service_id]["capability_catalog"] = CapabilityState().status(
+                    "catalog"
+                )
+            try:
+                if lease:
+                    state = await lease.worker.execute(
+                        lambda session: read_catalog(session, manifest)
+                    )
+                else:
+                    async with asyncio.timeout(manifest.timeout_seconds):
+                        async with service_session(manifest) as session:
+                            state = await read_catalog(session, manifest)
+                self._registration_matches(manifest)
+                state = self._bound_capability_state(manifest, state)
+                if lease:
+                    lease.capability_state = state
+                    if state.snapshot is not None:
+                        await self._renew(lease)
+                else:
+                    self._capabilities[service_id] = state
+                    self.services[service_id]["capability_catalog"] = state.status("catalog")
+                # Do not publish owner-specific status through list_services.
+                state, source = self._capability_state(manifest, owner_id)
+                return {"service_id": service_id, **state.status(source)}
+            except BaseException as error:
+                if lease and not lease.worker.alive:
+                    lease.lost = True
+                    self.ownership.lose(lease.context_id, "capability_probe_interrupted")
+                    await lease.worker.close()
+                if isinstance(error, asyncio.CancelledError):
+                    raise
+                if not isinstance(error, Exception):
+                    raise
+                reason = broker_reason(error)
+                if reason is not None:
+                    raise reason from None
+                raise BrokerError(
+                    "capability catalog probe failed; inspect service_session_status"
+                ) from None
 
     def _entry(self, tool_id: str) -> CatalogTool:
         try:

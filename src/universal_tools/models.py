@@ -8,7 +8,7 @@ import os
 import re
 import tempfile
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -45,6 +45,33 @@ def atomic_json(path: Path, value: object) -> None:
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
+
+
+class CatalogRequest(StrictModel):
+    tool: str = Field(pattern=TOOL_NAME_PATTERN)
+    arguments: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("arguments")
+    @classmethod
+    def bounded_json(cls, value: dict) -> dict:
+        try:
+            raw = json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+            if len(raw.encode("utf-8")) > 16 * 1024:
+                raise ValueError("catalog arguments exceed 16 KiB")
+        except (TypeError, UnicodeError, RecursionError):
+            raise ValueError("catalog arguments must contain finite UTF-8 JSON") from None
+        return value
+
+
+class CapabilityProvider(CatalogRequest):
+    schema_version: Literal[1] = 1
+
+    @field_validator("schema_version", mode="before")
+    @classmethod
+    def integer_version(cls, value):
+        if type(value) is not int or value != 1:
+            raise ValueError("capability catalog schema_version must be integer 1")
+        return value
 
 
 class HttpTransport(StrictModel):
@@ -116,6 +143,7 @@ class ServiceManifest(StrictModel):
     session_mode: Literal["transient", "exclusive"] = "transient"
     lease_seconds: float = Field(default=900.0, ge=5.0, le=86400.0)
     resource_id: str | None = Field(default=None, pattern=ID_PATTERN)
+    capability_catalog: CapabilityProvider | None = None
 
     @field_validator("allowed_write_tools")
     @classmethod

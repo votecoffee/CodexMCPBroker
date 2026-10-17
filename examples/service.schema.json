@@ -1,5 +1,31 @@
 {
   "$defs": {
+    "CapabilityProvider": {
+      "additionalProperties": false,
+      "properties": {
+        "tool": {
+          "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+          "title": "Tool",
+          "type": "string"
+        },
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "tool"
+      ],
+      "title": "CapabilityProvider",
+      "type": "object"
+    },
     "HttpTransport": {
       "additionalProperties": false,
       "properties": {
@@ -199,6 +225,17 @@
       ],
       "default": null,
       "title": "Resource Id"
+    },
+    "capability_catalog": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CapabilityProvider"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [

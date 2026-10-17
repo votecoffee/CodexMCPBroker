@@ -34,6 +34,8 @@ Policy and payload checks verify exact write allowlists, the service-wide master
 
 Use [MIGRATION.md](MIGRATION.md) to select a non-migrating compatibility review scope. Keep app-specific captures and decisions local; successful broker fixtures do not certify a native integration.
 
+Inner catalog checks use opt-in synthetic providers with versioned, bounded metadata. They cover explicit read-only declarations, schema/reference checks, malformed/duplicate catalogs, detached snapshots, stale revisions, registration revocation, changed discovery definitions and private owner visibility through expiry and transport loss. Real stdio frontends and stdio/HTTP apps verify install/refresh without frontend definition changes, inner feature additions without changing outer tool revisions, native rejection of stale app revisions, global refresh without owner probing, invalid metadata without native context loss, and zero host prompts or fixture commits from metadata confirmation attempts. They do not establish that an existing app's native catalog implements the new normalized format.
+
 ## Source package
 
 Refresh the source manifest after changing distributed files:

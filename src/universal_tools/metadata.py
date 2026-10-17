@@ -8,6 +8,7 @@ from .models import BrokerError
 
 BROKER_SUPPORT = {
     "tool_calls": True,
+    "capability_catalog_v1": True,
     "resources": False,
     "prompts": False,
     "completions": False,

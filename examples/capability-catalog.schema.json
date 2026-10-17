@@ -1,0 +1,88 @@
+{
+  "$defs": {
+    "Capability": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "maxLength": 64,
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Tags",
+          "type": "array"
+        },
+        "discovery": {
+          "$ref": "#/$defs/CatalogRequest"
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "discovery"
+      ],
+      "title": "Capability",
+      "type": "object"
+    },
+    "CatalogRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "tool": {
+          "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+          "title": "Tool",
+          "type": "string"
+        },
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        }
+      },
+      "required": [
+        "tool"
+      ],
+      "title": "CatalogRequest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "catalog_revision": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Catalog Revision",
+      "type": "string"
+    },
+    "capabilities": {
+      "items": {
+        "$ref": "#/$defs/Capability"
+      },
+      "maxItems": 1000,
+      "title": "Capabilities",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "catalog_revision",
+    "capabilities"
+  ],
+  "title": "CapabilityDocument",
+  "type": "object"
+}

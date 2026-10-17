@@ -24,6 +24,8 @@ from universal_tools.transport import http_session
 
 TOOLS = {
     "describe_service",
+    "describe_capability",
+    "refresh_capabilities",
     "broker_status",
     "list_services",
     "refresh_services",
