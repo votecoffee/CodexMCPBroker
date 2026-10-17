@@ -4,7 +4,7 @@ Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.3.0**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.4.0**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
 
@@ -24,7 +24,7 @@ The plugin is named **Universal Tools**. The Python distribution and CLI retain 
 
 Apps own their tools, native processes, data and authorization. CodexMCPBroker provides a common discovery and routing layer so each new app can register with the existing plugin.
 
-The broker exposes eleven fixed tools. App tools are namespaced catalog entries selected through search and description. They do not become individual native Codex tool definitions. Separate chats share the broker, while each chat connects through its own stdio frontend. Stateful integrations can opt into persistent, exclusively owned service contexts.
+The broker exposes twelve fixed tools. App tools are namespaced catalog entries selected through search and description. They do not become individual native Codex tool definitions. Separate chats share the broker, while each chat connects through its own stdio frontend. Stateful integrations can opt into persistent, exclusively owned service contexts.
 
 ## Install
 
@@ -97,7 +97,9 @@ See the [app integration contract](APP_CONTRACT.md) and [registration schema](ex
 
 ### Invoke tools
 
-Search for a tool, describe it, then invoke it with the returned `catalog_revision` and schema-valid arguments. Writes also require a unique `request_id`. The broker checks the live definition before dispatch; changed registrations or definitions require another refresh/describe cycle.
+Search for a tool, use `describe_service` for its app's initialization guidance and capabilities, then `describe_tool` for its schema and `catalog_revision`. Invoke it with that revision and schema-valid arguments. Writes also require a unique `request_id`. The broker checks the live definition before dispatch; changed registrations or definitions require another refresh/describe cycle.
+
+`describe_service` returns the app's negotiated protocol version, server information, advertised capabilities and optional instructions, alongside the broker's actual relay support. This is attributed, untrusted app data. It cannot authorize unrelated actions or change broker policy. The catalog snapshot comes from discovery; after acquiring an exclusive context, describe the service again to inspect that session's guidance. Only its active owner receives the session snapshot. Other frontends receive the earlier catalog snapshot, which refresh preserves while the context is owned. Description does not connect to the app or renew a lease.
 
 Registrations default to `allow_writes: false`. Tools need `readOnlyHint: true` for the read channel, except exact legacy tool names reviewed under `read_only_tools`. An explicit false annotation always uses the write channel. App-specific permissions and review requirements remain authoritative.
 
@@ -149,9 +151,9 @@ Write claims are stored in SQLite before dispatch. Reusing a claimed ID never di
 - Transient mode opens a fresh downstream session/process for each discovery or call. Exclusive mode retains one session for its owner; unowned discovery still uses temporary sessions. App-owned HTTP engines must retain business state independently of individual HTTP requests.
 - Identical routes and declared resource aliases involving an exclusive service are rejected. Use a stable `resource_id` for different routes to one native resource. The broker cannot infer arbitrary app aliases or fence direct/manual clients. Native sessions and live lease timers remain in memory; durable reservations preserve the recovery barrier, not the native process or its state.
 - Per-call frontend-to-broker HTTP connections and full downstream definition checks remain. Persistent downstream sessions remove repeated stdio startup, not every source of transport overhead.
-- Tools are the supported MCP surface. Downstream resources, prompts, OAuth linking, sampling, elicitation, progress and app UI routing are not implemented. App initialization instructions and bundled skills are not automatically delivered through the broker.
+- Tools are the supported MCP surface. Downstream resources, prompts, OAuth linking, sampling, elicitation, progress and app UI routing are not implemented. `describe_service` exposes initialization metadata on request; advertised app capabilities do not enable those relays. App skills are not automatically installed or distributed.
 - Search indexes outer tool IDs and descriptions. Nested app capability catalogs still require app-specific discovery. Broker refresh does not reload app extensions.
-- Budgets include 128 KiB schemas, 256 KiB argument objects and 1 MiB incoming broker requests. App timeouts default to 20 seconds and allow 0.2–300 seconds; queue wait happens before that deadline. Client disconnect or timeout can leave queued or running work whose outcome needs inspection.
+- Budgets include 128 KiB initialization metadata, 128 KiB schemas, 256 KiB argument objects and 1 MiB incoming broker requests. Oversized initialization metadata is rejected without truncating instructions. App timeouts default to 20 seconds and allow 0.2–300 seconds; queue wait happens before that deadline. Client disconnect or timeout can leave queued or running work whose outcome needs inspection.
 - Removed or invalid registrations lose routes on refresh. Revocation is also checked before a new call; already-dispatched work can continue. Unknown effects use the write channel, and service write policy applies to that whole category.
 - Protocol and example-service checks do not establish compatibility or native acceptance for a particular engineering application. Validate each app's state continuity, policy, media/results and failure behavior before integration.
 
@@ -163,6 +165,7 @@ Write claims are stored in SQLite before dispatch. Reusing a claimed ID never di
 | `list_services` | List registered app services and their discovery status. |
 | `refresh_services` | Reload registrations and query app tool definitions. |
 | `search_tools` | Search namespaced app tool IDs and descriptions. |
+| `describe_service` | Inspect attributed app initialization guidance, capabilities and broker relay support. |
 | `describe_tool` | Retrieve a tool definition, policy and catalog revision. |
 | `call_read_tool` | Invoke an allowed read operation with the described revision. |
 | `call_write_tool` | Invoke an enabled write operation with a unique request ID. |

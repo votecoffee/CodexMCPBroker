@@ -7,8 +7,12 @@ import secrets
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-server = FastMCP("Synthetic stateful app", log_level="WARNING")
 instance = secrets.token_hex(16)
+server = FastMCP(
+    "Synthetic stateful app",
+    instructions=f"Synthetic session guidance: {instance}. Inspect the target before applying.",
+    log_level="WARNING",
+)
 value = ""
 plans = {}
 READ = ToolAnnotations(readOnlyHint=True)

@@ -7,6 +7,7 @@ import json
 import re
 import secrets
 import time
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,7 @@ from jsonschema.validators import validator_for
 from mcp.types import CallToolResult, Tool
 
 from .journal import WriteJournal
+from .metadata import BROKER_SUPPORT
 from .models import ID_PATTERN, BrokerError, ServiceManifest, canonical_digest, load_manifest
 from .ownership import OwnershipJournal, owner_digest
 from .sessions import SessionWorker
@@ -116,6 +118,7 @@ class Broker:
         self._refresh_lock = asyncio.Lock()
         self._service_locks: dict[str, asyncio.Lock] = {}
         self._manifests: dict[str, ServiceManifest] = {}
+        self._metadata: dict[str, dict] = {}
         self._leases: dict[str, Lease] = {}
         self._reaper: asyncio.Task | None = None
         self._closed = False
@@ -235,6 +238,7 @@ class Broker:
             catalog = {}
             statuses = {}
             manifests = {}
+            metadata = {}
             # Revocation/configuration changes retire owned workers before discovery.
             for service_id, lease in list(self._leases.items()):
                 async with self.lock(service_id):
@@ -254,6 +258,7 @@ class Broker:
 
             async def discover(path: Path):
                 service_id = path.stem
+                manifest = None
                 try:
                     manifest = load_manifest(path)
                     if manifest.id != path.stem:
@@ -272,14 +277,24 @@ class Broker:
                     if self._conflicting(manifest):
                         raise BrokerError("resource has conflicting registrations; remove aliases")
                     async with self.lock(service_id):
+                        self._registration_matches(manifest)
                         lease = self._leases.get(service_id)
                         if lease:
                             # Metadata refresh must preserve the owner's native context.
                             tools = await lease.worker.execute(list_all_tools)
+                            # Owned initialization may contain session-specific app data.
+                            # Never publish it into a catalog shared with other frontends.
+                            if self._manifests.get(service_id) == manifest:
+                                if service_id in self._metadata:
+                                    metadata[service_id] = self._metadata[service_id]
                         else:
                             async with asyncio.timeout(manifest.timeout_seconds):
                                 async with service_session(manifest) as session:
                                     tools = await list_all_tools(session)
+                                    metadata[service_id] = {
+                                        "initialization": deepcopy(session.initialization),
+                                        "observed_generation": self.generation + 1,
+                                    }
                     for tool in tools:
                         if not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", tool.name):
                             raise BrokerError("app advertised an unsupported tool name")
@@ -300,11 +315,24 @@ class Broker:
                         "session_mode": manifest.session_mode,
                     }
                 except Exception as error:
+                    metadata.pop(service_id, None)
                     lease = self._leases.get(service_id)
                     if lease and lease.worker.failed:
                         lease.lost = True
                         self.ownership.lose(lease.context_id, "discovery_failed")
                         await lease.worker.close()
+                    if (
+                        manifest is not None
+                        and manifest.id == service_id
+                        and self._recovery_blocker(manifest)
+                    ):
+                        manifests[service_id] = manifest
+                        statuses[service_id] = {
+                            "service_id": service_id,
+                            "status": "recovery_required",
+                            "session_mode": manifest.session_mode,
+                        }
+                        return
                     # Do not retain stale tools for failed or malformed registrations.
                     statuses[service_id] = {
                         "service_id": service_id,
@@ -326,6 +354,7 @@ class Broker:
             await asyncio.gather(*(bounded(path) for path in files))
             self.catalog, self.services = catalog, statuses
             self._manifests = manifests
+            self._metadata = metadata
             self.generation += 1
             return self.list_services()
 
@@ -359,6 +388,49 @@ class Broker:
 
     def describe(self, tool_id: str) -> dict:
         return self._entry(tool_id).describe()
+
+    async def describe_service(self, service_id: str, *, owner_id: str | None) -> dict:
+        self._service_id(service_id)
+        async with self.lock(service_id):
+            if self._closed:
+                raise BrokerError("broker is closing")
+            manifest = self._manifests.get(service_id)
+            if manifest is None:
+                raise BrokerError("unknown or unavailable service; refresh_services")
+            self._registration_matches(manifest)
+            snapshot = self._metadata.get(service_id)
+            if snapshot is None:
+                raise BrokerError("service metadata unavailable; refresh_services")
+            result = {
+                "service_id": service_id,
+                "display_name": manifest.display_name,
+                "description": manifest.description,
+                "session_mode": manifest.session_mode,
+                "context_required": manifest.session_mode == "exclusive",
+                "generation": self.generation,
+                "metadata_source": "catalog",
+                **deepcopy(snapshot),
+                "trust": "untrusted_app_data",
+                "broker_support": dict(BROKER_SUPPORT),
+            }
+            lease = self._leases.get(service_id)
+            if (
+                lease
+                and lease.owner == owner_id
+                and lease.worker.alive
+                and not lease.lost
+                and lease.expires > self._clock()
+            ):
+                result.update(
+                    metadata_source="owned_session",
+                    initialization=deepcopy(lease.worker.initialization),
+                    context_id=lease.context_id,
+                )
+                result.pop("observed_generation")
+            result["metadata_revision"] = canonical_digest(
+                {"service": manifest.digest, "initialization": result["initialization"]}
+            )
+            return result
 
     def _entry(self, tool_id: str) -> CatalogTool:
         try:

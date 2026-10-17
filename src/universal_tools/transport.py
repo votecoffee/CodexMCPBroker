@@ -10,10 +10,20 @@ import httpx
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamable_http_client
-from mcp.types import Tool
+from mcp.types import InitializeResult, Tool
 
 from .identity import CLIENT_HEADER
+from .metadata import initialization_metadata
 from .models import BrokerError, HttpTransport, ServiceManifest
+
+
+class InitializedSession(ClientSession):
+    initialization: dict
+
+    async def initialize(self) -> InitializeResult:
+        result = await super().initialize()
+        self.initialization = initialization_metadata(result)
+        return result
 
 
 @asynccontextmanager
@@ -27,7 +37,7 @@ async def http_session(
         headers=headers, timeout=httpx.Timeout(timeout), follow_redirects=False, trust_env=False
     ) as client:
         async with streamable_http_client(url, http_client=client) as (read, write, _):
-            async with ClientSession(read, write, timedelta(seconds=timeout)) as session:
+            async with InitializedSession(read, write, timedelta(seconds=timeout)) as session:
                 await session.initialize()
                 yield session
 
@@ -56,7 +66,7 @@ async def service_session(manifest: ServiceManifest):
         # App stderr can contain secrets; do not merge it into broker logs.
         with open(os.devnull, "w", encoding="utf-8") as errlog:
             async with stdio_client(params, errlog=errlog) as (read, write):
-                async with ClientSession(
+                async with InitializedSession(
                     read, write, timedelta(seconds=manifest.timeout_seconds)
                 ) as session:
                     await session.initialize()

@@ -177,6 +177,11 @@ def test_journal_closes_database_handles_after_success_and_conflict(tmp_path, mo
 
 class FakeSession:
     def __init__(self):
+        self.initialization = {
+            "protocolVersion": "2025-11-25",
+            "serverInfo": {"name": "Synthetic app", "version": "1"},
+            "capabilities": {"tools": {}},
+        }
         self.tools = [tool()]
         self.calls = 0
         self.active = 0

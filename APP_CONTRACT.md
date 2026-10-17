@@ -43,7 +43,7 @@ Implement normal MCP initialization, paginated `tools/list`, and `tools/call`. T
 
 Each tool supplies a specific name, useful description, input schema, and accurate annotations. A catalog ID is `<service-id>/<tool-name>`. Version 1 supports tool names containing ASCII letters, digits, underscores, periods, and hyphens, up to 128 characters. Every tool in a registration must be valid or the entire registration is unavailable.
 
-Schemas are validated locally. Network schema references are rejected. The catalog revision hashes the complete tool definition and service registration. It changes when routing, permissions, metadata, or schemas change. Calls must use the described revision, and the live advertised definition must still match it. Keep contracts backward compatible during rolling app updates.
+Schemas are validated locally. Network schema references are rejected. The catalog revision hashes the complete tool definition and service registration. It changes when routing, permissions, tool metadata, or schemas change. Calls must use the described revision, and the live advertised definition must still match it. Keep contracts backward compatible during rolling app updates.
 
 Explicit `readOnlyHint: true` is required for the read channel, except exact names reviewed in the local legacy override. Unknown or explicit false annotations are write-capable. `allow_writes` controls that whole service. Invocation tools use conservative broker annotations; the described definition retains the app annotations for the model to inspect.
 
@@ -56,6 +56,16 @@ The app is authoritative for:
 - Its own startup/shutdown and continued availability. Normal broker startup does not start HTTP apps.
 
 The broker cannot create an app-specific authorization token or bypass a required review. A request ID prevents broker duplicate dispatch; it is not app authorization. Put app-level idempotency and revision protection in the tool contract when needed.
+
+## Initialization guidance and advertised capabilities
+
+Broker 0.4 retains the `protocolVersion`, `serverInfo`, `capabilities` and optional `instructions` fields from the app's MCP `initialize` response. These fields follow the [MCP lifecycle contract](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle). `describe_service(service_id)` returns them under `initialization`, with the registered service ID, `metadata_source`, `metadata_revision` and `broker_support`. Optional empty instructions remain empty; absent instructions remain absent. The combined UTF-8 JSON snapshot must fit 128 KiB. Larger metadata fails initialization; instructions are never silently truncated. Root-level `_meta` and other initialization extensions are not exported.
+
+For transient or unowned discovery, the snapshot is catalog data shared with all authenticated broker frontends. Apps must not put secrets or another user's private context into discovery guidance. Registration authorizes this initialization and discovery. For an exclusive context, its active owner receives the initialization captured from that retained session, together with its `context_id`. Other frontends receive the earlier unowned catalog snapshot. Refresh reuses the worker for tool discovery but never replaces shared initialization metadata with the owner's snapshot. `observed_generation` identifies when a catalog snapshot was captured; the response's `generation` identifies the current catalog. Owned snapshots are identified by their context instead.
+
+Description is observational: no app connection, tool invocation, acquisition, expiry cleanup or lease renewal occurs. Revoked registrations and unresolved recovery barriers block it. After acquisition, inspect the service again before following session-specific guidance. Metadata is a snapshot rather than a live query; its revision fingerprints initialization and registration data for comparison, and is separate from a tool's `catalog_revision`. Calls do not require or validate a metadata revision. An app must enforce critical authorization and review preconditions in its tool implementation.
+
+Instructions are untrusted app guidance within the user's authorized task. They are not appended to the broker's top-level instructions and cannot change broker policy. App-advertised capabilities remain separate from actual broker support: tool calls are routed, while resources, prompts, completions, task APIs, server requests (including sampling, elicitation and roots) and notifications/progress are not relayed. Advertising a feature does not enable it. Bundled app skills are not distributed by this mechanism.
 
 ## Existing stdio apps
 

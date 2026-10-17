@@ -22,6 +22,7 @@ from universal_tools.surface import RemoteBackend
 from universal_tools.transport import http_session
 
 TOOLS = {
+    "describe_service",
     "broker_status",
     "list_services",
     "refresh_services",
@@ -177,6 +178,21 @@ async def test_http_discovery_routing_and_annotations(stack):
         assert data(await invoke(session, "math/add", {"a": 2, "b": 3}))["sum"] == 5
         matches = data(await session.call_tool("search_tools", {"query": "ping"}))
         assert {entry["tool_id"] for entry in matches["matches"]} == {"math/ping", "notes/ping"}
+
+
+async def test_http_initialization_metadata_reaches_frontend_without_capability_promotion(stack):
+    _, settings, ports = stack
+    async with http_session(f"http://127.0.0.1:{ports[1]}/mcp") as app:
+        expected = app.initialization
+    async with http_session(settings.url + "/mcp", settings.token) as frontend:
+        info = data(await frontend.call_tool("describe_service", {"service_id": "math"}))
+        assert info["initialization"] == expected
+        assert info["metadata_source"] == "catalog" and "context_id" not in info
+        assert info["trust"] == "untrusted_app_data"
+        assert info["broker_support"]["resources"] is False
+        assert info["broker_support"]["server_requests"] is False
+        assert frontend.initialization["serverInfo"] != expected["serverInfo"]
+        assert "describe_service" in frontend.initialization["instructions"]
 
 
 async def test_four_concurrent_clients_keep_results_separate(stack):
@@ -526,11 +542,17 @@ async def test_two_stdio_frontends_cannot_share_or_release_each_others_context(s
                 )
             )
             session = await contexts.enter_async_context(ClientSession(*streams))
-            await session.initialize()
+            initialization = await session.initialize()
+            assert "Synthetic session guidance" not in initialization.instructions
             clients.append(session)
         owner, other = clients
+        public = data(await other.call_tool("describe_service", {"service_id": "stateful"}))
         lease = data(await owner.call_tool("acquire_service", {"service_id": "stateful"}))
         context = lease["context_id"]
+        owned = data(await owner.call_tool("describe_service", {"service_id": "stateful"}))
+        assert owned["metadata_source"] == "owned_session" and owned["context_id"] == context
+        assert owned["initialization"] != public["initialization"]
+        assert data(await other.call_tool("describe_service", {"service_id": "stateful"})) == public
         assert (await other.call_tool("acquire_service", {"service_id": "stateful"})).isError
         assert (
             await other.call_tool(
@@ -548,8 +570,15 @@ async def test_two_stdio_frontends_cannot_share_or_release_each_others_context(s
         }
         assert (await other.call_tool("call_read_tool", payload)).isError
         before = data(await owner.call_tool("call_read_tool", payload))
+        assert before["instance"] in owned["initialization"]["instructions"]
         data(await other.call_tool("refresh_services"))
         assert data(await owner.call_tool("call_read_tool", payload)) == before
+        after_owned = data(await owner.call_tool("describe_service", {"service_id": "stateful"}))
+        after_other = data(await other.call_tool("describe_service", {"service_id": "stateful"}))
+        assert after_owned["initialization"] == owned["initialization"]
+        assert after_other["initialization"] == public["initialization"]
+        assert after_other["observed_generation"] == public["observed_generation"]
+        assert "context_id" not in after_other
         data(
             await owner.call_tool(
                 "release_service", {"service_id": "stateful", "context_id": context}

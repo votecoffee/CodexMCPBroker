@@ -30,6 +30,12 @@ def manifest(**overrides):
 
 class StatefulSession:
     def __init__(self, generation):
+        self.initialization = {
+            "protocolVersion": "2025-11-25",
+            "serverInfo": {"name": "Synthetic app", "version": "1"},
+            "capabilities": {"tools": {}},
+            "instructions": f"Synthetic guidance for engine {generation}",
+        }
         self.generation = generation
         self.value = ""
         self.calls = 0

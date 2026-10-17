@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
@@ -33,6 +34,7 @@ class SessionWorker:
         self.ready = asyncio.get_running_loop().create_future()
         self.failed = False
         self.closing = False
+        self.initialization: dict | None = None
         self.task = asyncio.create_task(self._run(), name=f"app-session:{manifest.id}")
         self.ready.add_done_callback(self._consume_exception)
 
@@ -50,6 +52,7 @@ class SessionWorker:
             async with AsyncExitStack() as stack:
                 async with asyncio.timeout(self.manifest.timeout_seconds):
                     session = await stack.enter_async_context(self.connect(self.manifest))
+                    self.initialization = deepcopy(session.initialization)
                 self.ready.set_result(None)
                 while (work := await self.queue.get()) is not None:
                     try:

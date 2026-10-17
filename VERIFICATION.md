@@ -22,6 +22,8 @@ Session tests use synthetic process-local state and AnyIO task groups to verify 
 
 Durable ownership checks cover atomic resource reservations, hashed frontend identities, interrupted initialization/retirement, blocked discovery after restart, indefinite lost-context barriers, changed/renamed/transient routes, and exact-handle recovery under the stopped-broker OS lock. The process-crash test terminates only its own isolated broker and reconciles disposable fixture state through the administrative recovery path. These checks do not prove a real native application's work stopped or resumed.
 
+Initialization metadata checks cover optional and Unicode instructions, capability preservation, bounded snapshots, registration revocation, recovery barriers, refresh races and metadata isolation between owners. Real HTTP and two stdio frontends verify transport capture and delivery, stable owner guidance through another frontend's refresh, unchanged native instance identity, and the separation of app capability advertisements from broker relay support. Description must not connect to an app or extend its lease.
+
 These tests do not operate native engineering applications or establish their migration readiness. Test counts and measurements belong in local run records rather than a permanent public validation log.
 
 ## Source package
