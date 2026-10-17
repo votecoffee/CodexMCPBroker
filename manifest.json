@@ -209,8 +209,8 @@
     },
     {
       "path": "tests/test_integration.py",
-      "size": 22901,
-      "sha256": "3d69461bcf3c53a957ca26765a66d5e419104f5dadb7c2abc27b931e7a0ed1fe"
+      "size": 24640,
+      "sha256": "ac438fa8ddc62d0e3fc64e5765afff2fe7d66f674cf74495c27ac1f87e2c8a1a"
     },
     {
       "path": "tests/test_packaging.py",

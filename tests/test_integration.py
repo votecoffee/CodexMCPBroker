@@ -565,3 +565,41 @@ async def test_ownerless_http_client_cannot_acquire_an_exclusive_service(stack):
             result = await session.call_tool("acquire_service", {"service_id": "stateful"})
             assert result.isError
             assert "identified" in result.content[0].text
+
+
+async def test_exclusive_http_transport_preserves_owner_across_fresh_broker_requests(stack):
+    state, settings, _ = stack
+    path = state / "services/math.json"
+    original = path.read_bytes()
+    config = json.loads(original)
+    atomic_json(path, {**config, "session_mode": "exclusive"})
+    owner, other = RemoteBackend(settings), RemoteBackend(settings)
+    try:
+        data(await owner.invoke("refresh_services", {}))
+        context = data(await owner.invoke("acquire_service", {"service_id": "math"}))["context_id"]
+        description = data(await owner.invoke("describe_tool", {"tool_id": "math/echo"}))
+        payload = {
+            "tool_id": "math/echo",
+            "catalog_revision": description["catalog_revision"],
+            "arguments": {"value": "owned-http"},
+            "context_id": context,
+        }
+        assert data(await owner.invoke("call_read_tool", payload))["value"] == "owned-http"
+        data(await other.invoke("refresh_services", {}))
+        assert (await other.invoke("call_read_tool", payload)).isError
+        assert data(await owner.invoke("call_read_tool", payload))["value"] == "owned-http"
+        data(await owner.invoke("release_service", {"service_id": "math", "context_id": context}))
+        replacement = data(await other.invoke("acquire_service", {"service_id": "math"}))
+        assert replacement["context_id"] != context
+        data(
+            await other.invoke(
+                "release_service",
+                {
+                    "service_id": "math",
+                    "context_id": replacement["context_id"],
+                },
+            )
+        )
+    finally:
+        path.write_bytes(original)
+        data(await owner.invoke("refresh_services", {}))
