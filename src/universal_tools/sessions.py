@@ -12,12 +12,20 @@ from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 import anyio
 from mcp import ClientSession
 
-from .models import BrokerError, ServiceManifest
+from .models import BrokerError
+
+
+class SessionConfig(Protocol):
+    @property
+    def id(self) -> str: ...
+
+    @property
+    def timeout_seconds(self) -> float: ...
 
 
 @dataclass
@@ -27,15 +35,20 @@ class Work:
 
 
 class SessionWorker:
-    def __init__(self, manifest: ServiceManifest, connect):
+    def __init__(
+        self, manifest: SessionConfig, connect, *, initialization_timeout: float | None = None
+    ):
         self.manifest = manifest
         self.connect = connect
+        self.initialization_timeout = (
+            manifest.timeout_seconds if initialization_timeout is None else initialization_timeout
+        )
         self.queue: asyncio.Queue[Work | None] = asyncio.Queue()
         self.ready = asyncio.get_running_loop().create_future()
         self.failed = False
         self.closing = False
         self.initialization: dict | None = None
-        self.task = asyncio.create_task(self._run(), name=f"app-session:{manifest.id}")
+        self.task = asyncio.create_task(self._run(), name=f"mcp-session:{manifest.id}")
         self.ready.add_done_callback(self._consume_exception)
 
     @staticmethod
@@ -50,7 +63,7 @@ class SessionWorker:
     async def _run(self):
         try:
             async with AsyncExitStack() as stack:
-                async with asyncio.timeout(self.manifest.timeout_seconds):
+                async with asyncio.timeout(self.initialization_timeout):
                     session = await stack.enter_async_context(self.connect(self.manifest))
                     self.initialization = deepcopy(session.initialization)
                 self.ready.set_result(None)
@@ -101,3 +114,70 @@ class SessionWorker:
         # cleanup from that scope as well as shielding the actor from Task.cancel.
         with anyio.CancelScope(shield=True):
             await asyncio.shield(self.task)
+
+
+class SessionPool:
+    """Lazily reuse bounded actors; each borrower owns one channel until cleanup.
+
+    A failed or abandoned operation is never replayed. Only a later explicit
+    invocation can create a replacement channel. This pool owns connections,
+    not downstream app leases or their durable recovery barriers.
+    """
+
+    def __init__(
+        self, config: SessionConfig, connect, *, size: int = 4, initialization_timeout: float = 20
+    ):
+        if size < 1:
+            raise ValueError("session pool size must be positive")
+        self.config = config
+        self.connect = connect
+        self.size = size
+        self.initialization_timeout = initialization_timeout
+        self._condition = asyncio.Condition()
+        self._workers: dict[SessionWorker, bool] = {}
+        self._closed = False
+
+    async def _take(self) -> SessionWorker:
+        async with self._condition:
+            while not self._closed:
+                for worker, busy in self._workers.items():
+                    if not busy:
+                        self._workers[worker] = True
+                        return worker
+                if len(self._workers) < self.size:
+                    worker = SessionWorker(
+                        self.config,
+                        self.connect,
+                        initialization_timeout=self.initialization_timeout,
+                    )
+                    self._workers[worker] = True
+                    return worker
+                await self._condition.wait()
+        raise BrokerError("frontend connection pool is closed")
+
+    async def execute(self, operation):
+        worker = await self._take()
+        try:
+            return await worker.execute(operation)
+        finally:
+            # AnyIO request cancellation must not strand a borrowed channel.
+            with anyio.CancelScope(shield=True):
+                if not worker.alive:
+                    await worker.close()
+                async with self._condition:
+                    if self._closed or not worker.alive:
+                        self._workers.pop(worker, None)
+                    else:
+                        self._workers[worker] = False
+                    self._condition.notify_all()
+
+    async def aclose(self):
+        with anyio.CancelScope(shield=True):
+            async with self._condition:
+                self._closed = True
+                workers = list(self._workers)
+                self._condition.notify_all()
+            # Actors drain bounded work and exit their own SDK contexts.
+            await asyncio.shield(asyncio.gather(*(worker.close() for worker in workers)))
+            async with self._condition:
+                self._workers.clear()

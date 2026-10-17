@@ -122,8 +122,16 @@ The CLI takes the same OS instance lock as the daemon, rejects missing acknowled
 
 The broker rejects enabled registrations with identical transport identities, or matching explicit `resource_id` values, when either uses exclusive mode. All conflicting routes are unavailable on refresh, and conflicts are checked again before calls. HTTP credential variable names do not distinguish resource identity. Assign the same resource ID to app-specific aliases the broker cannot infer. Exclusivity does not extend across another broker state, manual GUI activity, direct app clients or undeclared aliases. An independently running engine can retain selections after proxy release; apps still need explicit targets and their own revision/ownership checks.
 
+## Frontend connection lifecycle
+
+Broker 0.5 adds a pool of up to four initialized HTTP sessions in each stdio frontend. Channels are created only as needed and all carry the same frontend identity. Sequential requests reuse an idle channel; concurrent requests can borrow separate channels. Requests wait when the pool is full, and cancellation during that wait does not dispatch them. Per-service broker serialization and exclusive ownership still apply across all channels.
+
+Each channel uses a dedicated task for SDK entry, serialized operations and teardown. Its initialization deadline is 20 seconds and each dispatched broker operation has a 330-second deadline. Pool wait precedes that deadline. The app's own configured deadline remains independent. Frontend shutdown rejects new requests, wakes pool waiters and drains bounded dispatched work before closing its HTTP sessions. Closing those connections does not release or restore an app context; the existing app lease and durable recovery rules still apply.
+
+An operation that fails, times out or is cancelled after dispatch is never automatically replayed. Its channel is retired after bounded cleanup. A later explicit request can create a replacement channel with the same frontend identity; it does not acquire a new native context or reissue the earlier operation. Inspect the write journal and actual app state after a lost response. An app error returned as a normal MCP result preserves the reusable connection. A new frontend process still receives a new identity.
+
 ## Limits and future extensions
 
 Version 1 allows 128 services, eight parallel discovery probes, 2,000 tools per app, 100 tool-list pages, 128 KiB schemas, 256 KiB argument objects, and app timeouts from 0.2 to 300 seconds. Broker requests are capped at 1 MiB. Calls to one registration are serialized; there is no distributed lock across broker installations.
 
-Potential later versions: native context resumption where apps support it, watched registration directories, supported remote HTTPS/OAuth connections, resource/prompt forwarding, elicitation relay, typed promotion of selected tools, operation-specific policies, and adapters for existing engineering apps. Persistent frontend-to-broker HTTP reuse is also separate from this version's downstream worker reuse. These are not part of the v0.3 acceptance claims.
+Potential later versions: native context resumption where apps support it, watched registration directories, supported remote HTTPS/OAuth connections, resource/prompt forwarding, elicitation relay, typed promotion of selected tools, operation-specific policies, and adapters for existing engineering apps. These remain outside the current acceptance scope.

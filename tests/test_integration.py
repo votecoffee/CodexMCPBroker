@@ -15,6 +15,7 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+import universal_tools.surface as surface_module
 from universal_tools.cli import initialize, probe, process_options, recover_context, stop
 from universal_tools.models import BrokerError, atomic_json
 from universal_tools.ownership import OwnershipJournal
@@ -152,6 +153,18 @@ def data(result):
     return result.structuredContent or json.loads(result.content[0].text)
 
 
+@pytest.fixture
+async def remote_backend():
+    async with AsyncExitStack() as resources:
+
+        def create(settings):
+            backend = RemoteBackend(settings)
+            resources.push_async_callback(backend.aclose)
+            return backend
+
+        yield create
+
+
 async def invoke(session, tool_id, arguments, *, write=False, request_id=None):
     description = data(await session.call_tool("describe_tool", {"tool_id": tool_id}))
     payload = {
@@ -227,6 +240,28 @@ async def test_live_registration_without_restarting_client_or_changing_tools(sta
         finally:
             (state / "services" / "late-app.json").unlink()
             data(await session.call_tool("refresh_services"))
+
+
+async def test_frontend_reuses_one_broker_handshake_for_sequential_calls(stack, monkeypatch):
+    _, settings, _ = stack
+    original = surface_module.http_session
+    connections = []
+
+    @asynccontextmanager
+    async def counted(*args, **kwargs):
+        connections.append(kwargs["client_id"])
+        async with original(*args, **kwargs) as session:
+            yield session
+
+    monkeypatch.setattr(surface_module, "http_session", counted)
+    async with RemoteBackend(settings) as frontend:
+        initial = data(await frontend.invoke("broker_status", {}))
+        for _ in range(8):
+            assert data(await frontend.invoke("broker_status", {})) == initial
+        assert connections == [frontend.client_id]
+    assert not frontend.pool._workers
+    assert (await frontend.invoke("broker_status", {})).isError
+    assert len(connections) == 1
 
 
 async def test_new_http_sessions_do_not_refresh_the_catalog_implicitly(stack):
@@ -462,23 +497,23 @@ async def exclusive_app(stack, *, timeout=3.0):
             "timeout_seconds": timeout,
         },
     )
-    admin = RemoteBackend(settings)
-    try:
-        services = data(await admin.invoke("refresh_services", {}))["services"]
-        assert (
-            next(item for item in services if item["service_id"] == "stateful")["status"]
-            == "available"
-        )
-        yield settings
-    finally:
-        path.unlink()
-        data(await admin.invoke("refresh_services", {}))
-        reservation = OwnershipJournal(state / "ownership.sqlite3").get("stateful")
-        if reservation:
-            # Reconcile disposable fixture state using the same stopped-broker admin route.
-            await asyncio.to_thread(
-                BROKER_TEST_OPERATIONS[state]["recover"], "stateful", reservation["context_id"]
+    async with RemoteBackend(settings) as admin:
+        try:
+            services = data(await admin.invoke("refresh_services", {}))["services"]
+            assert (
+                next(item for item in services if item["service_id"] == "stateful")["status"]
+                == "available"
             )
+            yield settings
+        finally:
+            path.unlink()
+            data(await admin.invoke("refresh_services", {}))
+            reservation = OwnershipJournal(state / "ownership.sqlite3").get("stateful")
+            if reservation:
+                # Reconcile disposable fixture state using the stopped-broker admin route.
+                await asyncio.to_thread(
+                    BROKER_TEST_OPERATIONS[state]["recover"], "stateful", reservation["context_id"]
+                )
 
 
 async def remote_call(backend, operation, arguments, context_id, *, request_id=None):
@@ -495,9 +530,9 @@ async def remote_call(backend, operation, arguments, context_id, *, request_id=N
     return await backend.invoke("call_write_tool" if request_id else "call_read_tool", payload)
 
 
-async def test_persistent_stdio_review_survives_http_turnover_and_refresh(stack):
+async def test_persistent_stdio_review_survives_http_turnover_and_refresh(stack, remote_backend):
     async with exclusive_app(stack) as settings:
-        owner, other = RemoteBackend(settings), RemoteBackend(settings)
+        owner, other = remote_backend(settings), remote_backend(settings)
         lease = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))
         context = lease["context_id"]
         initial = data(await remote_call(owner, "inspect", {}, context))
@@ -507,6 +542,24 @@ async def test_persistent_stdio_review_survives_http_turnover_and_refresh(stack)
             )
         )
         data(await other.invoke("refresh_services", {}))
+        async with http_session(
+            settings.url + "/mcp", settings.token, client_id=owner.client_id
+        ) as independent:
+            description = data(await owner.invoke("describe_tool", {"tool_id": "stateful/inspect"}))
+            assert (
+                data(
+                    await independent.call_tool(
+                        "call_read_tool",
+                        {
+                            "tool_id": "stateful/inspect",
+                            "catalog_revision": description["catalog_revision"],
+                            "arguments": {},
+                            "context_id": context,
+                        },
+                    )
+                )
+                == initial
+            )
         blocked = await remote_call(
             other, "apply", {"plan_id": plan["plan_id"]}, context, request_id="wire-steal-001"
         )
@@ -586,9 +639,51 @@ async def test_two_stdio_frontends_cannot_share_or_release_each_others_context(s
         )
 
 
-async def test_real_stdio_disconnect_marks_context_lost_without_restarting(stack):
+async def test_frontend_pool_shutdown_does_not_release_its_owned_native_session(
+    stack, remote_backend
+):
     async with exclusive_app(stack) as settings:
-        owner = RemoteBackend(settings)
+        owner, other = remote_backend(settings), remote_backend(settings)
+        context = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))[
+            "context_id"
+        ]
+        before = data(await remote_call(owner, "inspect", {}, context))
+        description = data(await owner.invoke("describe_tool", {"tool_id": "stateful/inspect"}))
+        await owner.aclose()
+        assert not owner.pool._workers
+        assert (await other.invoke("acquire_service", {"service_id": "stateful"})).isError
+        assert (await remote_call(other, "inspect", {}, context)).isError
+        async with http_session(
+            settings.url + "/mcp", settings.token, client_id=owner.client_id
+        ) as reconnect:
+            assert (
+                data(
+                    await reconnect.call_tool(
+                        "call_read_tool",
+                        {
+                            "tool_id": "stateful/inspect",
+                            "arguments": {},
+                            "catalog_revision": description["catalog_revision"],
+                            "context_id": context,
+                        },
+                    )
+                )
+                == before
+            )
+            data(
+                await reconnect.call_tool(
+                    "release_service",
+                    {
+                        "service_id": "stateful",
+                        "context_id": context,
+                    },
+                )
+            )
+
+
+async def test_real_stdio_disconnect_marks_context_lost_without_restarting(stack, remote_backend):
+    async with exclusive_app(stack) as settings:
+        owner = remote_backend(settings)
         lease = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))
         result = await remote_call(
             owner, "disconnect", {}, lease["context_id"], request_id="wire-crash-001"
@@ -602,9 +697,9 @@ async def test_real_stdio_disconnect_marks_context_lost_without_restarting(stack
         assert (await remote_call(owner, "inspect", {}, lease["context_id"])).isError
 
 
-async def test_real_stdio_timeout_marks_write_uncertain_and_context_lost(stack):
+async def test_real_stdio_timeout_marks_write_uncertain_and_context_lost(stack, remote_backend):
     async with exclusive_app(stack, timeout=2.0) as settings:
-        owner = RemoteBackend(settings)
+        owner = remote_backend(settings)
         lease = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))
         result = await remote_call(
             owner,
@@ -634,13 +729,15 @@ async def test_ownerless_http_client_cannot_acquire_an_exclusive_service(stack):
             assert "identified" in result.content[0].text
 
 
-async def test_exclusive_http_transport_preserves_owner_across_fresh_broker_requests(stack):
+async def test_exclusive_http_transport_preserves_owner_across_fresh_broker_requests(
+    stack, remote_backend
+):
     state, settings, _ = stack
     path = state / "services/math.json"
     original = path.read_bytes()
     config = json.loads(original)
     atomic_json(path, {**config, "session_mode": "exclusive"})
-    owner, other = RemoteBackend(settings), RemoteBackend(settings)
+    owner, other = remote_backend(settings), remote_backend(settings)
     try:
         data(await owner.invoke("refresh_services", {}))
 
@@ -653,6 +750,18 @@ async def test_exclusive_http_transport_preserves_owner_across_fresh_broker_requ
             "context_id": context,
         }
         assert data(await owner.invoke("call_read_tool", payload))["value"] == "owned-http"
+        concurrent = await asyncio.gather(
+            *(
+                owner.invoke(
+                    "call_read_tool", {**payload, "arguments": {"value": str(index), "delay": 0.05}}
+                )
+                for index in range(6)
+            )
+        )
+        assert [data(result)["value"] for result in concurrent] == [
+            str(index) for index in range(6)
+        ]
+        assert len(owner.pool._workers) == 4
         data(await other.invoke("refresh_services", {}))
         assert (await other.invoke("call_read_tool", payload)).isError
         assert data(await owner.invoke("call_read_tool", payload))["value"] == "owned-http"
@@ -673,10 +782,12 @@ async def test_exclusive_http_transport_preserves_owner_across_fresh_broker_requ
         data(await owner.invoke("refresh_services", {}))
 
 
-async def test_crashed_broker_requires_stopped_admin_recovery_before_new_ownership(stack):
+async def test_crashed_broker_requires_stopped_admin_recovery_before_new_ownership(
+    stack, remote_backend
+):
     async with exclusive_app(stack) as settings:
         state = stack[0]
-        owner, other = RemoteBackend(settings), RemoteBackend(settings)
+        owner, other = remote_backend(settings), remote_backend(settings)
         context = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))[
             "context_id"
         ]

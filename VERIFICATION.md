@@ -24,6 +24,8 @@ Durable ownership checks cover atomic resource reservations, hashed frontend ide
 
 Initialization metadata checks cover optional and Unicode instructions, capability preservation, bounded snapshots, registration revocation, recovery barriers, refresh races and metadata isolation between owners. Real HTTP and two stdio frontends verify transport capture and delivery, stable owner guidance through another frontend's refresh, unchanged native instance identity, and the separation of app capability advertisements from broker relay support. Description must not connect to an app or extend its lease.
 
+Frontend pool tests verify bounded concurrent channels, sequential reuse, cancellation before/after dispatch, initialization and operation deadlines, cleanup under SDK cancellation, queue wakeup on shutdown, and isolation between pools. Failed writes must be redacted and returned once without replay or identity changes. Protocol checks count broker handshakes across repeated requests, exercise ownership over four channels and across fresh HTTP connections, and confirm that pool shutdown preserves the app's owned native session. The broker crash/recovery checks also run with reused frontend connections.
+
 These tests do not operate native engineering applications or establish their migration readiness. Test counts and measurements belong in local run records rather than a permanent public validation log.
 
 ## Source package

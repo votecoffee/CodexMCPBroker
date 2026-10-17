@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import secrets
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -13,6 +15,7 @@ from . import __version__
 from .broker import Broker
 from .identity import client_identity
 from .models import BrokerError, Settings
+from .sessions import SessionPool
 from .transport import http_session
 
 INSTRUCTIONS = (
@@ -94,21 +97,40 @@ class LocalBackend:
             return error_result(str(error))
 
 
+@dataclass(frozen=True)
+class BrokerConnection:
+    id: str = "frontend-broker"
+    timeout_seconds: float = 330
+
+
 class RemoteBackend:
     def __init__(self, settings: Settings):
         self.settings = settings
         # Random affinity identity stays internal to this frontend, never tool arguments.
         self.client_id = secrets.token_urlsafe(32)
 
-    async def invoke(self, name: str, arguments: dict) -> CallToolResult:
-        try:
-            async with http_session(
+        def connect(_):
+            return http_session(
                 self.settings.url + "/mcp",
                 self.settings.token,
                 timeout=330,
                 client_id=self.client_id,
-            ) as session:
-                return await session.call_tool(name, arguments)
+            )
+
+        self.pool = SessionPool(BrokerConnection(), connect)
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_):
+        await self.aclose()
+
+    async def aclose(self):
+        await self.pool.aclose()
+
+    async def invoke(self, name: str, arguments: dict) -> CallToolResult:
+        try:
+            return await self.pool.execute(lambda session: session.call_tool(name, arguments))
         except Exception:
             return error_result(
                 "broker connection failed; check local broker status. For a write, inspect "
@@ -117,6 +139,13 @@ class RemoteBackend:
 
 
 def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -> FastMCP:
+    @asynccontextmanager
+    async def frontend_lifespan(_):
+        try:
+            yield
+        finally:
+            await backend.aclose()
+
     server = FastMCP(
         "Universal Tools",
         instructions=INSTRUCTIONS,
@@ -126,6 +155,9 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
         json_response=True,
         max_request_body_size=1024 * 1024,
         log_level="WARNING",
+        # Only the stdio frontend owns a pool. Stateless HTTP invokes low-level
+        # lifespans per request, so never attach broker/app cleanup here.
+        lifespan=frontend_lifespan if isinstance(backend, RemoteBackend) else None,
     )
 
     @server.tool(annotations=READ, structured_output=False)
