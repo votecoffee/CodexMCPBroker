@@ -204,8 +204,9 @@ async def test_transport_failure_is_lost_and_write_uncertain_without_reconnect(s
     with pytest.raises(BrokerError, match="lost"):
         await acquire(broker)
     assert len(sessions) == 2
-    await broker.release_service("stateful", context, owner_id=OWNER_A)
-    assert await acquire(broker) != context
+    with pytest.raises(BrokerError, match="operator recovery"):
+        await broker.release_service("stateful", context, owner_id=OWNER_A)
+    assert broker.ownership.get("stateful")["state"] == "lost"
 
 
 async def test_app_error_preserves_context_for_inspection(stateful):
@@ -249,7 +250,7 @@ async def test_cancellation_cannot_transfer_a_running_context(stateful):
     engine.unblock.set()
     with pytest.raises(asyncio.CancelledError):
         await running
-    with pytest.raises(BrokerError, match="another frontend"):
+    with pytest.raises(BrokerError, match="operator recovery"):
         await contender
     assert engine.closed
     assert broker.request_status("persistent-cancel")["status"] == "uncertain"
@@ -339,7 +340,7 @@ async def test_background_expiry_reaps_abandoned_worker_without_another_tool_cal
     worker = sessions[-1]
     clock[0] += 901
     async with asyncio.timeout(3):
-        while not worker.closed:
+        while not worker.closed or broker._leases:
             await asyncio.sleep(0.02)
     assert not broker._leases
 
@@ -425,7 +426,7 @@ async def test_sdk_style_cancellation_shields_cleanup_and_marks_write_uncertain(
         assert not contender.done()
         engine.unblock.set()
         await finished.wait()
-        with pytest.raises(BrokerError, match="another frontend"):
+        with pytest.raises(BrokerError, match="operator recovery"):
             await contender
     assert engine.closed
     assert broker.request_status("persistent-anyio-cancel")["status"] == "uncertain"

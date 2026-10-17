@@ -14,15 +14,10 @@ def now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-class WriteJournal:
+class SqliteJournal:
     def __init__(self, path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
         self.path = path
-        with self.connect() as db:
-            db.execute("""CREATE TABLE IF NOT EXISTS requests (
-                request_id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL,
-                tool_id TEXT NOT NULL, status TEXT NOT NULL,
-                created_at TEXT NOT NULL, updated_at TEXT NOT NULL)""")
 
     @contextmanager
     def connect(self):
@@ -34,6 +29,16 @@ class WriteJournal:
             # sqlite3's transaction context manager commits/rolls back but does
             # not close the connection. Do not depend on cyclic GC for Windows handles.
             db.close()
+
+
+class WriteJournal(SqliteJournal):
+    def __init__(self, path: Path):
+        super().__init__(path)
+        with self.connect() as db:
+            db.execute("""CREATE TABLE IF NOT EXISTS requests (
+                request_id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL,
+                tool_id TEXT NOT NULL, status TEXT NOT NULL,
+                created_at TEXT NOT NULL, updated_at TEXT NOT NULL)""")
 
     def claim(self, request_id: str, fingerprint: str, tool_id: str) -> None:
         if not 8 <= len(request_id) <= 128:

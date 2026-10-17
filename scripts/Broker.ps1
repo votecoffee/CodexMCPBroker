@@ -1,6 +1,6 @@
 param(
     [Parameter(Position=0)]
-    [ValidateSet('start','start-demo','status','stop','refresh','list')]
+    [ValidateSet('start','start-demo','status','stop','refresh','list','contexts')]
     [string]$Action = 'status'
 )
 $ErrorActionPreference = 'Stop'

@@ -85,7 +85,7 @@ The exclusive workflow is:
 
 The dedicated worker task enters and exits the SDK context and runs its operations in that same task. Catalog refresh reuses an active worker; it does not replace the owning engine. Before acquisition, metadata discovery still initializes a temporary host, so app initialization must tolerate metadata-only discovery and shutdown.
 
-Release and idle expiry close the downstream session/process before another owner can acquire it. The daemon reaps idle leases in the background. Expiry is deferred while an operation owns the service lock; a completed call renews the lease. Timeouts and transport failures retire the worker and leave its context lost until explicit release/expiry. Caller cancellation waits for the bounded operation/cleanup before unlocking; it does not hand a running worker to another owner. No automatic reconnect, native reattach, repreview or replay occurs.
+Release and healthy idle expiry close the downstream session/process before another owner can acquire it. The daemon reaps idle leases in the background. Expiry is deferred while an operation owns the service lock; a completed call renews the lease. Timeouts and transport failures retire the worker and leave its context lost with a durable recovery barrier. Lost reservations do not expire or clear through `release_service`. Caller cancellation waits for the bounded operation/cleanup before unlocking; it does not hand a running worker to another owner. No automatic reconnect, native reattach, repreview or replay occurs.
 
 Registration removal, disabling, invalidation or any descriptor change closes its old context on refresh. Calls also check local revocation before dispatch. A valid unchanged refresh preserves context. Live tool definitions are still re-listed and checked; changing an inner app catalog remains the app's separate revision responsibility.
 
@@ -95,7 +95,20 @@ The stdio frontend generates a random identity per process. Its `RemoteBackend` 
 
 This provides frontend affinity among trusted clients of one local-user broker. It does not authenticate an actual Codex chat or defend against a local process that already has the broker credential and can choose arbitrary headers. If a host shares one frontend among chats, those chats share its identity. A restarted frontend cannot resume the earlier identity; release beforehand or wait for the lease to expire.
 
-Context leases are in memory. Broker shutdown closes workers; a crash/restart invalidates all handles and does not restore ownership or app state. Before explicit reacquisition after a crash, reconcile any external work that may still be running. The persisted write journal remains duplicate-dispatch protection, not a durable context or native outcome record.
+Live sessions and monotonic lease deadlines are in memory. Broker 0.3 records reservations separately in `<broker-state>/ownership.sqlite3`, before starting an owned worker. Resource keys are reserved transactionally, and frontend identities are stored as digests. Credentials, app arguments, results and raw frontend identities are not stored in that journal. The independent write journal remains duplicate-dispatch protection, not a native outcome record.
+
+Clean retirement is recorded before cleanup and clears its reservation only after the worker closes successfully. Failed initialization, timeout, transport loss, interrupted calls and teardown failures retain a lost reservation. On startup under the OS instance lock, records without live broker workers become lost. Metadata discovery and calls are blocked for those services/resources, regardless of the old wall-clock expiry. Shutdown and descriptor removal/change do not discard lost records. Neither an alias, a changed route under the same service ID, nor switching a recorded resource to transient mode clears the barrier.
+
+`service_session_status` returns `recovery_required: true` for an unresolved context. It reveals a retained handle only to the matching frontend identity; the local administrative `contexts` command can list handles for recovery. A restarted frontend cannot adopt native sessions. After a broker restart, even the original frontend must use operator recovery before acquiring a replacement.
+
+Recovery requires the broker to be stopped and the exact service/context handle:
+
+```text
+python -m universal_tools --state STATE contexts
+python -m universal_tools --state STATE recover-context APP_ID --context-id CONTEXT_ID --acknowledge-outcome
+```
+
+The CLI takes the same OS instance lock as the daemon, rejects missing acknowledgement and stale handles, and records the recovery event before releasing resource keys. This is a local administrator's acknowledgement that external work has been inspected/reconciled. The command does not verify the native outcome or perform any cancellation/rollback/reattach. There is no recovery MCP tool and no automatic app migration. Preserve the database rather than deleting it to bypass recovery.
 
 The broker rejects enabled registrations with identical transport identities, or matching explicit `resource_id` values, when either uses exclusive mode. All conflicting routes are unavailable on refresh, and conflicts are checked again before calls. HTTP credential variable names do not distinguish resource identity. Assign the same resource ID to app-specific aliases the broker cannot infer. Exclusivity does not extend across another broker state, manual GUI activity, direct app clients or undeclared aliases. An independently running engine can retain selections after proxy release; apps still need explicit targets and their own revision/ownership checks.
 
@@ -103,4 +116,4 @@ The broker rejects enabled registrations with identical transport identities, or
 
 Version 1 allows 128 services, eight parallel discovery probes, 2,000 tools per app, 100 tool-list pages, 128 KiB schemas, 256 KiB argument objects, and app timeouts from 0.2 to 300 seconds. Broker requests are capped at 1 MiB. Calls to one registration are serialized; there is no distributed lock across broker installations.
 
-Potential later versions: durable context recovery, watched registration directories, supported remote HTTPS/OAuth connections, resource/prompt forwarding, elicitation relay, typed promotion of selected tools, operation-specific policies, and adapters for existing engineering apps. Persistent frontend-to-broker HTTP reuse is also separate from this version's downstream worker reuse. These are not part of the v0.2 acceptance claims.
+Potential later versions: native context resumption where apps support it, watched registration directories, supported remote HTTPS/OAuth connections, resource/prompt forwarding, elicitation relay, typed promotion of selected tools, operation-specific policies, and adapters for existing engineering apps. Persistent frontend-to-broker HTTP reuse is also separate from this version's downstream worker reuse. These are not part of the v0.3 acceptance claims.

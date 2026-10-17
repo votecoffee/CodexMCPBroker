@@ -27,6 +27,7 @@ from .models import (
     load_manifest,
     load_settings,
 )
+from .ownership import OwnershipJournal
 from .surface import RemoteBackend, create_surface
 from .transport import http_session
 
@@ -166,6 +167,42 @@ def stop(state: Path) -> dict:
     raise BrokerError("broker is still shutting down; no process was forcibly terminated")
 
 
+def list_contexts(state: Path) -> dict:
+    load_settings(state)
+    fields = {"service_id", "context_id", "state", "reason", "expires_at", "updated_at"}
+    return {
+        "contexts": [
+            {key: value for key, value in row.items() if key in fields}
+            for row in OwnershipJournal(state / "ownership.sqlite3").entries()
+        ],
+        "note": "Recorded reservations do not prove native work is stopped or recoverable.",
+    }
+
+
+def recover_context(state: Path, service_id: str, context_id: str, *, acknowledged: bool) -> dict:
+    load_settings(state)
+    if not re.fullmatch(ID_PATTERN, service_id):
+        raise BrokerError("invalid service_id")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{32,128}", context_id):
+        raise BrokerError("invalid context_id")
+    if not acknowledged:
+        raise BrokerError(
+            "recovery requires --acknowledge-outcome after inspecting/reconciling app state"
+        )
+    # This is a local administrative operation, never a model-facing MCP tool.
+    # The OS lock, not a health probe, proves no daemon owns this state during recovery.
+    with InstanceLock(state / "broker.lock"):
+        OwnershipJournal(state / "ownership.sqlite3").finish(
+            service_id, context_id, "operator_reconciled", recovery=True
+        )
+    return {
+        "service_id": service_id,
+        "context_id": context_id,
+        "recovered": True,
+        "note": "Reservation cleared; no native operation, cancellation or rollback was performed.",
+    }
+
+
 async def wait_for_app(port: int):
     for _ in range(100):
         try:
@@ -260,6 +297,7 @@ def main(argv: list[str] | None = None):
         "proxy",
         "start-demo",
         "demo-stack",
+        "contexts",
     ]:
         commands.add_parser(name)
     registration = commands.add_parser("register", help="trust an app's local service manifest")
@@ -269,6 +307,12 @@ def main(argv: list[str] | None = None):
     remove.add_argument("service_id")
     configure = commands.add_parser("configure-plugin")
     configure.add_argument("plugin", type=Path)
+    recovery = commands.add_parser(
+        "recover-context", help="clear a reconciled context while stopped"
+    )
+    recovery.add_argument("service_id")
+    recovery.add_argument("--context-id", required=True)
+    recovery.add_argument("--acknowledge-outcome", action="store_true")
     demo = commands.add_parser("demo")
     demo.add_argument("--kind", choices=["math", "notes"], required=True)
     demo.add_argument("--port", type=int, required=True)
@@ -300,6 +344,15 @@ def main(argv: list[str] | None = None):
                 result = probe(load_settings(state)) or {"running": False}
             case "stop":
                 result = stop(state)
+            case "contexts":
+                result = list_contexts(state)
+            case "recover-context":
+                result = recover_context(
+                    state,
+                    args.service_id,
+                    args.context_id,
+                    acknowledged=args.acknowledge_outcome,
+                )
             case "register":
                 load_settings(state)
                 result = {

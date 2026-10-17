@@ -20,6 +20,8 @@ The core suite checks registration, schema restrictions, conservative classifica
 
 Session tests use synthetic process-local state and AnyIO task groups to verify same-task SDK ownership, workflow continuity across refresh, competing frontends, idle expiry, alias conflicts, cancellation, bounded initialization and context loss. Protocol tests run a disposable stdio app through HTTP and multiple stdio broker frontends, including prepare/apply continuity, process exit and in-flight timeout. They leave installed plugins and normal app registrations untouched.
 
+Durable ownership checks cover atomic resource reservations, hashed frontend identities, interrupted initialization/retirement, blocked discovery after restart, indefinite lost-context barriers, changed/renamed/transient routes, and exact-handle recovery under the stopped-broker OS lock. The process-crash test terminates only its own isolated broker and reconciles disposable fixture state through the administrative recovery path. These checks do not prove a real native application's work stopped or resumed.
+
 These tests do not operate native engineering applications or establish their migration readiness. Test counts and measurements belong in local run records rather than a permanent public validation log.
 
 ## Source package

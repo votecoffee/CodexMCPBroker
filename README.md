@@ -4,7 +4,7 @@ Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.2.0**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.3.0**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
 
@@ -107,7 +107,22 @@ For a service registered with `session_mode: "exclusive"`, call `acquire_service
 
 Calling `acquire_service` again from the same frontend renews its active lease. App calls renew it after success. `service_session_status` inspects ownership/health without renewing it. Save or reconcile app state before `release_service`: release, idle expiry, registration changes and broker shutdown close the downstream connection and can discard process-owned documents or review plans.
 
-The default idle lease is 900 seconds, configurable from 5 to 86,400 seconds. In-flight operations retain their lock until completion or bounded cleanup. A timeout, transport failure or abandoned in-flight call leaves the context lost; it is not automatically recreated. Reconcile uncertain app effects, explicitly release, and reacquire when appropriate. Broker restart invalidates all context handles; it does not restore native state or prove earlier work stopped.
+The default idle lease is 900 seconds, configurable from 5 to 86,400 seconds. In-flight operations retain their lock until completion or bounded cleanup. A timeout, transport failure or abandoned in-flight call leaves the context lost; it is not automatically recreated. Durable reservations keep lost contexts blocked across restart and beyond their previous idle deadline. Restart does not restore native state or prove earlier work stopped.
+
+### Recover a lost context
+
+Inspect `service_session_status` or the local `contexts` command. A service reporting `recovery_required` is blocked for all frontends, including transient or renamed registrations that address the same recorded resource. Neither release nor catalog refresh clears this condition.
+
+Stop the broker, inspect/reconcile the app's actual state, and use the local administrative recovery command. Replace `APP_ID` and `CONTEXT_ID` with values from `contexts`:
+
+```powershell
+.\scripts\Broker.ps1 stop
+.\scripts\Broker.ps1 contexts
+.\.local\runtime\Scripts\python.exe -m universal_tools --state .\.local recover-context APP_ID --context-id CONTEXT_ID --acknowledge-outcome
+.\scripts\Broker.ps1 start
+```
+
+Only acknowledge after reconciliation. Recovery records that acknowledgement and clears the reservation; it performs no native cancellation, rollback, save or reattach. It is unavailable as an MCP tool and refuses to run while a broker owns that state directory. A stale or incorrect handle cannot clear a newer context.
 
 ## Architecture
 
@@ -132,7 +147,7 @@ Write claims are stored in SQLite before dispatch. Reusing a claimed ID never di
 
 - Connections are limited to one local user account and literal loopback HTTP endpoints. A random bearer token protects the broker; browser-origin requests are rejected. Keep `.local/settings.json` private. App credentials are independent and are never copied from the incoming broker request.
 - Transient mode opens a fresh downstream session/process for each discovery or call. Exclusive mode retains one session for its owner; unowned discovery still uses temporary sessions. App-owned HTTP engines must retain business state independently of individual HTTP requests.
-- Identical routes and declared resource aliases involving an exclusive service are rejected. Use the same `resource_id` for different routes to one native resource. The broker cannot infer arbitrary app aliases or fence direct/manual clients. Ownership is in memory; a broker crash/restart requires app reconciliation before acquiring a new context.
+- Identical routes and declared resource aliases involving an exclusive service are rejected. Use a stable `resource_id` for different routes to one native resource. The broker cannot infer arbitrary app aliases or fence direct/manual clients. Native sessions and live lease timers remain in memory; durable reservations preserve the recovery barrier, not the native process or its state.
 - Per-call frontend-to-broker HTTP connections and full downstream definition checks remain. Persistent downstream sessions remove repeated stdio startup, not every source of transport overhead.
 - Tools are the supported MCP surface. Downstream resources, prompts, OAuth linking, sampling, elicitation, progress and app UI routing are not implemented. App initialization instructions and bundled skills are not automatically delivered through the broker.
 - Search indexes outer tool IDs and descriptions. Nested app capability catalogs still require app-specific discovery. Broker refresh does not reload app extensions.

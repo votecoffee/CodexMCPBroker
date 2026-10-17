@@ -17,6 +17,7 @@ from mcp.types import CallToolResult, Tool
 
 from .journal import WriteJournal
 from .models import ID_PATTERN, BrokerError, ServiceManifest, canonical_digest, load_manifest
+from .ownership import OwnershipJournal, owner_digest
 from .sessions import SessionWorker
 from .transport import list_all_tools, service_session
 
@@ -108,6 +109,7 @@ class Broker:
         self.registry = state / "services"
         self.registry.mkdir(parents=True, exist_ok=True)
         self.journal = WriteJournal(state / "writes.sqlite3")
+        self.ownership = OwnershipJournal(state / "ownership.sqlite3")
         self.catalog: dict[str, CatalogTool] = {}
         self.services: dict[str, dict] = {}
         self.generation = 0
@@ -121,6 +123,8 @@ class Broker:
 
     async def start(self):
         if self._reaper is None:
+            # Called under the daemon's OS instance lock. Never reconstruct native sessions.
+            self.ownership.orphaned({lease.context_id for lease in self._leases.values()})
             self._reaper = asyncio.create_task(self._reap(), name="service-lease-expiry")
 
     async def _reap(self):
@@ -130,16 +134,65 @@ class Broker:
                 async with self.lock(service_id):
                     await self._expire(service_id)
 
-    async def _retire(self, service_id: str):
+    async def _retire(self, service_id: str) -> bool:
         lease = self._leases.get(service_id)
         if lease:
+            lost = lease.lost or lease.worker.failed
+            if not lost:
+                self.ownership.retiring(lease.context_id)
             await lease.worker.close()
+            lost = lost or lease.worker.failed
+            if lost:
+                self.ownership.lose(lease.context_id, "session_lost")
+            else:
+                self.ownership.finish(service_id, lease.context_id, "closed")
             self._leases.pop(service_id, None)
+            return not lost
+        return False
 
     async def _expire(self, service_id: str):
         lease = self._leases.get(service_id)
-        if lease and lease.expires <= self._clock():
+        if lease and (lease.lost or lease.worker.failed or lease.expires <= self._clock()):
             await self._retire(service_id)
+
+    def _recovery_blocker(self, manifest: ServiceManifest) -> dict | None:
+        records = self.ownership.blockers(manifest.resource_keys)
+        same_id = self.ownership.get(manifest.id)
+        if same_id and not any(row["context_id"] == same_id["context_id"] for row in records):
+            records.append(same_id)
+        for record in records:
+            lease = self._leases.get(record["service_id"])
+            if (
+                lease
+                and lease.context_id == record["context_id"]
+                and lease.manifest.digest == manifest.digest
+                and lease.manifest.id == manifest.id
+                and not lease.lost
+                and lease.worker.alive
+                and record["state"] in {"opening", "active"}
+            ):
+                continue
+            return record
+        return None
+
+    def _check_recovery(self, manifest: ServiceManifest):
+        if self._recovery_blocker(manifest):
+            raise BrokerError(
+                "service context is lost or reserved; operator recovery is required. "
+                "Stop the broker, reconcile app state, then use recover-context"
+            )
+
+    async def _renew(self, lease: Lease):
+        try:
+            self.ownership.activate(lease.context_id, lease.manifest.lease_seconds)
+        except Exception:
+            lease.lost = True
+            try:
+                self.ownership.lose(lease.context_id, "reservation_update_failed")
+            finally:
+                await lease.worker.close()
+            raise BrokerError("ownership update failed; operator recovery is required") from None
+        lease.expires = self._clock() + lease.manifest.lease_seconds
 
     async def aclose(self):
         self._closed = True
@@ -208,6 +261,14 @@ class Broker:
                     if not manifest.enabled:
                         statuses[service_id] = {"service_id": service_id, "status": "disabled"}
                         return
+                    if self._recovery_blocker(manifest):
+                        statuses[service_id] = {
+                            "service_id": service_id,
+                            "status": "recovery_required",
+                            "session_mode": manifest.session_mode,
+                        }
+                        manifests[service_id] = manifest
+                        return
                     if self._conflicting(manifest):
                         raise BrokerError("resource has conflicting registrations; remove aliases")
                     async with self.lock(service_id):
@@ -239,6 +300,11 @@ class Broker:
                         "session_mode": manifest.session_mode,
                     }
                 except Exception as error:
+                    lease = self._leases.get(service_id)
+                    if lease and lease.worker.failed:
+                        lease.lost = True
+                        self.ownership.lose(lease.context_id, "discovery_failed")
+                        await lease.worker.close()
                     # Do not retain stale tools for failed or malformed registrations.
                     statuses[service_id] = {
                         "service_id": service_id,
@@ -298,6 +364,10 @@ class Broker:
         try:
             return self.catalog[tool_id]
         except KeyError:
+            if self.services.get(tool_id.split("/", 1)[0], {}).get("status") == "recovery_required":
+                raise BrokerError(
+                    "service context is lost; operator recovery is required"
+                ) from None
             raise BrokerError("unknown tool_id; refresh_services and search_tools first") from None
 
     def _registration_unchanged(self, entry: CatalogTool) -> None:
@@ -312,6 +382,7 @@ class Broker:
             raise BrokerError("registration changed; refresh_services and describe_tool again")
         if self._conflicting(current):
             raise BrokerError("resource has conflicting registrations; remove aliases and refresh")
+        self._check_recovery(current)
 
     def _owned_manifest(self, service_id: str) -> ServiceManifest:
         if self._closed:
@@ -350,25 +421,37 @@ class Broker:
                 if lease.lost or not lease.worker.alive:
                     raise BrokerError("service context is lost; release_service before reacquiring")
             else:
+                context_id = secrets.token_urlsafe(32)
+                # Commit the reservation before starting a potentially stateful process.
+                self.ownership.reserve(manifest, owner, context_id)
                 worker = SessionWorker(manifest, service_session)
+                lease = Lease(manifest, owner, context_id, 0, worker)
+                self._leases[service_id] = lease
                 try:
                     await worker.execute(list_all_tools)
                     self._registration_matches(manifest)
                 except BaseException as error:
+                    lease.lost = True
+                    self.ownership.lose(context_id, "initialization_failed")
                     await worker.close()
+                    self._leases.pop(service_id, None)
                     if isinstance(error, asyncio.CancelledError):
                         raise
                     raise BrokerError(
-                        "app session could not be acquired; check app and refresh"
+                        "app session could not be acquired; operator recovery is required"
                     ) from None
-                lease = Lease(manifest, owner, secrets.token_urlsafe(32), 0, worker)
-                self._leases[service_id] = lease
-            lease.expires = self._clock() + manifest.lease_seconds
+            await self._renew(lease)
             return self._lease_info(service_id, owner)
 
     def _lease_info(self, service_id: str, owner: str | None) -> dict:
         lease = self._leases.get(service_id)
         if not lease:
+            record = self.ownership.get(service_id)
+            if record:
+                info = {"service_id": service_id, "state": "lost", "recovery_required": True}
+                if owner is not None and record["owner_digest"] == owner_digest(owner):
+                    info["context_id"] = record["context_id"]
+                return info
             return {"service_id": service_id, "state": "unowned"}
         if lease.owner != owner:
             return {"service_id": service_id, "state": "owned_by_another"}
@@ -376,13 +459,14 @@ class Broker:
             "service_id": service_id,
             "context_id": lease.context_id,
             "state": (
-                "expired"
-                if lease.expires <= self._clock()
-                else "lost"
+                "lost"
                 if lease.lost or not lease.worker.alive
+                else "expired"
+                if lease.expires <= self._clock()
                 else "active"
             ),
             "expires_in_seconds": max(0, round(lease.expires - self._clock(), 3)),
+            "recovery_required": lease.lost or not lease.worker.alive,
         }
 
     async def service_session_status(self, service_id: str, *, owner_id: str | None) -> dict:
@@ -397,11 +481,15 @@ class Broker:
         self._service_id(service_id)
         async with self.lock(service_id):
             await self._require_lease(service_id, context_id, owner)
-            await self._retire(service_id)
+            if not await self._retire(service_id):
+                raise BrokerError("context is lost; operator recovery is required")
             return {"service_id": service_id, "released": True}
 
     async def _require_lease(self, service_id: str, context_id: str | None, owner: str) -> Lease:
         await self._expire(service_id)
+        record = self.ownership.get(service_id)
+        if record and record["state"] == "lost":
+            raise BrokerError("context is lost; operator recovery is required")
         lease = self._leases.get(service_id)
         if not lease or lease.owner != owner or lease.context_id != context_id:
             raise BrokerError("context is missing, expired, or owned by another frontend")
@@ -478,7 +566,7 @@ class Broker:
             try:
                 if lease:
                     result = await lease.worker.execute(invoke)
-                    lease.expires = self._clock() + lease.manifest.lease_seconds
+                    await self._renew(lease)
                     return result
                 async with asyncio.timeout(entry.manifest.timeout_seconds):
                     async with service_session(entry.manifest) as session:
@@ -489,6 +577,7 @@ class Broker:
                     self.journal.finish(request_id, "uncertain")
                 if lease and not lease.worker.alive:
                     lease.lost = True
+                    self.ownership.lose(lease.context_id, "call_interrupted")
                     await lease.worker.close()
                 if isinstance(error, asyncio.CancelledError):
                     raise

@@ -24,7 +24,9 @@ INSTRUCTIONS = (
     " For an exclusive service, acquire_service first and pass its context_id on every app call. "
     "Only this frontend owns that context. acquire_service renews an existing lease; "
     "release_service closes it and may discard unsaved native state. Never silently recreate "
-    "a lost context or assume another chat's project/review is yours."
+    "a lost context or assume another chat's project/review is yours. Lost contexts require "
+    "local operator recovery with the broker stopped, after app state is reconciled; "
+    "release/reacquire does not clear that barrier."
 )
 READ = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=False)
 CALL_READ = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=True)
@@ -198,16 +200,17 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
         """Acquire an exclusive service context for this frontend, or renew its current lease.
 
         Pass the returned context_id on app calls. Other frontends cannot use or release it.
-        A lost context requires explicit release/reacquisition and app outcome reconciliation.
+        A lost context requires stopped-broker operator recovery after app reconciliation.
         """
         return await backend.invoke("acquire_service", {"service_id": service_id})
 
     @server.tool(annotations=WRITE, structured_output=False)
     async def release_service(service_id: str, context_id: str) -> CallToolResult:
-        """Release this frontend's context and close its downstream session/process.
+        """Release this frontend's healthy context and close its downstream session/process.
 
         Save/reconcile app state first. Closing may discard unsaved documents or review plans.
         This does not roll back native work or guarantee app-owned background jobs stopped.
+        Lost contexts require operator recovery; this tool cannot clear their reservation.
         """
         return await backend.invoke(
             "release_service", {"service_id": service_id, "context_id": context_id}

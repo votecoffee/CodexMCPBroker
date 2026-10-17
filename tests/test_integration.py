@@ -15,8 +15,9 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from universal_tools.cli import initialize, process_options
-from universal_tools.models import atomic_json
+from universal_tools.cli import initialize, probe, process_options, recover_context, stop
+from universal_tools.models import BrokerError, atomic_json
+from universal_tools.ownership import OwnershipJournal
 from universal_tools.surface import RemoteBackend
 from universal_tools.transport import http_session
 
@@ -33,6 +34,7 @@ TOOLS = {
     "release_service",
     "service_session_status",
 }
+BROKER_TEST_OPERATIONS = {}
 
 
 def free_port():
@@ -59,6 +61,7 @@ def stack(tmp_path_factory):
             **process_options(),
         )
         processes.append(child)
+        return child
 
     try:
         for index, kind in [(1, "math"), (2, "notes")]:
@@ -87,7 +90,7 @@ def stack(tmp_path_factory):
                     if time.monotonic() > deadline:
                         pytest.fail("example app startup timed out")
                     time.sleep(0.05)
-        launch(["serve"])
+        daemon_child = launch(["serve"])
         headers = {"Authorization": f"Bearer {settings.token}"}
         while True:
             try:
@@ -100,8 +103,37 @@ def stack(tmp_path_factory):
             if time.monotonic() > deadline:
                 pytest.fail("broker startup timed out")
             time.sleep(0.05)
+
+        def wait_broker():
+            deadline = time.monotonic() + 20
+            while not probe(settings):
+                if time.monotonic() > deadline or daemon_child.poll() is not None:
+                    raise RuntimeError("isolated test broker did not restart")
+                time.sleep(0.05)
+
+        def recover_fixture(service_id, context_id):
+            nonlocal daemon_child
+            stop(state)
+            daemon_child.wait(timeout=15)
+            recover_context(state, service_id, context_id, acknowledged=True)
+            daemon_child = launch(["serve"])
+            wait_broker()
+
+        def crash_and_restart_fixture():
+            nonlocal daemon_child
+            # Only this fixture's owned process, never an installed broker.
+            daemon_child.terminate()
+            daemon_child.wait(timeout=15)
+            daemon_child = launch(["serve"])
+            wait_broker()
+
+        BROKER_TEST_OPERATIONS[state] = {
+            "recover": recover_fixture,
+            "crash_restart": crash_and_restart_fixture,
+        }
         yield state, settings, ports
     finally:
+        BROKER_TEST_OPERATIONS.pop(state, None)
         for child in reversed(processes):
             if child.poll() is None:
                 child.terminate()
@@ -425,6 +457,12 @@ async def exclusive_app(stack, *, timeout=3.0):
     finally:
         path.unlink()
         data(await admin.invoke("refresh_services", {}))
+        reservation = OwnershipJournal(state / "ownership.sqlite3").get("stateful")
+        if reservation:
+            # Reconcile disposable fixture state using the same stopped-broker admin route.
+            await asyncio.to_thread(
+                BROKER_TEST_OPERATIONS[state]["recover"], "stateful", reservation["context_id"]
+            )
 
 
 async def remote_call(backend, operation, arguments, context_id, *, request_id=None):
@@ -576,6 +614,7 @@ async def test_exclusive_http_transport_preserves_owner_across_fresh_broker_requ
     owner, other = RemoteBackend(settings), RemoteBackend(settings)
     try:
         data(await owner.invoke("refresh_services", {}))
+
         context = data(await owner.invoke("acquire_service", {"service_id": "math"}))["context_id"]
         description = data(await owner.invoke("describe_tool", {"tool_id": "math/echo"}))
         payload = {
@@ -603,3 +642,37 @@ async def test_exclusive_http_transport_preserves_owner_across_fresh_broker_requ
     finally:
         path.write_bytes(original)
         data(await owner.invoke("refresh_services", {}))
+
+
+async def test_crashed_broker_requires_stopped_admin_recovery_before_new_ownership(stack):
+    async with exclusive_app(stack) as settings:
+        state = stack[0]
+        owner, other = RemoteBackend(settings), RemoteBackend(settings)
+        context = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))[
+            "context_id"
+        ]
+        original = data(await remote_call(owner, "inspect", {}, context))
+        await asyncio.to_thread(BROKER_TEST_OPERATIONS[state]["crash_restart"])
+        rows = data(await owner.invoke("list_services", {}))["services"]
+        assert (
+            next(row for row in rows if row["service_id"] == "stateful")["status"]
+            == "recovery_required"
+        )
+        assert (
+            data(await owner.invoke("service_session_status", {"service_id": "stateful"}))[
+                "context_id"
+            ]
+            == context
+        )
+        assert (await other.invoke("acquire_service", {"service_id": "stateful"})).isError
+        assert (
+            await owner.invoke("release_service", {"service_id": "stateful", "context_id": context})
+        ).isError
+        with pytest.raises(BrokerError, match="already owns"):
+            recover_context(state, "stateful", context, acknowledged=True)
+        await asyncio.to_thread(BROKER_TEST_OPERATIONS[state]["recover"], "stateful", context)
+        replacement = data(await other.invoke("acquire_service", {"service_id": "stateful"}))[
+            "context_id"
+        ]
+        current = data(await remote_call(other, "inspect", {}, replacement))
+        assert replacement != context and current["instance"] != original["instance"]
