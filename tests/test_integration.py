@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 import socket
 import subprocess
 import sys
 import time
+from contextlib import AsyncExitStack, asynccontextmanager
 from pathlib import Path
 
 import httpx
@@ -15,6 +17,7 @@ from mcp.client.stdio import stdio_client
 
 from universal_tools.cli import initialize, process_options
 from universal_tools.models import atomic_json
+from universal_tools.surface import RemoteBackend
 from universal_tools.transport import http_session
 
 TOOLS = {
@@ -26,6 +29,9 @@ TOOLS = {
     "call_read_tool",
     "call_write_tool",
     "get_request_status",
+    "acquire_service",
+    "release_service",
+    "service_session_status",
 }
 
 
@@ -273,9 +279,14 @@ def test_http_authentication_and_browser_origin_rejection(stack):
         )
 
 
-async def test_two_plugin_frontends_share_one_broker(stack):
+async def test_two_plugin_frontends_share_one_broker(stack, tmp_path):
     state, settings, _ = stack
-    plugin = Path(__file__).resolve().parents[1] / "plugins/universal-tools"
+    plugin = tmp_path / "test-plugin"
+    shutil.copytree(
+        Path(__file__).resolve().parents[1] / "plugins/universal-tools",
+        plugin,
+        ignore=shutil.ignore_patterns("runtime.json", "__pycache__"),
+    )
     runtime_path = plugin / "runtime.json"
     original = runtime_path.read_bytes() if runtime_path.exists() else None
     atomic_json(runtime_path, {"python": sys.executable, "state": str(state)})
@@ -381,3 +392,176 @@ async def test_two_native_clients_cannot_overwrite_a_stale_notebook_revision(sta
         writer("native-a", initial["revision"]), writer("native-b", initial["revision"])
     )
     assert sum(not result.isError for result in results) == 1
+
+
+@asynccontextmanager
+async def exclusive_app(stack, *, timeout=3.0):
+    state, settings, _ = stack
+    path = state / "services/stateful.json"
+    assert not path.exists()
+    atomic_json(
+        path,
+        {
+            "id": "stateful",
+            "display_name": "Synthetic stateful app",
+            "transport": {
+                "type": "stdio",
+                "command": sys.executable,
+                "args": [str(Path(__file__).parent / "fixtures/stateful_mcp.py")],
+            },
+            "session_mode": "exclusive",
+            "allow_writes": True,
+            "timeout_seconds": timeout,
+        },
+    )
+    admin = RemoteBackend(settings)
+    try:
+        services = data(await admin.invoke("refresh_services", {}))["services"]
+        assert (
+            next(item for item in services if item["service_id"] == "stateful")["status"]
+            == "available"
+        )
+        yield settings
+    finally:
+        path.unlink()
+        data(await admin.invoke("refresh_services", {}))
+
+
+async def remote_call(backend, operation, arguments, context_id, *, request_id=None):
+    tool_id = "stateful/" + operation
+    description = data(await backend.invoke("describe_tool", {"tool_id": tool_id}))
+    payload = {
+        "tool_id": tool_id,
+        "catalog_revision": description["catalog_revision"],
+        "arguments": arguments,
+        "context_id": context_id,
+    }
+    if request_id:
+        payload["request_id"] = request_id
+    return await backend.invoke("call_write_tool" if request_id else "call_read_tool", payload)
+
+
+async def test_persistent_stdio_review_survives_http_turnover_and_refresh(stack):
+    async with exclusive_app(stack) as settings:
+        owner, other = RemoteBackend(settings), RemoteBackend(settings)
+        lease = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))
+        context = lease["context_id"]
+        initial = data(await remote_call(owner, "inspect", {}, context))
+        plan = data(
+            await remote_call(
+                owner, "prepare", {"candidate": "reviewed"}, context, request_id="wire-prepare-001"
+            )
+        )
+        data(await other.invoke("refresh_services", {}))
+        blocked = await remote_call(
+            other, "apply", {"plan_id": plan["plan_id"]}, context, request_id="wire-steal-001"
+        )
+        assert blocked.isError
+        assert "another frontend" in blocked.content[0].text
+        applied = data(
+            await remote_call(
+                owner, "apply", {"plan_id": plan["plan_id"]}, context, request_id="wire-apply-001"
+            )
+        )
+        assert applied == {"instance": initial["instance"], "value": "reviewed"}
+        data(
+            await owner.invoke("release_service", {"service_id": "stateful", "context_id": context})
+        )
+        replacement = data(await other.invoke("acquire_service", {"service_id": "stateful"}))
+        after = data(await remote_call(other, "inspect", {}, replacement["context_id"]))
+        assert after["instance"] != initial["instance"] and after["value"] == ""
+        stale = await remote_call(other, "inspect", {}, context)
+        assert stale.isError
+
+
+async def test_two_stdio_frontends_cannot_share_or_release_each_others_context(stack):
+    async with exclusive_app(stack), AsyncExitStack() as contexts:
+        clients = []
+        state = stack[0]
+        for _ in range(2):
+            streams = await contexts.enter_async_context(
+                stdio_client(
+                    StdioServerParameters(
+                        command=sys.executable,
+                        args=["-m", "universal_tools", "--state", str(state), "proxy"],
+                    )
+                )
+            )
+            session = await contexts.enter_async_context(ClientSession(*streams))
+            await session.initialize()
+            clients.append(session)
+        owner, other = clients
+        lease = data(await owner.call_tool("acquire_service", {"service_id": "stateful"}))
+        context = lease["context_id"]
+        assert (await other.call_tool("acquire_service", {"service_id": "stateful"})).isError
+        assert (
+            await other.call_tool(
+                "release_service", {"service_id": "stateful", "context_id": context}
+            )
+        ).isError
+        info = data(await other.call_tool("service_session_status", {"service_id": "stateful"}))
+        assert info == {"service_id": "stateful", "state": "owned_by_another"}
+        description = data(await owner.call_tool("describe_tool", {"tool_id": "stateful/inspect"}))
+        payload = {
+            "tool_id": "stateful/inspect",
+            "catalog_revision": description["catalog_revision"],
+            "arguments": {},
+            "context_id": context,
+        }
+        assert (await other.call_tool("call_read_tool", payload)).isError
+        before = data(await owner.call_tool("call_read_tool", payload))
+        data(await other.call_tool("refresh_services"))
+        assert data(await owner.call_tool("call_read_tool", payload)) == before
+        data(
+            await owner.call_tool(
+                "release_service", {"service_id": "stateful", "context_id": context}
+            )
+        )
+
+
+async def test_real_stdio_disconnect_marks_context_lost_without_restarting(stack):
+    async with exclusive_app(stack) as settings:
+        owner = RemoteBackend(settings)
+        lease = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))
+        result = await remote_call(
+            owner, "disconnect", {}, lease["context_id"], request_id="wire-crash-001"
+        )
+        assert result.isError
+        status = data(await owner.invoke("get_request_status", {"request_id": "wire-crash-001"}))
+        assert status["status"] == "uncertain"
+        info = data(await owner.invoke("service_session_status", {"service_id": "stateful"}))
+        assert info["state"] == "lost"
+        assert (await owner.invoke("acquire_service", {"service_id": "stateful"})).isError
+        assert (await remote_call(owner, "inspect", {}, lease["context_id"])).isError
+
+
+async def test_real_stdio_timeout_marks_write_uncertain_and_context_lost(stack):
+    async with exclusive_app(stack, timeout=2.0) as settings:
+        owner = RemoteBackend(settings)
+        lease = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))
+        result = await remote_call(
+            owner,
+            "slow_edit",
+            {"candidate": "maybe-applied", "delay": 10},
+            lease["context_id"],
+            request_id="wire-timeout-001",
+        )
+        assert result.isError
+        assert (
+            data(await owner.invoke("get_request_status", {"request_id": "wire-timeout-001"}))[
+                "status"
+            ]
+            == "uncertain"
+        )
+        assert (
+            data(await owner.invoke("service_session_status", {"service_id": "stateful"}))["state"]
+            == "lost"
+        )
+
+
+async def test_ownerless_http_client_cannot_acquire_an_exclusive_service(stack):
+    async with exclusive_app(stack) as settings:
+        async with http_session(settings.url + "/mcp", settings.token) as session:
+            result = await session.call_tool("acquire_service", {"service_id": "stateful"})
+            assert result.isError
+            assert "identified" in result.content[0].text

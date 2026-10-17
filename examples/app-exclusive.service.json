@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "my-stateful-app",
+  "display_name": "My Stateful App",
+  "description": "An app whose workflow context must survive multiple tool calls.",
+  "transport": {
+    "type": "stdio",
+    "command": "C:\\Path\\To\\App\\python.exe",
+    "args": ["-m", "app_mcp_server"],
+    "cwd": "C:\\Path\\To\\App",
+    "env_vars": []
+  },
+  "enabled": true,
+  "allow_writes": false,
+  "read_only_tools": [],
+  "timeout_seconds": 120.0,
+  "session_mode": "exclusive",
+  "lease_seconds": 900.0,
+  "resource_id": "my-app-engine"
+}

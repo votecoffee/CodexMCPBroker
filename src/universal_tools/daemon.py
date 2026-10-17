@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hmac
 import os
+import re
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -14,6 +15,7 @@ from starlette.responses import JSONResponse
 
 from . import __version__
 from .broker import Broker
+from .identity import CLIENT_HEADER, CLIENT_PATTERN, client_identity
 from .models import BrokerError, Settings, load_settings
 from .surface import LocalBackend, create_surface
 
@@ -71,7 +73,16 @@ class ProtectedApp:
             self.server.should_exit = True
             response = JSONResponse({"stopping": True})
         else:
-            return await self.app(scope, receive, send)
+            value = headers.get(CLIENT_HEADER.encode(), b"").decode("ascii", errors="replace")
+            if value and not re.fullmatch(CLIENT_PATTERN, value):
+                return await JSONResponse({"error": "invalid frontend identity"}, status_code=400)(
+                    scope, receive, send
+                )
+            token = client_identity.set(value or None)
+            try:
+                return await self.app(scope, receive, send)
+            finally:
+                client_identity.reset(token)
         return await response(scope, receive, send)
 
 
@@ -86,9 +97,13 @@ def serve(state: Path) -> None:
         async def lifespan(app):
             # The SDK low-level lifespan runs once per stateless request. Discovery
             # belongs to the ASGI process lifespan, not to each read/tool request.
-            await broker.refresh()
-            async with mcp.session_manager.run():
-                yield
+            await broker.start()
+            try:
+                await broker.refresh()
+                async with mcp.session_manager.run():
+                    yield
+            finally:
+                await broker.aclose()
 
         app = Starlette(routes=base_app.routes, lifespan=lifespan)
         config = uvicorn.Config(

@@ -18,6 +18,8 @@ py -3.13 -m venv .venv
 
 The core suite checks registration, schema restrictions, conservative classification, revocation, catalog revisions, serialization/concurrency, durable write claims and uncertain outcomes. Integration tests use real MCP SDK clients and isolated example HTTP/stdio processes to exercise authentication, routing, changing discovery, multiple frontends and result/error forwarding. Packaging tests check that runtime state and Git metadata remain outside source inventories.
 
+Session tests use synthetic process-local state and AnyIO task groups to verify same-task SDK ownership, workflow continuity across refresh, competing frontends, idle expiry, alias conflicts, cancellation, bounded initialization and context loss. Protocol tests run a disposable stdio app through HTTP and multiple stdio broker frontends, including prepare/apply continuity, process exit and in-flight timeout. They leave installed plugins and normal app registrations untouched.
+
 These tests do not operate native engineering applications or establish their migration readiness. Test counts and measurements belong in local run records rather than a permanent public validation log.
 
 ## Source package

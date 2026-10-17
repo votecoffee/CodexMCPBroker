@@ -104,6 +104,18 @@ class ServiceManifest(StrictModel):
     # For legacy servers, only app-owner reviewed names can be classified as reads.
     read_only_tools: list[str] = Field(default_factory=list)
     timeout_seconds: float = Field(default=20.0, ge=0.2, le=300.0)
+    session_mode: Literal["transient", "exclusive"] = "transient"
+    lease_seconds: float = Field(default=900.0, ge=5.0, le=86400.0)
+    resource_id: str | None = Field(default=None, pattern=ID_PATTERN)
+
+    @property
+    def resource_keys(self) -> set[str]:
+        # Credential variable names do not distinguish two routes to one HTTP app.
+        route = self.transport.model_dump(mode="json", exclude={"bearer_token_env"})
+        keys = {"transport:" + canonical_digest(route)}
+        if self.resource_id:
+            keys.add("resource:" + self.resource_id)
+        return keys
 
     @property
     def digest(self) -> str:

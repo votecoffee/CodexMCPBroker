@@ -12,12 +12,17 @@ from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamable_http_client
 from mcp.types import Tool
 
+from .identity import CLIENT_HEADER
 from .models import BrokerError, HttpTransport, ServiceManifest
 
 
 @asynccontextmanager
-async def http_session(url: str, token: str | None = None, timeout: float = 20):
+async def http_session(
+    url: str, token: str | None = None, timeout: float = 20, *, client_id: str | None = None
+):
     headers = {"Authorization": f"Bearer {token}"} if token else {}
+    if client_id is not None:
+        headers[CLIENT_HEADER] = client_id
     async with httpx.AsyncClient(
         headers=headers, timeout=httpx.Timeout(timeout), follow_redirects=False, trust_env=False
     ) as client:

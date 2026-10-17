@@ -4,7 +4,7 @@ Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.1.1**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.2.0**.
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ The plugin is named **Universal Tools**. The Python distribution and CLI retain 
 
 Apps own their tools, native processes, data and authorization. CodexMCPBroker provides a common discovery and routing layer so each new app can register with the existing plugin.
 
-The broker exposes eight fixed tools. App tools are namespaced catalog entries selected through search and description. They do not become individual native Codex tool definitions. Separate chats share the broker, while each chat connects through its own stdio frontend.
+The broker exposes eleven fixed tools. App tools are namespaced catalog entries selected through search and description. They do not become individual native Codex tool definitions. Separate chats share the broker, while each chat connects through its own stdio frontend. Stateful integrations can opt into persistent, exclusively owned service contexts.
 
 ## Install
 
@@ -87,6 +87,8 @@ notepad .\.local\my-app.service.json
 
 Use [app-http.service.json](examples/app-http.service.json) for an MCP Streamable HTTP endpoint on literal loopback. Use [app-stdio.service.json](examples/app-stdio.service.json) for a stateless stdio adapter. Existing REST endpoints need an MCP adapter.
 
+For an integration that needs state across calls, review [app-exclusive.service.json](examples/app-exclusive.service.json) and the ownership contract before registration. Persistence is opt-in; existing registrations keep their transient lifecycle.
+
 Registration is a local administrative action: it authorizes connecting to the endpoint or launching the configured executable. The broker scans its registration directory; app installers can use the same registration command. It does not automatically discover arbitrary installed applications.
 
 See the [app integration contract](APP_CONTRACT.md) and [registration schema](examples/service.schema.json) for authentication, lifecycle, ownership and validation requirements.
@@ -96,6 +98,14 @@ See the [app integration contract](APP_CONTRACT.md) and [registration schema](ex
 Search for a tool, describe it, then invoke it with the returned `catalog_revision` and schema-valid arguments. Writes also require a unique `request_id`. The broker checks the live definition before dispatch; changed registrations or definitions require another refresh/describe cycle.
 
 Registrations default to `allow_writes: false`. Tools need `readOnlyHint: true` for the read channel, except exact legacy tool names reviewed under `read_only_tools`. An explicit false annotation always uses the write channel. App-specific permissions and review requirements remain authoritative.
+
+### Own a stateful workflow
+
+For a service registered with `session_mode: "exclusive"`, call `acquire_service` and retain its `context_id`. Include that handle in every read/write call. The broker keeps one downstream session/process alive for that frontend across calls and catalog refresh. A competing frontend cannot acquire, call or release the context, even if it knows the handle.
+
+Calling `acquire_service` again from the same frontend renews its active lease. App calls renew it after success. `service_session_status` inspects ownership/health without renewing it. Save or reconcile app state before `release_service`: release, idle expiry, registration changes and broker shutdown close the downstream connection and can discard process-owned documents or review plans.
+
+The default idle lease is 900 seconds, configurable from 5 to 86,400 seconds. In-flight operations retain their lock until completion or bounded cleanup. A timeout, transport failure or abandoned in-flight call leaves the context lost; it is not automatically recreated. Reconcile uncertain app effects, explicitly release, and reacquire when appropriate. Broker restart invalidates all context handles; it does not restore native state or prove earlier work stopped.
 
 ## Architecture
 
@@ -110,14 +120,18 @@ flowchart LR
     G --> Y[App B MCP server]
 ```
 
-The broker supports concurrent clients and independent apps. It serializes connection, validation and invocation per service ID. Apps own locks and revision checks across all clients, including direct integrations and alternate registrations. The broker does not assume a chat ID or provide a project/workflow lease.
+The broker supports concurrent clients and independent apps. It serializes connection, validation and invocation per service ID. Exclusive mode adds a service-wide workflow lease bound to a randomly identified frontend instance. A dedicated worker task owns the downstream SDK transport through initialization, calls and teardown.
+
+This is frontend affinity within one authenticated broker, not an authenticated Codex chat principal or a native project lease. A restarted frontend has a new identity and cannot adopt the old lease. Apps still own resource IDs, locks and revision checks across direct clients, other brokers and GUI edits. Closing a proxy does not reset independently running app state; a new owner must still select/inspect its intended resource explicitly.
 
 Write claims are stored in SQLite before dispatch. Reusing a claimed ID never dispatches the write again, including after restart. The journal stores status and fingerprints, not arguments or results. Inspect `get_request_status` after a lost response and reconcile actual app state after uncertain outcomes. Duplicate-dispatch prevention does not establish exactly-once execution or native rollback.
 
 ## Limitations
 
 - Connections are limited to one local user account and literal loopback HTTP endpoints. A random bearer token protects the broker; browser-origin requests are rejected. Keep `.local/settings.json` private. App credentials are independent and are never copied from the incoming broker request.
-- A fresh downstream session is opened for each discovery or call. Stdio starts a new process each time. Stateful apps must retain business state in an independently running service or durable storage; transport sessions cannot be their only owner.
+- Transient mode opens a fresh downstream session/process for each discovery or call. Exclusive mode retains one session for its owner; unowned discovery still uses temporary sessions. App-owned HTTP engines must retain business state independently of individual HTTP requests.
+- Identical routes and declared resource aliases involving an exclusive service are rejected. Use the same `resource_id` for different routes to one native resource. The broker cannot infer arbitrary app aliases or fence direct/manual clients. Ownership is in memory; a broker crash/restart requires app reconciliation before acquiring a new context.
+- Per-call frontend-to-broker HTTP connections and full downstream definition checks remain. Persistent downstream sessions remove repeated stdio startup, not every source of transport overhead.
 - Tools are the supported MCP surface. Downstream resources, prompts, OAuth linking, sampling, elicitation, progress and app UI routing are not implemented. App initialization instructions and bundled skills are not automatically delivered through the broker.
 - Search indexes outer tool IDs and descriptions. Nested app capability catalogs still require app-specific discovery. Broker refresh does not reload app extensions.
 - Budgets include 128 KiB schemas, 256 KiB argument objects and 1 MiB incoming broker requests. App timeouts default to 20 seconds and allow 0.2–300 seconds; queue wait happens before that deadline. Client disconnect or timeout can leave queued or running work whose outcome needs inspection.
@@ -136,6 +150,9 @@ Write claims are stored in SQLite before dispatch. Reusing a claimed ID never di
 | `call_read_tool` | Invoke an allowed read operation with the described revision. |
 | `call_write_tool` | Invoke an enabled write operation with a unique request ID. |
 | `get_request_status` | Inspect a persisted write claim after a lost response. |
+| `acquire_service` | Acquire or renew this frontend's exclusive service context. |
+| `release_service` | Release the owned context and close its downstream session/process. |
+| `service_session_status` | Inspect ownership, health and remaining idle lease without renewal. |
 
 The CLI entry point is `universal-tools`, also available as `python -m universal_tools`. For example:
 

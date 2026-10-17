@@ -146,6 +146,35 @@
       "minimum": 0.2,
       "title": "Timeout Seconds",
       "type": "number"
+    },
+    "session_mode": {
+      "default": "transient",
+      "enum": [
+        "transient",
+        "exclusive"
+      ],
+      "title": "Session Mode",
+      "type": "string"
+    },
+    "lease_seconds": {
+      "default": 900.0,
+      "maximum": 86400.0,
+      "minimum": 5.0,
+      "title": "Lease Seconds",
+      "type": "number"
+    },
+    "resource_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resource Id"
     }
   },
   "required": [
@@ -154,6 +183,5 @@
     "transport"
   ],
   "title": "ServiceManifest",
-  "type": "object",
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  "type": "object"
 }
