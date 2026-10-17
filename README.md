@@ -4,7 +4,7 @@ Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.6.0**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.7.0**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
 
@@ -103,6 +103,24 @@ Search for a tool, use `describe_service` for its app's initialization guidance 
 
 Registrations default to `allow_writes: false`. Tools need `readOnlyHint: true` for the read channel, except exact legacy tool names reviewed under `read_only_tools`. An explicit false annotation always uses the write channel. App-specific permissions and review requirements remain authoritative.
 
+### Scope pilot access and payloads
+
+Broker 0.7 adds optional local registration fields for selected writes and larger arguments. For a disposable pilot, review the actual app tool names and payload requirements before setting, for example:
+
+```json
+{
+  "allow_writes": true,
+  "allowed_write_tools": ["prepare_change", "apply_change"],
+  "max_argument_bytes": 2097152
+}
+```
+
+This is a descriptor fragment, not a registration command. `allowed_write_tools` contains exact, case-sensitive outer MCP tool names without the service prefix. It applies only when `allow_writes` is true. An empty list disables all writes; omission or `null` preserves the existing service-wide write flag. A newly advertised tool stays blocked unless named in a configured list. This does not change read/write classification or filter operations inside an extension wrapper; apps must enforce their inner operation policy.
+
+`max_argument_bytes` defaults to 262,144 and accepts 1–8,388,608 bytes. It measures the entire argument object encoded as compact UTF-8 JSON, including base64 and JSON escaping. The broker HTTP envelope has a separate 10 MiB cap. `describe_tool` reports the argument limit; `describe_service` reports policy and limits. A larger registration budget does not enlarge the app's or host's limits. The broker forwards one app invocation without splitting, truncating or replaying it.
+
+Changing either setting changes catalog revisions and can retire an exclusive context. Finish/release its work before local reconfiguration. See the [migration assessment guide](MIGRATION.md) for scoped compatibility checks while retaining direct integrations.
+
 ### Own a stateful workflow
 
 For a service registered with `session_mode: "exclusive"`, call `acquire_service` and retain its `context_id`. Include that handle in every read/write call. The broker keeps one downstream session/process alive for that frontend across calls and catalog refresh. A competing frontend cannot acquire, call or release the context, even if it knows the handle.
@@ -158,7 +176,7 @@ Write claims are stored in SQLite before dispatch. Reusing a claimed ID never di
 - Tool routing and request-bound form elicitation are supported. Downstream resources, prompts, OAuth linking, sampling, URL elicitation, progress and app UI routing are not implemented. `describe_service` exposes initialization metadata and explicit `elicitation_form`/`elicitation_url` support flags; advertised app capabilities do not enable other relays. App skills are not automatically installed or distributed.
 - Form relay accepts flat primitive fields and enum arrays, with no schema references. Budgets are 32 KiB per request, 16 KiB per response, one outstanding form and eight forms per tool call. Each form has a 60-second relay deadline, while the app's shorter operation deadline continues running. A late answer cannot revive an expired call. Background/session-wide and task-augmented elicitation are unsupported.
 - Search indexes outer tool IDs and descriptions. Nested app capability catalogs still require app-specific discovery. Broker refresh does not reload app extensions.
-- Budgets include 128 KiB initialization metadata, 128 KiB schemas, 256 KiB argument objects and 1 MiB incoming broker requests. Oversized initialization metadata is rejected without truncating instructions. App timeouts default to 20 seconds and allow 0.2–300 seconds; queue wait happens before that deadline. Client disconnect or timeout can leave queued or running work whose outcome needs inspection.
+- Budgets include 128 KiB initialization metadata, 128 KiB schemas, argument objects defaulting to 256 KiB with an explicit per-service maximum of 8 MiB, and 10 MiB incoming broker requests. Oversized initialization metadata is rejected without truncating instructions. App and host limits remain independent. App timeouts default to 20 seconds and allow 0.2–300 seconds; queue wait happens before that deadline. Client disconnect or timeout can leave queued or running work whose outcome needs inspection.
 - Removed or invalid registrations lose routes on refresh. Revocation is also checked before a new call; already-dispatched work can continue. Unknown effects use the write channel, and service write policy applies to that whole category.
 - Protocol and example-service checks do not establish compatibility or native acceptance for a particular engineering application. Validate each app's state continuity, policy, media/results and failure behavior before integration.
 
@@ -186,7 +204,7 @@ The CLI entry point is `universal-tools`, also available as `python -m universal
 .\.local\runtime\Scripts\python.exe -m universal_tools --state .\.local status
 ```
 
-See [APP_CONTRACT.md](APP_CONTRACT.md) for downstream service contracts and [VERIFICATION.md](VERIFICATION.md) for reproducible development and packaging checks. The Python implementation has no separately documented stable library API.
+See [APP_CONTRACT.md](APP_CONTRACT.md) for downstream service contracts, [MIGRATION.md](MIGRATION.md) for compatibility assessment gates, and [VERIFICATION.md](VERIFICATION.md) for reproducible development and packaging checks. The Python implementation has no separately documented stable library API.
 
 ## Maintainers
 

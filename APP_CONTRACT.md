@@ -45,7 +45,7 @@ Each tool supplies a specific name, useful description, input schema, and accura
 
 Schemas are validated locally. Network schema references are rejected. The catalog revision hashes the complete tool definition and service registration. It changes when routing, permissions, tool metadata, or schemas change. Calls must use the described revision, and the live advertised definition must still match it. Keep contracts backward compatible during rolling app updates.
 
-Explicit `readOnlyHint: true` is required for the read channel, except exact names reviewed in the local legacy override. Unknown or explicit false annotations are write-capable. `allow_writes` controls that whole service. Invocation tools use conservative broker annotations; the described definition retains the app annotations for the model to inspect.
+Explicit `readOnlyHint: true` is required for the read channel, except exact names reviewed in the local legacy override. Unknown or explicit false annotations are write-capable. `allow_writes` is the service-wide master flag; an optional `allowed_write_tools` list narrows its scope as described below. Invocation tools use conservative broker annotations; the described definition retains the app annotations for the model to inspect.
 
 The app is authoritative for:
 
@@ -56,6 +56,25 @@ The app is authoritative for:
 - Its own startup/shutdown and continued availability. Normal broker startup does not start HTTP apps.
 
 The broker cannot create an app-specific authorization token or bypass a required review. A request ID prevents broker duplicate dispatch; it is not app authorization. Put app-level idempotency and revision protection in the tool contract when needed.
+
+### Local tool policy and payload budgets
+
+Broker 0.7 adds two optional version-1 registration fields:
+
+```json
+{
+  "allowed_write_tools": ["prepare_change", "apply_change"],
+  "max_argument_bytes": 2097152
+}
+```
+
+`allowed_write_tools` accepts up to 2,000 unique, exact, case-sensitive outer MCP tool names using the tool naming rules above. Do not include the service prefix or wildcard patterns. A write requires both `allow_writes: true` and membership in this list. An empty list denies all writes. Omission or `null` preserves legacy service-wide behavior. Read-classified tools stay on the read channel and do not require list membership. The list cannot reclassify an effect, grant app authorization, or restrict individual operations carried inside one outer extension tool. Apps remain responsible for those inner policies. A stale or misspelled entry enables no other tool.
+
+Search and description report each tool's effective `callable` flag. `describe_service` returns the registration's `policy` and `limits`; `describe_tool` includes `max_argument_bytes`. These snapshots do not grant permission. Registration changes are checked again after queue wait and before native dispatch, so revoking a name or reducing a limit blocks stale requests without waiting for refresh. Already-dispatched operations may continue.
+
+`max_argument_bytes` is an integer from 1 to 8,388,608, defaulting to 262,144. Measurement uses compact JSON (`separators=(",", ":")`, `ensure_ascii=False`) encoded in UTF-8 with non-finite values rejected. Count the whole argument object, including field names, nested envelopes, base64 and escaped characters. A request at the limit is allowed; one byte over is rejected before app connection or a write claim. The actual incoming broker HTTP body is independently capped at 10,485,760 bytes, including MCP metadata/envelope bytes and any extra whitespace or escaping. Discovery, schema and elicitation budgets are unchanged; this is not a response-size guarantee.
+
+No splitting, chunking, truncation or automatic replay is introduced. App-native batch/Undo and single-use review boundaries must remain intact. A local administrator must select a budget that the actual app, adapter and calling host also support. Updating policy or budgets changes the catalog revision and follows normal descriptor-change retirement rules for exclusive contexts. Finish and release existing work before reconfiguration.
 
 ## Initialization guidance and advertised capabilities
 
@@ -148,6 +167,6 @@ To support the reply path, the broker uses stateful Streamable HTTP with SSE res
 
 ## Limits and future extensions
 
-Version 1 allows 128 services, eight parallel discovery probes, 2,000 tools per app, 100 tool-list pages, 128 KiB schemas, 256 KiB argument objects, and app timeouts from 0.2 to 300 seconds. Broker requests are capped at 1 MiB. Calls to one registration are serialized; there is no distributed lock across broker installations.
+Version 1 allows 128 services, eight parallel discovery probes, 2,000 tools per app, 100 tool-list pages, 128 KiB schemas, argument objects defaulting to 256 KiB with an explicit per-service maximum of 8 MiB, and app timeouts from 0.2 to 300 seconds. Broker requests are capped at 10 MiB. Calls to one registration are serialized; there is no distributed lock across broker installations.
 
 Potential later versions: native context resumption where apps support it, watched registration directories, supported remote HTTPS/OAuth connections, resource/prompt forwarding, URL elicitation, typed promotion of selected tools, operation-specific policies, and adapters for existing engineering apps. These remain outside the current acceptance scope.

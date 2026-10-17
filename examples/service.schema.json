@@ -133,12 +133,36 @@
       "title": "Allow Writes",
       "type": "boolean"
     },
+    "allowed_write_tools": {
+      "anyOf": [
+        {
+          "items": {
+            "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+            "type": "string"
+          },
+          "maxItems": 2000,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Allowed Write Tools"
+    },
     "read_only_tools": {
       "items": {
         "type": "string"
       },
       "title": "Read Only Tools",
       "type": "array"
+    },
+    "max_argument_bytes": {
+      "default": 262144,
+      "maximum": 8388608,
+      "minimum": 1,
+      "title": "Max Argument Bytes",
+      "type": "integer"
     },
     "timeout_seconds": {
       "default": 20.0,

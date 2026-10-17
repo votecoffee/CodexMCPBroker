@@ -19,7 +19,15 @@ from mcp.types import CallToolResult, Tool
 from .elicitation import ElicitationTarget, routed_call
 from .journal import WriteJournal
 from .metadata import BROKER_SUPPORT
-from .models import ID_PATTERN, BrokerError, ServiceManifest, canonical_digest, load_manifest
+from .models import (
+    ID_PATTERN,
+    MAX_REQUEST_BYTES,
+    TOOL_NAME_PATTERN,
+    BrokerError,
+    ServiceManifest,
+    canonical_digest,
+    load_manifest,
+)
 from .ownership import OwnershipJournal, owner_digest
 from .sessions import SessionWorker
 from .transport import list_all_tools, service_session
@@ -78,6 +86,10 @@ class CatalogTool:
         return hint is True or (hint is None and self.tool.name in self.manifest.read_only_tools)
 
     @property
+    def callable(self) -> bool:
+        return self.read_only or self.manifest.permits_write(self.tool.name)
+
+    @property
     def revision(self) -> str:
         return canonical_digest(
             {"service": self.manifest.digest, "tool": self.tool.model_dump(mode="json")}
@@ -89,7 +101,8 @@ class CatalogTool:
             "catalog_revision": self.revision,
             "service_id": self.manifest.id,
             "classification": "read" if self.read_only else "write_or_unknown",
-            "callable": self.read_only or self.manifest.allow_writes,
+            "callable": self.callable,
+            "max_argument_bytes": self.manifest.max_argument_bytes,
             "session_mode": self.manifest.session_mode,
             "context_required": self.manifest.session_mode == "exclusive",
             "definition": self.tool.model_dump(mode="json", exclude_none=True),
@@ -297,7 +310,7 @@ class Broker:
                                         "observed_generation": self.generation + 1,
                                     }
                     for tool in tools:
-                        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", tool.name):
+                        if not re.fullmatch(TOOL_NAME_PATTERN, tool.name):
                             raise BrokerError("app advertised an unsupported tool name")
                         check_schema(tool.inputSchema)
                         if tool.outputSchema is not None:
@@ -312,6 +325,8 @@ class Broker:
                         "status": "available",
                         "transport": manifest.transport.type,
                         "allow_writes": manifest.allow_writes,
+                        "allowed_write_tools": deepcopy(manifest.allowed_write_tools),
+                        "max_argument_bytes": manifest.max_argument_bytes,
                         "tool_count": len(entries),
                         "session_mode": manifest.session_mode,
                     }
@@ -381,7 +396,7 @@ class Broker:
                         "tool_id": entry.id,
                         "description": entry.tool.description or "",
                         "classification": "read" if entry.read_only else "write_or_unknown",
-                        "callable": entry.read_only or entry.manifest.allow_writes,
+                        "callable": entry.callable,
                         "context_required": entry.manifest.session_mode == "exclusive",
                     }
                 )
@@ -408,6 +423,15 @@ class Broker:
                 "description": manifest.description,
                 "session_mode": manifest.session_mode,
                 "context_required": manifest.session_mode == "exclusive",
+                "policy": {
+                    "allow_writes": manifest.allow_writes,
+                    "allowed_write_tools": deepcopy(manifest.allowed_write_tools),
+                },
+                "limits": {
+                    "max_argument_bytes": manifest.max_argument_bytes,
+                    "max_request_body_bytes": MAX_REQUEST_BYTES,
+                    "timeout_seconds": manifest.timeout_seconds,
+                },
                 "generation": self.generation,
                 "metadata_source": "catalog",
                 **deepcopy(snapshot),
@@ -591,10 +615,23 @@ class Broker:
             raise BrokerError("tool is write-capable or unclassified; use call_write_tool")
         if write and not entry.manifest.allow_writes:
             raise BrokerError("writes are disabled in this app's local registration")
+        if write and not entry.manifest.permits_write(entry.tool.name):
+            raise BrokerError("tool is not enabled by this app's allowed_write_tools policy")
         if write and request_id is None:
             raise BrokerError("write calls require a unique request_id")
-        if len(json.dumps(arguments, allow_nan=False).encode("utf-8")) > 256 * 1024:
-            raise BrokerError("arguments exceed 256 KiB")
+        try:
+            size = len(
+                json.dumps(
+                    arguments, ensure_ascii=False, separators=(",", ":"), allow_nan=False
+                ).encode("utf-8")
+            )
+        except (TypeError, ValueError, UnicodeError, RecursionError):
+            raise BrokerError("arguments must contain valid finite JSON values") from None
+        if size > entry.manifest.max_argument_bytes:
+            raise BrokerError(
+                "arguments exceed this app's max_argument_bytes "
+                f"({entry.manifest.max_argument_bytes})"
+            )
         try:
             validator_for(entry.tool.inputSchema)(entry.tool.inputSchema).validate(arguments)
         except ValidationError:

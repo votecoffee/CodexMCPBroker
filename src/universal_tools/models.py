@@ -14,7 +14,11 @@ from urllib.parse import urlsplit
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 MAX_MANIFEST_BYTES = 256 * 1024
+DEFAULT_ARGUMENT_BYTES = 256 * 1024
+MAX_ARGUMENT_BYTES = 8 * 1024 * 1024
+MAX_REQUEST_BYTES = 10 * 1024 * 1024
 ID_PATTERN = r"^[a-z][a-z0-9_-]{0,63}$"
+TOOL_NAME_PATTERN = r"^[A-Za-z0-9_.-]{1,128}$"
 
 
 class BrokerError(ValueError):
@@ -101,12 +105,29 @@ class ServiceManifest(StrictModel):
     transport: Annotated[HttpTransport | StdioTransport, Field(discriminator="type")]
     enabled: bool = True
     allow_writes: bool = False
+    # None preserves service-wide enablement; an empty list enables no writes.
+    allowed_write_tools: list[Annotated[str, Field(pattern=TOOL_NAME_PATTERN)]] | None = Field(
+        default=None, max_length=2000
+    )
     # For legacy servers, only app-owner reviewed names can be classified as reads.
     read_only_tools: list[str] = Field(default_factory=list)
+    max_argument_bytes: int = Field(default=DEFAULT_ARGUMENT_BYTES, ge=1, le=MAX_ARGUMENT_BYTES)
     timeout_seconds: float = Field(default=20.0, ge=0.2, le=300.0)
     session_mode: Literal["transient", "exclusive"] = "transient"
     lease_seconds: float = Field(default=900.0, ge=5.0, le=86400.0)
     resource_id: str | None = Field(default=None, pattern=ID_PATTERN)
+
+    @field_validator("allowed_write_tools")
+    @classmethod
+    def unique_write_tools(cls, value: list[str] | None) -> list[str] | None:
+        if value is not None and len(value) != len(set(value)):
+            raise ValueError("allowed_write_tools must contain unique exact tool names")
+        return value
+
+    def permits_write(self, tool_name: str) -> bool:
+        return self.allow_writes and (
+            self.allowed_write_tools is None or tool_name in self.allowed_write_tools
+        )
 
     @property
     def resource_keys(self) -> set[str]:
