@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "my-app",
+  "display_name": "My App",
+  "description": "Describe the user goals this app can handle.",
+  "transport": {
+    "type": "streamable-http",
+    "url": "http://127.0.0.1:8790/mcp"
+  },
+  "enabled": true,
+  "allow_writes": false,
+  "timeout_seconds": 20.0
+}

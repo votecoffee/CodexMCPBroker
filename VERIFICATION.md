@@ -1,0 +1,41 @@
+# Verification
+
+This guide describes repeatable checks for the public source. Keep machine-specific results, installed-plugin records, app compatibility captures and deployment history under ignored `.local/private-docs/` or outside the checkout.
+
+## Development environment
+
+From the repository root on Windows:
+
+```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev-lock.txt
+.\.venv\Scripts\python.exe -m pip install --no-deps -e .
+.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m ruff format --check .
+```
+
+The core suite checks registration, schema restrictions, conservative classification, revocation, catalog revisions, serialization/concurrency, durable write claims and uncertain outcomes. Integration tests use real MCP SDK clients and isolated example HTTP/stdio processes to exercise authentication, routing, changing discovery, multiple frontends and result/error forwarding. Packaging tests check that runtime state and Git metadata remain outside source inventories.
+
+These tests do not operate native engineering applications or establish their migration readiness. Test counts and measurements belong in local run records rather than a permanent public validation log.
+
+## Source package
+
+Refresh the source manifest after changing distributed files:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/package_release.py
+.\.venv\Scripts\python.exe scripts/verify_manifest.py
+git diff --check
+```
+
+The packager writes a versioned source ZIP and SHA-256 sidecar under ignored `dist/`. Its exact-membership inventory excludes `.git`, `.local`, virtual environments, build outputs, caches and the generated plugin runtime pointer. Git ignore rules alone are not release filters: keep private material in `.local/`, which the packager explicitly excludes.
+
+For release verification, extract the ZIP to a fresh directory, run its manifest verifier, and run the appropriate checks from that extracted source. Check the committed Git tree against the manifest as well, including line-ending normalization. Keep archive hashes and run logs in an ignored local report or a separately published release artifact.
+
+## Installed plugin checks
+
+`scripts/smoke_installed.py` is an optional example-stack integration check. Run its `--help` output for required arguments. It opens two installed-plugin frontends, routes example reads and temporarily registers an example service before removing it. Use a disposable example state or an explicitly selected development stack. Do not run it against an unrelated user's configuration.
+
+Model-driven selection in a fresh Codex chat is a separate manual acceptance check. App integration also needs app-owned tests for context lifetime, revisions, permissions, human confirmations, large arguments/results and failure recovery. Preserve app-specific evidence locally and report the boundary of any native validation explicitly.

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "legacy-app",
+  "display_name": "Existing stdio App",
+  "description": "Replace the executable and script paths with this app's installed runtime.",
+  "transport": {
+    "type": "stdio",
+    "command": "C:\\Path\\To\\App\\python.exe",
+    "args": ["-m", "my_app.mcp_server"],
+    "cwd": "C:\\Path\\To\\App",
+    "env_vars": []
+  },
+  "enabled": true,
+  "allow_writes": false,
+  "timeout_seconds": 20.0
+}

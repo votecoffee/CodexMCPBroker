@@ -1,0 +1,196 @@
+{
+  "name": "CodexMCPBroker",
+  "version": "0.1.1",
+  "files": [
+    {
+      "path": ".agents/plugins/marketplace.json",
+      "size": 346,
+      "sha256": "fe42f3821877acf926b575d047a7e0ccfbfb317ef13716a7c1354e9df99a50a1"
+    },
+    {
+      "path": ".gitattributes",
+      "size": 19,
+      "sha256": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c"
+    },
+    {
+      "path": ".gitignore",
+      "size": 124,
+      "sha256": "55cae7c854e9c77cafec71c3a8353056a1fd8702ca0586c1c6fdc6c961a5a4e7"
+    },
+    {
+      "path": "APP_CONTRACT.md",
+      "size": 5741,
+      "sha256": "253eb08483e2f6f822b85551b36897d397435a1552a312598197e63693a3f3b9"
+    },
+    {
+      "path": "examples/app-http.service.json",
+      "size": 300,
+      "sha256": "d3754943110af78bb4239208fa509b4ac5f26f09a300db0c9f49d5ee7d7c7ec1"
+    },
+    {
+      "path": "examples/app-stdio.service.json",
+      "size": 437,
+      "sha256": "f55ef641fac6bea00d27a67f92f944ca1f39c18f105d19c293a500be8badd975"
+    },
+    {
+      "path": "examples/service.schema.json",
+      "size": 3286,
+      "sha256": "7dc0046df80432c7e006d9a43c56f02b32f20097523767b0c46138061be47c93"
+    },
+    {
+      "path": "LICENSE",
+      "size": 1067,
+      "sha256": "9fdbc8c41abf794f69c3488f463798e06338bf90ebefbe2daee329d217c83d44"
+    },
+    {
+      "path": "plugins/universal-tools/mcp.json",
+      "size": 262,
+      "sha256": "c942832aa53892d133c9bb59a0a82fd3da42c413e28b6787fbf9326200e423ff"
+    },
+    {
+      "path": "plugins/universal-tools/plugin.json",
+      "size": 477,
+      "sha256": "8b5d52fcb722c3298bf4a8d07e4a1298d41c9082072dda0033a7206aa63b84e4"
+    },
+    {
+      "path": "plugins/universal-tools/server/launch.py",
+      "size": 870,
+      "sha256": "7e7ca2586bbeaf6a42d87c62d6eb12ced5a18bb4055aabcce97d2ffbfeb46dd4"
+    },
+    {
+      "path": "plugins/universal-tools/skills/universal-tools/SKILL.md",
+      "size": 1628,
+      "sha256": "1aaa1bf6a5f832a9965b1430e7c4476947efc150737b54834a0846b37c1ac688"
+    },
+    {
+      "path": "pyproject.toml",
+      "size": 936,
+      "sha256": "2ed7679ae66a26218fd2a6c35411536837339c06d80fa2b79a5ada6c0e702ca2"
+    },
+    {
+      "path": "README.md",
+      "size": 8492,
+      "sha256": "36cfb7974f7b8c34dd2846a9ebfebcfcfab316450951ecd177918f8db369af51"
+    },
+    {
+      "path": "requirements-dev-lock.txt",
+      "size": 823,
+      "sha256": "a05744bd8a4c0efce7cad9c3ea1652c9a81311d9aed79cc22ed8caeeee42940b"
+    },
+    {
+      "path": "requirements-lock.txt",
+      "size": 658,
+      "sha256": "839d54cc935c164fcf5b0b94b8075f44037ad086aedbef8d3a9246a223741c41"
+    },
+    {
+      "path": "scripts/Broker.ps1",
+      "size": 612,
+      "sha256": "6fcd8e3062c6ca98c2ef59b6b8e957af2067463b0a013f2b1920dbfa7eecaddb"
+    },
+    {
+      "path": "scripts/Install-Plugin.ps1",
+      "size": 592,
+      "sha256": "07160d13b60780865cc80d0632c1a16be2a9f240ce682464aee26676d1fc0cdb"
+    },
+    {
+      "path": "scripts/lock_dependencies.py",
+      "size": 1714,
+      "sha256": "58c1642a3a31776892bc39a85df6791d789aa3ac97529ae340b57755fe46eed8"
+    },
+    {
+      "path": "scripts/package_release.py",
+      "size": 1772,
+      "sha256": "7e181159838cf7474c5f07ebfffaa08ea24d89bfae39eda03c8c3e314ceec73d"
+    },
+    {
+      "path": "scripts/Register-App.ps1",
+      "size": 744,
+      "sha256": "b892211feb31116dddbbd5b61f1b220df34f8ca3db3544379db9895ff041914e"
+    },
+    {
+      "path": "scripts/Setup.ps1",
+      "size": 1398,
+      "sha256": "836e78ad96240240611e279ab09389a87ae6c49b3e0f6b953361616edc415c9e"
+    },
+    {
+      "path": "scripts/smoke_installed.py",
+      "size": 4698,
+      "sha256": "fa06083e3bfc2b664ab1aa3931e6cf65d03d92c11a6acd5769aee85f85b8ecd0"
+    },
+    {
+      "path": "scripts/verify_manifest.py",
+      "size": 2005,
+      "sha256": "e2567d55e6f09c75131935d5530e4e43f15a34db7d9b893ee8652e5a3fd4ef0f"
+    },
+    {
+      "path": "src/universal_tools/__init__.py",
+      "size": 98,
+      "sha256": "2e821641d26505d5817f184b3bd404dfc28f663c0fe67243c5b3421c857dd09d"
+    },
+    {
+      "path": "src/universal_tools/__main__.py",
+      "size": 30,
+      "sha256": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279"
+    },
+    {
+      "path": "src/universal_tools/broker.py",
+      "size": 13072,
+      "sha256": "c998f476189f50b12dd59bdef44e3e028209d0968d45cc811b4b4bf95398b3c6"
+    },
+    {
+      "path": "src/universal_tools/cli.py",
+      "size": 13069,
+      "sha256": "548582580ac3689b1ac307a454dfe98f8deb8f871631be6cf233d051b1557525"
+    },
+    {
+      "path": "src/universal_tools/daemon.py",
+      "size": 3698,
+      "sha256": "b380b63187b3bd12195551f4f887bb07d45330f209eb729a13a64ea87298ec1d"
+    },
+    {
+      "path": "src/universal_tools/demo.py",
+      "size": 3967,
+      "sha256": "082c1366dbaec14a8f0ee47ca6ecffca1a02d79097a164798446b7bba5875cd0"
+    },
+    {
+      "path": "src/universal_tools/journal.py",
+      "size": 2309,
+      "sha256": "4618c672f267c1c87244da7f3ef8b1dafc82c12c44922f38c0bd3d83aeb326b7"
+    },
+    {
+      "path": "src/universal_tools/models.py",
+      "size": 4654,
+      "sha256": "81cd2ba79813c855724389dc2b6033d9401b025fdd8d6b00f3b73f29060b2cdc"
+    },
+    {
+      "path": "src/universal_tools/surface.py",
+      "size": 6788,
+      "sha256": "34ecd8ece38ae2ee5fbbd6315ccc81b5b473973372a676edbccabda80ecdc525"
+    },
+    {
+      "path": "src/universal_tools/transport.py",
+      "size": 3246,
+      "sha256": "cbf96cf81efa7ac7a6592500543eca320f6f385e43166497f8d4492a343d4fec"
+    },
+    {
+      "path": "tests/test_core.py",
+      "size": 11205,
+      "sha256": "8b8348744f94d246c0b303f46aa7caa3ade4f082d47dfc7481b369ddd693822f"
+    },
+    {
+      "path": "tests/test_integration.py",
+      "size": 15180,
+      "sha256": "158dcf0acba5237c06aac27a4eba1759c0d7f8f9bc62bcbe736dee724c44b303"
+    },
+    {
+      "path": "tests/test_packaging.py",
+      "size": 1000,
+      "sha256": "94070b41d01933ae0961f722e19618888e2827b0553cbbe0fbe62d8957a635ba"
+    },
+    {
+      "path": "VERIFICATION.md",
+      "size": 3022,
+      "sha256": "c619c5e88c4ec2d7946a1a5578a0a637d546259c93b2458561074f2293ce5bf3"
+    }
+  ]
+}
