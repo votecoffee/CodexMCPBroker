@@ -1,0 +1,159 @@
+{
+  "$defs": {
+    "HttpTransport": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "streamable-http",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "bearer_token_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bearer Token Env"
+        }
+      },
+      "required": [
+        "type",
+        "url"
+      ],
+      "title": "HttpTransport",
+      "type": "object"
+    },
+    "StdioTransport": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "stdio",
+          "title": "Type",
+          "type": "string"
+        },
+        "command": {
+          "minLength": 1,
+          "title": "Command",
+          "type": "string"
+        },
+        "args": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Args",
+          "type": "array"
+        },
+        "cwd": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cwd"
+        },
+        "env_vars": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Env Vars",
+          "type": "array"
+        }
+      },
+      "required": [
+        "type",
+        "command"
+      ],
+      "title": "StdioTransport",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "id": {
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "display_name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Display Name",
+      "type": "string"
+    },
+    "description": {
+      "default": "",
+      "maxLength": 2048,
+      "title": "Description",
+      "type": "string"
+    },
+    "transport": {
+      "discriminator": {
+        "mapping": {
+          "stdio": "#/$defs/StdioTransport",
+          "streamable-http": "#/$defs/HttpTransport"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/HttpTransport"
+        },
+        {
+          "$ref": "#/$defs/StdioTransport"
+        }
+      ],
+      "title": "Transport"
+    },
+    "enabled": {
+      "default": true,
+      "title": "Enabled",
+      "type": "boolean"
+    },
+    "allow_writes": {
+      "default": false,
+      "title": "Allow Writes",
+      "type": "boolean"
+    },
+    "read_only_tools": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Read Only Tools",
+      "type": "array"
+    },
+    "timeout_seconds": {
+      "default": 20.0,
+      "maximum": 300.0,
+      "minimum": 0.2,
+      "title": "Timeout Seconds",
+      "type": "number"
+    }
+  },
+  "required": [
+    "id",
+    "display_name",
+    "transport"
+  ],
+  "title": "ServiceManifest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

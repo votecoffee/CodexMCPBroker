@@ -1,1 +1,159 @@
 # CodexMCPBroker
+
+Local MCP service discovery and routing for one reusable Codex plugin
+
+Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
+
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.1.1**.
+
+## Table of Contents
+
+- [Background](#background)
+- [Install](#install)
+- [Usage](#usage)
+- [Architecture](#architecture)
+- [Limitations](#limitations)
+- [API](#api)
+- [Maintainers](#maintainers)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Background
+
+Apps own their tools, native processes, data and authorization. CodexMCPBroker provides a common discovery and routing layer so each new app can register with the existing plugin.
+
+The broker exposes eight fixed tools. App tools are namespaced catalog entries selected through search and description. They do not become individual native Codex tool definitions. Separate chats share the broker, while each chat connects through its own stdio frontend.
+
+## Install
+
+### Dependencies
+
+- Windows and PowerShell. Windows with Python 3.13 is the validated development environment.
+- Python 3.11 or newer with the Windows `py` launcher; setup defaults to Python 3.13.
+- Git to clone the source, and a Codex installation with the `codex plugin` CLI commands available.
+
+From PowerShell:
+
+```powershell
+git clone https://github.com/votecoffee/CodexMCPBroker.git
+Set-Location CodexMCPBroker
+.\scripts\Setup.ps1
+.\scripts\Install-Plugin.ps1
+```
+
+Setup installs locked runtime dependencies into `.local/runtime`, initializes private broker state under `.local`, and writes an ignored plugin runtime pointer. Installation registers the local marketplace and adds `universal-tools@universal-tools-local`. Start a new Codex chat to load the plugin. No OpenAI API key is required by the broker.
+
+To select another installed Python version, pass `-PythonVersion` to `Setup.ps1`. After broker code changes, stop the broker and rerun setup. After plugin package changes, rerun installation. Adding an app registration requires a catalog refresh.
+
+## Usage
+
+### CLI
+
+Run these commands from the repository root:
+
+```powershell
+.\scripts\Broker.ps1 start
+.\scripts\Broker.ps1 status
+.\scripts\Broker.ps1 list
+.\scripts\Broker.ps1 refresh
+.\scripts\Broker.ps1 stop
+```
+
+A plugin frontend also starts the broker when needed. Closing a chat leaves the shared broker available to other chats. Normal startup connects to registered apps; each HTTP app manages its own process lifecycle.
+
+### Try the example services
+
+```powershell
+.\scripts\Broker.ps1 start-demo
+.\scripts\Broker.ps1 list
+```
+
+The demonstration starts example math and notes services. Default loopback ports are 8768 for the broker, 8769 for math and 8770 for notes; setup can select a different broker port. The demo supervisor stops its example processes when the broker exits.
+
+In a new Codex chat, ask:
+
+> Use Universal Tools. Refresh services, find and describe the example math add tool, and calculate 12 + 30.
+
+### Register an app
+
+Copy a descriptor into the ignored local directory, then edit its app ID, endpoint and policy:
+
+```powershell
+Copy-Item .\examples\app-http.service.json .\.local\my-app.service.json
+notepad .\.local\my-app.service.json
+.\scripts\Register-App.ps1 -Manifest .\.local\my-app.service.json
+.\scripts\Broker.ps1 refresh
+```
+
+Use [app-http.service.json](examples/app-http.service.json) for an MCP Streamable HTTP endpoint on literal loopback. Use [app-stdio.service.json](examples/app-stdio.service.json) for a stateless stdio adapter. Existing REST endpoints need an MCP adapter.
+
+Registration is a local administrative action: it authorizes connecting to the endpoint or launching the configured executable. The broker scans its registration directory; app installers can use the same registration command. It does not automatically discover arbitrary installed applications.
+
+See the [app integration contract](APP_CONTRACT.md) and [registration schema](examples/service.schema.json) for authentication, lifecycle, ownership and validation requirements.
+
+### Invoke tools
+
+Search for a tool, describe it, then invoke it with the returned `catalog_revision` and schema-valid arguments. Writes also require a unique `request_id`. The broker checks the live definition before dispatch; changed registrations or definitions require another refresh/describe cycle.
+
+Registrations default to `allow_writes: false`. Tools need `readOnlyHint: true` for the read channel, except exact legacy tool names reviewed under `read_only_tools`. An explicit false annotation always uses the write channel. App-specific permissions and review requirements remain authoritative.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A[Codex chat A] --> P[Stdio frontend A]
+    B[Codex chat B] --> Q[Stdio frontend B]
+    P --> G[Authenticated loopback MCP broker]
+    Q --> G
+    G --> R[Local service registry]
+    G --> X[App A MCP server]
+    G --> Y[App B MCP server]
+```
+
+The broker supports concurrent clients and independent apps. It serializes connection, validation and invocation per service ID. Apps own locks and revision checks across all clients, including direct integrations and alternate registrations. The broker does not assume a chat ID or provide a project/workflow lease.
+
+Write claims are stored in SQLite before dispatch. Reusing a claimed ID never dispatches the write again, including after restart. The journal stores status and fingerprints, not arguments or results. Inspect `get_request_status` after a lost response and reconcile actual app state after uncertain outcomes. Duplicate-dispatch prevention does not establish exactly-once execution or native rollback.
+
+## Limitations
+
+- Connections are limited to one local user account and literal loopback HTTP endpoints. A random bearer token protects the broker; browser-origin requests are rejected. Keep `.local/settings.json` private. App credentials are independent and are never copied from the incoming broker request.
+- A fresh downstream session is opened for each discovery or call. Stdio starts a new process each time. Stateful apps must retain business state in an independently running service or durable storage; transport sessions cannot be their only owner.
+- Tools are the supported MCP surface. Downstream resources, prompts, OAuth linking, sampling, elicitation, progress and app UI routing are not implemented. App initialization instructions and bundled skills are not automatically delivered through the broker.
+- Search indexes outer tool IDs and descriptions. Nested app capability catalogs still require app-specific discovery. Broker refresh does not reload app extensions.
+- Budgets include 128 KiB schemas, 256 KiB argument objects and 1 MiB incoming broker requests. App timeouts default to 20 seconds and allow 0.2–300 seconds; queue wait happens before that deadline. Client disconnect or timeout can leave queued or running work whose outcome needs inspection.
+- Removed or invalid registrations lose routes on refresh. Revocation is also checked before a new call; already-dispatched work can continue. Unknown effects use the write channel, and service write policy applies to that whole category.
+- Protocol and example-service checks do not establish compatibility or native acceptance for a particular engineering application. Validate each app's state continuity, policy, media/results and failure behavior before integration.
+
+## API
+
+| MCP tool | Purpose |
+| --- | --- |
+| `broker_status` | Inspect broker availability and catalog state. |
+| `list_services` | List registered app services and their discovery status. |
+| `refresh_services` | Reload registrations and query app tool definitions. |
+| `search_tools` | Search namespaced app tool IDs and descriptions. |
+| `describe_tool` | Retrieve a tool definition, policy and catalog revision. |
+| `call_read_tool` | Invoke an allowed read operation with the described revision. |
+| `call_write_tool` | Invoke an enabled write operation with a unique request ID. |
+| `get_request_status` | Inspect a persisted write claim after a lost response. |
+
+The CLI entry point is `universal-tools`, also available as `python -m universal_tools`. For example:
+
+```powershell
+.\.local\runtime\Scripts\python.exe -m universal_tools --help
+.\.local\runtime\Scripts\python.exe -m universal_tools --state .\.local status
+```
+
+See [APP_CONTRACT.md](APP_CONTRACT.md) for downstream service contracts and [VERIFICATION.md](VERIFICATION.md) for reproducible development and packaging checks. The Python implementation has no separately documented stable library API.
+
+## Maintainers
+
+[@votecoffee](https://github.com/votecoffee)
+
+## Contributing
+
+Questions and bug reports belong in [GitHub issues](https://github.com/votecoffee/CodexMCPBroker/issues). Pull requests are welcome. Follow [CONTRIBUTING.md](CONTRIBUTING.md) for development checks, public documentation rules and release packaging.
+
+## License
+
+[MIT](LICENSE) © 2026 votecoffee.

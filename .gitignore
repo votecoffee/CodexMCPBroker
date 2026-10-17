@@ -1,0 +1,11 @@
+.venv/
+# Local runtime, credentials, private notes and installation-specific evidence.
+.local/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+plugins/universal-tools/runtime.json

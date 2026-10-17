@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "universal-codex-tools"
+version = "0.1.1"
+description = "Local MCP service discovery and routing for one reusable Codex plugin"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.11"
+dependencies = ["mcp==1.30.0", "jsonschema==4.26.0"]
+
+[project.urls]
+Repository = "https://github.com/votecoffee/CodexMCPBroker"
+Issues = "https://github.com/votecoffee/CodexMCPBroker/issues"
+
+[project.optional-dependencies]
+dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "ruff==0.17.1", "build==1.6.1"]
+
+[project.scripts]
+universal-tools = "universal_tools.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [".local"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
