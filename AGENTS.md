@@ -6,3 +6,4 @@
 - Preserve app-owned authorization, revisions and ambiguous-outcome handling. Use isolated synthetic fixtures for routine checks. Do not connect to native projects/devices or migrate registrations without task authorization.
 - Follow `VERIFICATION.md` for checks appropriate to the change. Regenerate the source manifest after distributed-file changes and verify Git/exported bytes as well as the working tree.
 - Commit coherent verified increments. Do not push unless the user explicitly authorizes it.
+- Continue development on `main` unless the user requests another branch or isolation.

@@ -19,8 +19,8 @@
     },
     {
       "path": "AGENTS.md",
-      "size": 1177,
-      "sha256": "5f5814145a4949b6d67126d96f3cd772cd374b6fe53f8d74bfe8a771108203a3"
+      "size": 1264,
+      "sha256": "5e88fcf3ed3ef19264280879a44b4dbae00a56d25cb4c3d5bba95c826978f5d3"
     },
     {
       "path": "APP_CONTRACT.md",
@@ -84,8 +84,8 @@
     },
     {
       "path": "README.md",
-      "size": 12155,
-      "sha256": "5422f2db8c859a080d850213aba0d7111eaea70ad217d4ca35ddf021484b002b"
+      "size": 12640,
+      "sha256": "5bf8fb67c26fe031486ec29e15c33ce6d786a8d0fe44f44a737355740a464a40"
     },
     {
       "path": "requirements-dev-lock.txt",
