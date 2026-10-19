@@ -15,8 +15,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 MAX_MANIFEST_BYTES = 256 * 1024
 DEFAULT_ARGUMENT_BYTES = 256 * 1024
-MAX_ARGUMENT_BYTES = 8 * 1024 * 1024
+MAX_ARGUMENT_BYTES = 64 * 1024 * 1024
 MAX_REQUEST_BYTES = 10 * 1024 * 1024
+MAX_REQUEST_BODY_BYTES = 128 * 1024 * 1024
 ID_PATTERN = r"^[a-z][a-z0-9_-]{0,63}$"
 TOOL_NAME_PATTERN = r"^[A-Za-z0-9_.-]{1,128}$"
 
@@ -182,6 +183,7 @@ class Settings(StrictModel):
     host: Literal["127.0.0.1"] = "127.0.0.1"
     port: int = Field(default=8768, ge=1024, le=65535)
     token: str = Field(pattern=r"^[A-Za-z0-9_-]{32,128}$")
+    max_request_body_bytes: int = Field(default=MAX_REQUEST_BYTES, ge=1, le=MAX_REQUEST_BODY_BYTES)
 
     @property
     def url(self) -> str:

@@ -19,7 +19,6 @@ from test_integration import stack as stack
 from universal_tools.cli import process_options
 from universal_tools.models import (
     DEFAULT_ARGUMENT_BYTES,
-    MAX_ARGUMENT_BYTES,
     MAX_REQUEST_BYTES,
     atomic_json,
 )
@@ -217,19 +216,20 @@ async def test_large_payloads_results_unicode_and_64_bit_integers_survive(
         assert type(data(forwarded)["unsigned"]) is int
 
 
-async def test_maximum_argument_budget_accepts_exact_limit_and_rejects_one_more_byte(
+async def test_eight_mib_argument_budget_accepts_exact_limit_and_rejects_one_more_byte(
     stack, tmp_path
 ):
     async with (
-        payload_app(stack, tmp_path, "stdio", limit=MAX_ARGUMENT_BYTES),
+        payload_app(stack, tmp_path, "stdio", limit=8 * 1024 * 1024),
         frontends(stack[0], None) as (owner,),
     ):
         context = data(await owner.invoke("acquire_service", {"service_id": "payload"}))[
             "context_id"
         ]
         # Twenty-three bytes for the nested argument envelope, plus the ASCII value.
-        arguments = {"payload": {"text": "x" * (MAX_ARGUMENT_BYTES - 23)}}
-        assert len(json.dumps(arguments, separators=(",", ":")).encode()) == MAX_ARGUMENT_BYTES
+        limit = 8 * 1024 * 1024
+        arguments = {"payload": {"text": "x" * (limit - 23)}}
+        assert len(json.dumps(arguments, separators=(",", ":")).encode()) == limit
         assert data(await invoke(owner, "roundtrip", arguments, context)) == arguments["payload"]
         arguments["payload"]["text"] += "x"
         too_large = await invoke(owner, "roundtrip", arguments, context)

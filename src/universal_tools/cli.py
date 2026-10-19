@@ -60,6 +60,21 @@ def register(state: Path, manifest_path: Path, replace: bool = False) -> str:
     return manifest.id
 
 
+def configure_request_limit(state: Path, maximum_bytes: int) -> dict:
+    # Coordinate both ordinary startup and direct `serve` without probing or
+    # stopping a running broker. This command never touches app registrations.
+    with InstanceLock(state / "startup.lock"), InstanceLock(state / "broker.lock"):
+        settings = load_settings(state)
+        replacement = Settings.model_validate(
+            {**settings.model_dump(mode="json"), "max_request_body_bytes": maximum_bytes}
+        )
+        atomic_json(state / "settings.json", replacement.model_dump(mode="json"))
+    return {
+        "max_request_body_bytes": replacement.max_request_body_bytes,
+        "next": "start the broker; per-service argument budgets and app limits still apply",
+    }
+
+
 def probe(settings: Settings) -> dict | None:
     try:
         with httpx.Client(timeout=1, trust_env=False, follow_redirects=False) as client:
@@ -287,6 +302,10 @@ def main(argv: list[str] | None = None):
     commands = parser.add_subparsers(dest="command", required=True)
     initialize_parser = commands.add_parser("init", help="create private local broker settings")
     initialize_parser.add_argument("--port", type=int, default=8768)
+    request_limit = commands.add_parser(
+        "configure-request-limit", help="set the HTTP body limit while the broker is stopped"
+    )
+    request_limit.add_argument("--bytes", type=int, required=True)
     for name in [
         "start",
         "serve",
@@ -324,6 +343,8 @@ def main(argv: list[str] | None = None):
             case "init":
                 settings = initialize(state, args.port)
                 result = {"state": str(state), "url": settings.url, "version": __version__}
+            case "configure-request-limit":
+                result = configure_request_limit(state, args.bytes)
             case "start" | "start-demo":
                 result = ensure_running(state, demo=args.command == "start-demo")
             case "serve":

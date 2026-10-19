@@ -101,9 +101,11 @@ class ProtectedApp:
 
 
 def serve(state: Path) -> None:
-    settings = load_settings(state)
     with InstanceLock(state / "broker.lock"):
-        broker = Broker(state)
+        # Read only after taking the same lock used by stopped-broker settings
+        # updates, so a concurrent start cannot retain an obsolete limit.
+        settings = load_settings(state)
+        broker = Broker(state, max_request_body_bytes=settings.max_request_body_bytes)
         mcp = create_surface(LocalBackend(broker), port=settings.port)
         base_app = mcp.streamable_http_app()
 

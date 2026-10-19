@@ -120,8 +120,9 @@ class Lease:
 
 
 class Broker:
-    def __init__(self, state: Path):
+    def __init__(self, state: Path, *, max_request_body_bytes: int = MAX_REQUEST_BYTES):
         self.state = state
+        self.max_request_body_bytes = max_request_body_bytes
         self.registry = state / "services"
         self.registry.mkdir(parents=True, exist_ok=True)
         self.journal = WriteJournal(state / "writes.sqlite3")
@@ -496,7 +497,7 @@ class Broker:
                 },
                 "limits": {
                     "max_argument_bytes": manifest.max_argument_bytes,
-                    "max_request_body_bytes": MAX_REQUEST_BYTES,
+                    "max_request_body_bytes": self.max_request_body_bytes,
                     "timeout_seconds": manifest.timeout_seconds,
                 },
                 "generation": self.generation,

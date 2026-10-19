@@ -185,7 +185,7 @@
     },
     "max_argument_bytes": {
       "default": 262144,
-      "maximum": 8388608,
+      "maximum": 67108864,
       "minimum": 1,
       "title": "Max Argument Bytes",
       "type": "integer"

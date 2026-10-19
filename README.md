@@ -6,9 +6,11 @@ Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.10.3**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.11.0**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
+
+The [beta completion plan](ROADMAP.md) separates the implemented broker foundation from remaining adapter/host acceptance and later native migration pilots. Parallel private contexts and full app/host payload parity are not currently promised.
 
 ## Table of Contents
 
@@ -134,7 +136,15 @@ Broker 0.7 adds optional local registration fields for selected writes and large
 
 This is a descriptor fragment, not a registration command. `allowed_write_tools` contains exact, case-sensitive outer MCP tool names without the service prefix. It applies only when `allow_writes` is true. An empty list disables all writes; omission or `null` preserves the existing service-wide write flag. A newly advertised write-capable tool stays blocked unless named in a configured list. This does not change read/write classification or filter operations inside an extension wrapper; apps must enforce their inner operation policy.
 
-`max_argument_bytes` defaults to 262,144 and accepts 1–8,388,608 bytes. It measures the entire argument object encoded as compact UTF-8 JSON, including base64 and JSON escaping. The broker HTTP envelope has a separate 10 MiB cap. `describe_tool` reports the argument limit; `describe_service` reports policy and limits. A larger registration budget does not enlarge the app's or host's limits. The broker forwards one app invocation without splitting, truncating or replaying it.
+`max_argument_bytes` defaults to 262,144 and accepts 1–67,108,864 bytes (64 MiB). It measures the entire argument object encoded as compact UTF-8 JSON, including base64 and JSON escaping. The broker HTTP envelope has an independent 10 MiB default limit. `describe_tool` reports the argument limit; `describe_service` reports policy and actual limits. A larger registration budget does not enlarge the app's or host's limits. The broker forwards one app invocation without splitting, truncating or replaying it.
+
+For an assessed bulk workflow, finish active work and stop the broker before changing its HTTP body limit. This local administrative command accepts 1–134,217,728 bytes (128 MiB), preserves other settings and refuses a running broker or concurrent startup:
+
+```powershell
+.\scripts\Broker.ps1 configure-request-limit -Bytes 134217728
+```
+
+Then start the broker and explicitly set `max_argument_bytes` in only the reviewed service registration, up to 67,108,864. Both opt-ins may be needed: a service budget does not override the HTTP envelope, and a larger HTTP allowance does not override a smaller service budget. HTTP whitespace and ASCII-escaped Unicode can make the incoming body larger than the compact UTF-8 argument measurement. Existing settings keep the 10 MiB HTTP default; setup preserves an explicitly configured limit. Messages remain whole in-memory JSON requests, so larger limits increase memory and processing costs. Use app-owned file routes when appropriate; do not split reviewed batches to bypass a limit.
 
 Changing either setting changes catalog revisions and can retire a retained session. Finish/reconcile its work before local reconfiguration. See the [migration assessment guide](MIGRATION.md) for scoped compatibility checks while retaining direct integrations.
 
@@ -215,7 +225,7 @@ Write claims are stored in SQLite before dispatch. Reusing a claimed ID never di
 - Tool routing, request-bound form elicitation and opt-in progress are supported. Downstream resources, prompts, OAuth linking, sampling, URL elicitation, tasks, general notifications and app UI routing are not implemented. `describe_service` exposes initialization metadata and explicit `elicitation_form`/`elicitation_url`/`progress` support flags; advertised app capabilities do not enable other relays. App skills are not automatically installed or distributed.
 - Form relay accepts flat primitive fields and enum arrays, with no schema references. Budgets are 32 KiB per request, 16 KiB per response, one outstanding form and eight forms per tool call. Each form has a 60-second relay deadline, while the app's shorter operation deadline continues running. A late answer cannot revive an expired call. Background/session-wide and task-augmented elicitation are unsupported.
 - Inner capability search requires an opt-in normalized provider; arbitrary app catalogs are not parsed automatically. Catalog hints are bounded to 512 KiB and 1,000 entries, are not executable routes, and do not replace app-specific discovery or approval. Broker refresh does not reload app extensions or distribute app skills.
-- Budgets include 128 KiB initialization metadata, 128 KiB schemas, argument objects defaulting to 256 KiB with an explicit per-service maximum of 8 MiB, and 10 MiB incoming broker requests. Oversized initialization metadata is rejected without truncating instructions. App and host limits remain independent. App timeouts default to 20 seconds and allow 0.2–300 seconds; queue wait happens before that deadline. Client disconnect or timeout can leave queued or running work whose outcome needs inspection.
+- Budgets include 128 KiB initialization metadata, 128 KiB schemas and argument objects defaulting to 256 KiB with an explicit per-service maximum of 64 MiB. Incoming broker requests default to 10 MiB, with an independent stopped-broker configuration ceiling of 128 MiB. Oversized initialization metadata is rejected without truncating instructions. App and host limits remain independent. App timeouts default to 20 seconds and allow 0.2–300 seconds; queue wait happens before that deadline. Client disconnect or timeout can leave queued or running work whose outcome needs inspection.
 - Removed or invalid registrations lose routes on refresh. Revocation is also checked before a new call; already-dispatched work can continue. Unknown effects use the write channel, and service write policy applies to that whole category.
 - Protocol and example-service checks do not establish compatibility or native acceptance for a particular engineering application. Validate each app's state continuity, policy, media/results and failure behavior before integration.
 

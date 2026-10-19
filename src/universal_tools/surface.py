@@ -15,7 +15,7 @@ from . import __version__
 from .broker import Broker
 from .elicitation import ElicitationTarget, routed_call
 from .identity import client_identity
-from .models import MAX_REQUEST_BYTES, BrokerError, Settings
+from .models import BrokerError, Settings
 from .sessions import SessionPool
 from .transport import http_session
 
@@ -180,7 +180,11 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
         json_response=False,
         session_idle_timeout=900,
         max_sessions=256,
-        max_request_body_size=MAX_REQUEST_BYTES,
+        max_request_body_size=(
+            backend.broker.max_request_body_bytes
+            if isinstance(backend, LocalBackend)
+            else backend.settings.max_request_body_bytes
+        ),
         log_level="WARNING",
         # Only the stdio frontend owns a pool. Broker/app cleanup belongs to
         # the daemon lifespan, independently of frontend MCP sessions.
