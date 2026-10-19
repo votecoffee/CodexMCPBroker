@@ -148,6 +148,8 @@ Mode selection is an administrative registration decision. Existing registration
 
 Shared mode removes repeated adapter startup for an independently running app service. It requires an app-owner review: targets, jobs, review tokens and authorization must be explicit and safe to share. Process-local current selections, private review plans or per-chat credentials are incompatible with this mode. The broker does not forward a chat identity to the app or supply per-job privacy. See [app-shared.service.json](examples/app-shared.service.json) and the [shared session contract](APP_CONTRACT.md#retained-shared-adapters).
 
+Use the [adapter session assessment](docs/adapter-assessment.md) to trace captured reads, pending plans, jobs and shutdown effects before choosing a mode. A plan ID or durable job record does not establish that its live state survives a fresh adapter. The worksheet includes fake-backed approval, ownership and lost-reply checks; host and native acceptance remain separate gates.
+
 Shared calls remain serialized and recheck tool definitions and registration policy. Successful calls renew the idle deadline. Clean idle expiry, reconfiguration and shutdown close the adapter; a later explicit call can open a new one. A timeout, cancellation, transport failure or crash keeps a durable recovery barrier for every frontend. There is no automatic reconnect or replay after loss. `service_session_status` reports shared health without returning a context handle; acquire/release tools apply only to exclusive mode. Forms and progress return only to the initiating call. Capability hints remain shared catalog data, and service descriptions retain the installation-level initialization snapshot.
 
 ### Own a stateful workflow

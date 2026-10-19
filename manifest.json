@@ -33,6 +33,11 @@
       "sha256": "f5491007549cbbb041bb3dda004287fa16b63321a74939a65e017f26b2b433d5"
     },
     {
+      "path": "docs/adapter-assessment.md",
+      "size": 7510,
+      "sha256": "f6ea86ab81839e4434c75752aa5201332c246becad42a20a06fece8d6e8d9e15"
+    },
+    {
       "path": "docs/capability-catalog.md",
       "size": 6958,
       "sha256": "670c9e5e4350f68eb38a722fad99ae3270e9393a8ca41bb9584e8e4f7740fa8f"
@@ -114,8 +119,8 @@
     },
     {
       "path": "MIGRATION.md",
-      "size": 8907,
-      "sha256": "71c83d2879a41208f9e3cceabef0157f4e4ccea70af2cf1b0c8e04189bb2d4d1"
+      "size": 9228,
+      "sha256": "8aa33f957b449d10d8cd1939765f71ce979505c478ba9211a4758332a0b74df0"
     },
     {
       "path": "plugins/universal-tools/assets/icon-128.png",
@@ -189,8 +194,8 @@
     },
     {
       "path": "README.md",
-      "size": 25827,
-      "sha256": "9735166f2991c62571491208787f6343f1e4e4b40ced61d570c46d1710ada01c"
+      "size": 26208,
+      "sha256": "af2544a40982fdb0fdcceba22539aec9effed32e79052039864b35a3d01c494a"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -464,8 +469,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 15627,
-      "sha256": "aa25c7d9a9cbaab34ec64b08d506df59ee772379e2777697022cb62260241844"
+      "size": 16236,
+      "sha256": "ccc6d1fd189db69727b4e4a11476c2399475f1b92369f24c3faa6c4cf1e3b2e9"
     }
   ]
 }
