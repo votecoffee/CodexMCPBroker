@@ -84,8 +84,8 @@
     },
     {
       "path": "interop/requirements-mcp2-lock.txt",
-      "size": 765,
-      "sha256": "3a7564f8d8269ea8727f51832069d4b9ae7a23d9d84add7b6e34eeab14aa7776"
+      "size": 728,
+      "sha256": "f2f4e1d45c018dc6235da0092cdf8fa4f9d5dd719151f157ec11e66617a564b8"
     },
     {
       "path": "interop/sdk2_app.py",
