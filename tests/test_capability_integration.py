@@ -21,19 +21,24 @@ from universal_tools.surface import RemoteBackend
 
 
 @asynccontextmanager
-async def capability_app(stack, tmp_path, transport="stdio", timeout=3.0):
+async def capability_app(stack, tmp_path, transport="stdio", timeout=20.0):
     state, settings, _ = stack
     path = state / "services/cap-index.json"
     fixture = Path(__file__).parent / "fixtures/capability_mcp.py"
+    audit = tmp_path / "catalog-calls.jsonl"
     child, log = None, None
     assert not path.exists()
     try:
-        connection = {"type": "stdio", "command": sys.executable, "args": [str(fixture)]}
+        connection = {
+            "type": "stdio",
+            "command": sys.executable,
+            "args": [str(fixture), "--audit", str(audit)],
+        }
         if transport == "http":
             port = free_port()
             log = (tmp_path / "catalog-app.log").open("wb")
             child = subprocess.Popen(
-                [sys.executable, str(fixture), "--port", str(port)],
+                [sys.executable, str(fixture), "--port", str(port), "--audit", str(audit)],
                 stdin=subprocess.DEVNULL,
                 stdout=log,
                 stderr=log,
@@ -71,7 +76,7 @@ async def capability_app(stack, tmp_path, transport="stdio", timeout=3.0):
                 assert (
                     status["status"] == "available" and status["capability_catalog"]["count"] == 1
                 )
-                yield
+                yield audit
             finally:
                 path.unlink()
                 data(await admin.invoke("refresh_services", {}))
@@ -261,12 +266,25 @@ async def test_installing_an_opt_in_provider_only_requires_refresh_in_existing_f
             assert surface == (await owner.session.list_tools()).model_dump()
 
 
-async def test_provider_timeout_cannot_leave_searchable_owned_hints(stack, tmp_path):
-    async with capability_app(stack, tmp_path, timeout=2.0), frontends(stack[0], None) as (owner,):
+@pytest.mark.parametrize("transport,timeout,delay", [("stdio", 15.0, 30.0), ("http", 2.0, 10.0)])
+async def test_provider_timeout_cannot_leave_searchable_owned_hints(
+    stack, tmp_path, transport, timeout, delay
+):
+    async with (
+        capability_app(stack, tmp_path, transport=transport, timeout=timeout) as audit,
+        frontends(stack[0], None) as (owner,),
+    ):
         context = await acquire(owner)
         data(await refresh(owner, context))
-        data(await call(owner, "reload_fixture", {"wait": 10.0}, context, "catalog-stall-001"))
+        data(
+            await call(
+                owner, "reload_fixture", {"wait": delay}, context, "catalog-stall-" + transport
+            )
+        )
+        before = len(audit.read_text(encoding="utf-8").splitlines())
         assert (await refresh(owner, context)).isError
+        observed = [json.loads(line) for line in audit.read_text(encoding="utf-8").splitlines()]
+        assert len(observed) == before + 1 and observed[-1]["delay"] == delay
         assert not await matches(owner)
         status = data(await owner.invoke("service_session_status", {"service_id": "cap-index"}))
         assert status["recovery_required"]

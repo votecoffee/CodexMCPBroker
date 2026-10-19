@@ -279,8 +279,8 @@
     },
     {
       "path": "tests/fixtures/capability_mcp.py",
-      "size": 3260,
-      "sha256": "9e15eb67cf62e8ed24333c0a8bc7b55e49faacc2da403baafbd290afe4b22e33"
+      "size": 3518,
+      "sha256": "aaca8f4fbfd94ded986d475b65942b46eb02525388b9dc43dd1fec7b42db7fe9"
     },
     {
       "path": "tests/fixtures/job_mcp.py",
@@ -309,8 +309,8 @@
     },
     {
       "path": "tests/test_capability_integration.py",
-      "size": 11969,
-      "sha256": "4fca2bd76709f7842ae5d1c1144843682c8d5c4cca1fd86f210794b209d63b46"
+      "size": 12610,
+      "sha256": "445ae86471ba2e82ed967cf85a762f5a0e3299e3efdc129c20cfe513bd6ef210"
     },
     {
       "path": "tests/test_core.py",
@@ -389,8 +389,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 12488,
-      "sha256": "ecd65fc1bb63492b2170be03a538908f0af4cb058a31bfa595f3a7610a23e65e"
+      "size": 12910,
+      "sha256": "221295129ab2fdda0725f8558be56ce803776daa8b3da878c2c3fbd64119e6eb"
     }
   ]
 }

@@ -44,6 +44,8 @@ Use [MIGRATION.md](MIGRATION.md) to select a non-migrating compatibility review 
 
 Inner catalog checks use opt-in synthetic providers with versioned, bounded metadata. They cover explicit read-only declarations, schema/reference checks, malformed/duplicate catalogs, detached snapshots, stale revisions, registration revocation, changed discovery definitions and private owner visibility through expiry and transport loss. Real stdio frontends and stdio/HTTP apps verify install/refresh without frontend definition changes, inner feature additions without changing outer tool revisions, native rejection of stale app revisions, global refresh without owner probing, invalid metadata without native context loss, and zero host prompts or fixture commits from metadata confirmation attempts. They do not establish that an existing app's native catalog implements the new normalized format.
 
+Provider deadline cases cover both stdio and a prestarted HTTP fixture. They record entry into the delayed provider before checking that its timeout evicts owned search hints and retains the recovery barrier. The stdio case allows cold process initialization; the HTTP case keeps a short operation budget after server startup. Thus an initialization failure cannot substitute for the intended in-flight provider timeout.
+
 ## Cross-SDK profile
 
 The optional `interop/` profile uses the broker's locked MCP 1.30 client and a separate MCP 2.3 server environment. It is outside the default `tests/` collection so ordinary development does not install a second SDK or silently skip matrix checks. Invoke it explicitly from the repository root:

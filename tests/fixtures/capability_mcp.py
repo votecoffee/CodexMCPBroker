@@ -2,13 +2,16 @@
 
 import argparse
 import asyncio
+import json
 import secrets
+from pathlib import Path
 
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import ToolAnnotations
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int)
+parser.add_argument("--audit", type=Path)
 options = parser.parse_args()
 server = FastMCP(
     "Synthetic capability app",
@@ -36,6 +39,9 @@ def revision(ctx):
 async def catalog(ctx: Context) -> dict:
     global catalog_calls
     catalog_calls += 1
+    if options.audit:
+        with options.audit.open("a", encoding="utf-8") as audit:
+            audit.write(json.dumps({"catalog_call": catalog_calls, "delay": delay}) + "\n")
     await asyncio.sleep(delay)
     if confirmation:
         await ctx.session.elicit_form(
