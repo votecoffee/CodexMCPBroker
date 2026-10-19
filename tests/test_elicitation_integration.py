@@ -168,9 +168,11 @@ async def test_second_form_requires_its_own_answer_instead_of_reusing_an_approva
         assert data(await remote_call(owner, "confirmation_state", {}, context))["commits"] == 0
 
 
-async def test_app_deadline_cannot_be_overridden_by_a_late_acceptance(stack, tmp_path):
+@pytest.mark.parametrize("mode", ["exclusive", "shared"])
+async def test_app_deadline_cannot_be_overridden_by_a_late_acceptance(stack, tmp_path, mode):
     prompt, gate = asyncio.Event(), asyncio.Event()
     audit = tmp_path / "fixture-commits.jsonl"
+    request_id = "confirm-timeout-" + mode
 
     async def late_answer(_, params):
         prompt.set()
@@ -178,16 +180,17 @@ async def test_app_deadline_cannot_be_overridden_by_a_late_acceptance(stack, tmp
         return ElicitResult(action="accept", content={"approved": True})
 
     async with (
-        exclusive_app(stack, timeout=5, audit_path=audit),
+        exclusive_app(stack, timeout=5, audit_path=audit, session_mode=mode),
         frontends(stack[0], late_answer) as (owner,),
     ):
-        context = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))[
-            "context_id"
-        ]
+        context = (
+            data(await owner.invoke("acquire_service", {"service_id": "stateful"}))["context_id"]
+            if mode == "exclusive"
+            else None
+        )
+        data(await remote_call(owner, "confirmation_state", {}, context))
         pending = asyncio.create_task(
-            remote_call(
-                owner, "confirm", {"candidate": "late"}, context, request_id="confirm-timeout-001"
-            )
+            remote_call(owner, "confirm", {"candidate": "late"}, context, request_id=request_id)
         )
         try:
             await asyncio.wait_for(prompt.wait(), 3)
@@ -199,7 +202,7 @@ async def test_app_deadline_cannot_be_overridden_by_a_late_acceptance(stack, tmp
                         data(
                             await observer.invoke(
                                 "get_request_status",
-                                {"request_id": "confirm-timeout-001"},
+                                {"request_id": request_id},
                             )
                         )["status"]
                         != "uncertain"
@@ -208,9 +211,7 @@ async def test_app_deadline_cannot_be_overridden_by_a_late_acceptance(stack, tmp
             gate.set()
             assert (await asyncio.wait_for(pending, 12)).isError
             assert not audit.exists()
-            status = data(
-                await owner.invoke("get_request_status", {"request_id": "confirm-timeout-001"})
-            )
+            status = data(await owner.invoke("get_request_status", {"request_id": request_id}))
             assert status["status"] == "uncertain"
             info = data(await owner.invoke("service_session_status", {"service_id": "stateful"}))
             assert info["recovery_required"]
@@ -380,7 +381,7 @@ def http_confirmation_app(tmp_path, request):
             process.wait(timeout=10)
 
 
-@pytest.mark.parametrize("mode", ["transient", "exclusive"])
+@pytest.mark.parametrize("mode", ["transient", "exclusive", "shared"])
 async def test_confirmation_through_an_http_app_preserves_response_and_separate_identity(
     stack, http_confirmation_app, mode
 ):

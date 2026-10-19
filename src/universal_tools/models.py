@@ -140,7 +140,7 @@ class ServiceManifest(StrictModel):
     read_only_tools: list[str] = Field(default_factory=list)
     max_argument_bytes: int = Field(default=DEFAULT_ARGUMENT_BYTES, ge=1, le=MAX_ARGUMENT_BYTES)
     timeout_seconds: float = Field(default=20.0, ge=0.2, le=300.0)
-    session_mode: Literal["transient", "exclusive"] = "transient"
+    session_mode: Literal["transient", "exclusive", "shared"] = "transient"
     lease_seconds: float = Field(default=900.0, ge=5.0, le=86400.0)
     resource_id: str | None = Field(default=None, pattern=ID_PATTERN)
     capability_catalog: CapabilityProvider | None = None

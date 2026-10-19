@@ -117,7 +117,7 @@ async def test_restart_blocks_even_metadata_and_never_expires_the_lost_reservati
         await clean.aclose()
 
 
-@pytest.mark.parametrize("mode", ["transient", "exclusive"])
+@pytest.mark.parametrize("mode", ["transient", "exclusive", "shared"])
 async def test_registry_changes_cannot_bypass_an_unresolved_service(stateful, mode):
     broker, sessions = stateful
     old = manifest(resource_id="native-engine")

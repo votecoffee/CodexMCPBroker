@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.9.3",
+  "version": "0.10.0",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -24,8 +24,8 @@
     },
     {
       "path": "APP_CONTRACT.md",
-      "size": 30832,
-      "sha256": "c4c561e677a6a69cb662f25deb221be631df29b8ce9b160061e4d32459e06913"
+      "size": 34640,
+      "sha256": "77550b262f4a829c686eaaa6941dd8e62a837d074dbf482810b7a26ebb5abd6d"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -53,6 +53,11 @@
       "sha256": "d3754943110af78bb4239208fa509b4ac5f26f09a300db0c9f49d5ee7d7c7ec1"
     },
     {
+      "path": "examples/app-shared.service.json",
+      "size": 536,
+      "sha256": "454e0a910d3cb6420ed5c1eb1cf9f49f0a33050e9edc97ccd66d9137664d1434"
+    },
+    {
       "path": "examples/app-stdio.service.json",
       "size": 437,
       "sha256": "f55ef641fac6bea00d27a67f92f944ca1f39c18f105d19c293a500be8badd975"
@@ -69,8 +74,8 @@
     },
     {
       "path": "examples/service.schema.json",
-      "size": 5146,
-      "sha256": "72b29decf7adbda56456d5ceb561eee31f8fedb0b3758bec01bdc2bc91436265"
+      "size": 5164,
+      "sha256": "34471e7cb9bf2b25fa844a8be6e08f84de81ac344355384648a5c2d969345c77"
     },
     {
       "path": "interop/conftest.py",
@@ -104,8 +109,8 @@
     },
     {
       "path": "MIGRATION.md",
-      "size": 8174,
-      "sha256": "78b29f92c05910a6db994381f5790ccfaafcb7b3f6dc895a991dd0487de01309"
+      "size": 8907,
+      "sha256": "71c83d2879a41208f9e3cceabef0157f4e4ccea70af2cf1b0c8e04189bb2d4d1"
     },
     {
       "path": "plugins/universal-tools/mcp.json",
@@ -114,8 +119,8 @@
     },
     {
       "path": "plugins/universal-tools/plugin.json",
-      "size": 477,
-      "sha256": "e60d2dce1c5dad031a8950a28735b1b6d415191a9446f00374ba040cc71fa57f"
+      "size": 478,
+      "sha256": "a2fa82864daf9d26072d5c8835052da32a01ad504bf0c137029de5612418d8ad"
     },
     {
       "path": "plugins/universal-tools/server/launch.py",
@@ -129,13 +134,13 @@
     },
     {
       "path": "pyproject.toml",
-      "size": 953,
-      "sha256": "6fab52b05589659afb1eb6fc1bd65e00a43079502c3015329c1af131e39f580c"
+      "size": 954,
+      "sha256": "effc57319b9eb7b322315ba87a46720e78f77871d5cbfc31bc450c23a1197dfe"
     },
     {
       "path": "README.md",
-      "size": 22187,
-      "sha256": "923442000b1a13fa43e57e54ba5276fb8b17aba8d700f7e90c2c7cd1aac60c9b"
+      "size": 24325,
+      "sha256": "94bb8d002edc795b1964ea838427f8779415f9b4bf7c4514b4d3b07565b4c24e"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -189,8 +194,8 @@
     },
     {
       "path": "src/universal_tools/__init__.py",
-      "size": 98,
-      "sha256": "c0011e5e4e8932b73c8e06c126453266602cc0aa2e5cc471aeddb649e90a33d1"
+      "size": 99,
+      "sha256": "f4bdc96e3cafbab895f0a192b614bc30b3a1003dccb1892e7c9f41d9d58caa08"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -199,8 +204,8 @@
     },
     {
       "path": "src/universal_tools/broker.py",
-      "size": 39474,
-      "sha256": "ae5797d242441d704cb3b8c4c07ca1765078661fadcea6ce9abdcf20b4d03588"
+      "size": 42392,
+      "sha256": "6fa90ccb519090e0ab7cfec96d357d63d7a9995b1aeeedafe9844a5200b14698"
     },
     {
       "path": "src/universal_tools/capabilities.py",
@@ -244,8 +249,8 @@
     },
     {
       "path": "src/universal_tools/models.py",
-      "size": 7266,
-      "sha256": "bff946bdda55ea7b776007e1807f40debfa37006e1ca8de3f55edf953f695607"
+      "size": 7276,
+      "sha256": "ad44a3c996df9235445ddaa27436d766badb7b872925264b3867ff867e3c1fbd"
     },
     {
       "path": "src/universal_tools/ownership.py",
@@ -269,8 +274,8 @@
     },
     {
       "path": "src/universal_tools/surface.py",
-      "size": 15497,
-      "sha256": "cb763e9fa51508fbb47dd6d5c57ccbbd99750c327d295570e191f73d4239c05a"
+      "size": 15933,
+      "sha256": "5cb276a39861a1a4a07227243afa7329a26cde08e655db794d7f23ff0ffbe4fe"
     },
     {
       "path": "src/universal_tools/transport.py",
@@ -324,18 +329,18 @@
     },
     {
       "path": "tests/test_elicitation_integration.py",
-      "size": 16596,
-      "sha256": "099cd993601228778f585bda11f3705fb97e6f77864d24d1227d939cc9908b9d"
+      "size": 16772,
+      "sha256": "583ecc73067e1f7428fec0a309ff45bfba015487877b10352343503e2b349305"
     },
     {
       "path": "tests/test_integration.py",
-      "size": 34895,
-      "sha256": "84dda52e63e130e30edaae687d61198128e5a812d8f74c8b6fea3fb75b71f3b4"
+      "size": 34928,
+      "sha256": "0f756672330cdf509de3d8bf3b9e03042c74109f681ecadc16eaab90bec34939"
     },
     {
       "path": "tests/test_jobs_integration.py",
-      "size": 15925,
-      "sha256": "7bc2b70b55a3aaba0d889ebf7ebe75ccd385d27482d6f6aaadd1d21a13e7e575"
+      "size": 18879,
+      "sha256": "03f218c94609634a3943d183301770f83f11d706d3065259c54e5c33bb06c944"
     },
     {
       "path": "tests/test_metadata.py",
@@ -344,8 +349,8 @@
     },
     {
       "path": "tests/test_ownership.py",
-      "size": 8581,
-      "sha256": "4442703e2a4b2c56481c5b35ddad6e0baee9130976129bdd69b44c32e7f26436"
+      "size": 8591,
+      "sha256": "c7eeab0de01146c27e310cf652f538a623d93c80708d2fc7c2ed0756d055fe23"
     },
     {
       "path": "tests/test_packaging.py",
@@ -374,8 +379,8 @@
     },
     {
       "path": "tests/test_progress_integration.py",
-      "size": 12088,
-      "sha256": "c558aa549b4589ab274c6e4c891ed704ff23a627fecf0de778e2647bea4fe4e6"
+      "size": 12098,
+      "sha256": "2c04ec85d16e92d433cea387a87a5026d45ad8396bee7ff31bdef347fd3c230d"
     },
     {
       "path": "tests/test_renewal.py",
@@ -388,9 +393,19 @@
       "sha256": "6507f7c5480c1334e705bd60308999fab773400f7f347a7147f91d534415a722"
     },
     {
+      "path": "tests/test_shared.py",
+      "size": 15364,
+      "sha256": "48c88eab8fbe548c2a49dcf0cf371f0475df9bb0603f99aeb3821fcfcc9d3658"
+    },
+    {
+      "path": "tests/test_shared_integration.py",
+      "size": 2664,
+      "sha256": "07b104a95cd44ed47dece1a470f0c678a7debd121d85d7762053c3dd5fa8ee68"
+    },
+    {
       "path": "VERIFICATION.md",
-      "size": 12910,
-      "sha256": "221295129ab2fdda0725f8558be56ce803776daa8b3da878c2c3fbd64119e6eb"
+      "size": 13934,
+      "sha256": "e7112066a7e9259923c4bdd4b88201e43f477cec89283baddbc703aa717028cf"
     }
   ]
 }

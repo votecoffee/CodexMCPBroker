@@ -86,7 +86,7 @@ class CatalogTool:
 @dataclass
 class Lease:
     manifest: ServiceManifest
-    owner: str
+    owner: str | None
     context_id: str
     expires: float
     worker: SessionWorker
@@ -110,6 +110,8 @@ class Broker:
         self._metadata: dict[str, dict] = {}
         self._capabilities: dict[str, CapabilityState] = {}
         self._leases: dict[str, Lease] = {}
+        # Shared workers belong to this broker instance, never a frontend.
+        self._shared_owner = secrets.token_urlsafe(48)
         self._reaper: asyncio.Task | None = None
         self._closed = False
         self._clock = time.monotonic
@@ -209,7 +211,7 @@ class Broker:
                 continue
             if (
                 other.enabled
-                and "exclusive" in {manifest.session_mode, other.session_mode}
+                and (manifest.session_mode != "transient" or other.session_mode != "transient")
                 and manifest.resource_keys & other.resource_keys
             ):
                 return True
@@ -486,6 +488,7 @@ class Broker:
             lease = self._leases.get(service_id)
             if (
                 lease
+                and lease.manifest.session_mode == "exclusive"
                 and lease.owner == owner_id
                 and lease.worker.alive
                 and not lease.lost
@@ -509,6 +512,7 @@ class Broker:
         state = self._capabilities.get(manifest.id, CapabilityState())
         if (
             lease
+            and lease.manifest.session_mode == "exclusive"
             and lease.owner == owner_id
             and lease.worker.alive
             and not lease.lost
@@ -572,30 +576,36 @@ class Broker:
                 lease = await self._require_lease(service_id, context_id, self._owner(owner_id))
                 lease.capability_state = CapabilityState()
             elif context_id is not None:
-                raise BrokerError("transient services do not accept a context_id")
+                raise BrokerError("non-exclusive services do not accept a context_id")
             else:
                 self._capabilities.pop(service_id, None)
                 self.services[service_id]["capability_catalog"] = CapabilityState().status(
                     "catalog"
                 )
             try:
-                if lease:
-                    state = await lease.worker.execute(
-                        lambda session: read_catalog(session, manifest)
-                    )
-                else:
-                    async with asyncio.timeout(manifest.timeout_seconds):
-                        async with service_session(manifest) as session:
-                            state = await read_catalog(session, manifest)
+                # A lazy shared start and its probe share one invocation budget.
+                async with asyncio.timeout(
+                    manifest.timeout_seconds if manifest.session_mode == "shared" else None
+                ):
+                    if manifest.session_mode == "shared":
+                        lease = await self._shared_lease(manifest)
+                    if lease:
+                        state = await lease.worker.execute(
+                            lambda session: read_catalog(session, manifest)
+                        )
+                    else:
+                        async with asyncio.timeout(manifest.timeout_seconds):
+                            async with service_session(manifest) as session:
+                                state = await read_catalog(session, manifest)
                 self._registration_matches(manifest)
                 state = self._bound_capability_state(manifest, state)
-                if lease:
+                if lease and manifest.session_mode == "exclusive":
                     lease.capability_state = state
-                    if state.snapshot is not None:
-                        await self._renew(lease)
                 else:
                     self._capabilities[service_id] = state
                     self.services[service_id]["capability_catalog"] = state.status("catalog")
+                if lease and state.snapshot is not None:
+                    await self._renew(lease)
                 # Do not publish owner-specific status through list_services.
                 state, source = self._capability_state(manifest, owner_id)
                 return {"service_id": service_id, **state.status(source)}
@@ -646,7 +656,9 @@ class Broker:
             raise BrokerError("unknown or unavailable service; refresh_services")
         manifest = self._manifests[service_id]
         if manifest.session_mode != "exclusive":
-            raise BrokerError("service is transient; exclusive contexts are not enabled")
+            raise BrokerError(
+                f"service is {manifest.session_mode}; exclusive contexts are not enabled"
+            )
         return manifest
 
     @staticmethod
@@ -659,6 +671,41 @@ class Broker:
         if owner_id is None:
             raise BrokerError("service ownership requires an identified broker frontend")
         return owner_id
+
+    async def _open_lease(self, manifest: ServiceManifest, owner: str | None) -> Lease:
+        context_id = secrets.token_urlsafe(32)
+        # Commit the reservation before starting a potentially stateful process.
+        self.ownership.reserve(
+            manifest, owner if owner is not None else self._shared_owner, context_id
+        )
+        worker = SessionWorker(manifest, service_session)
+        lease = Lease(manifest, owner, context_id, 0, worker)
+        self._leases[manifest.id] = lease
+        try:
+            await worker.execute(list_all_tools)
+            self._registration_matches(manifest)
+        except BaseException as error:
+            lease.lost = True
+            self.ownership.lose(context_id, "initialization_failed")
+            await worker.close()
+            self._leases.pop(manifest.id, None)
+            if isinstance(error, asyncio.CancelledError):
+                raise
+            raise BrokerError(
+                "app session could not be acquired; operator recovery is required"
+            ) from None
+        await self._renew(lease)
+        return lease
+
+    async def _shared_lease(self, manifest: ServiceManifest) -> Lease:
+        # Caller holds the service lock. Only clean idle retirement may reopen;
+        # failure, cancellation and restart keep the durable recovery barrier.
+        await self._expire(manifest.id)
+        self._registration_matches(manifest)
+        lease = self._leases.get(manifest.id)
+        if lease is None:
+            lease = await self._open_lease(manifest, None)
+        return lease
 
     async def acquire_service(self, service_id: str, *, owner_id: str | None) -> dict:
         owner = self._owner(owner_id)
@@ -676,25 +723,8 @@ class Broker:
                 if lease.lost or not lease.worker.alive:
                     raise BrokerError("service context is lost; release_service before reacquiring")
             else:
-                context_id = secrets.token_urlsafe(32)
-                # Commit the reservation before starting a potentially stateful process.
-                self.ownership.reserve(manifest, owner, context_id)
-                worker = SessionWorker(manifest, service_session)
-                lease = Lease(manifest, owner, context_id, 0, worker)
-                self._leases[service_id] = lease
-                try:
-                    await worker.execute(list_all_tools)
-                    self._registration_matches(manifest)
-                except BaseException as error:
-                    lease.lost = True
-                    self.ownership.lose(context_id, "initialization_failed")
-                    await worker.close()
-                    self._leases.pop(service_id, None)
-                    if isinstance(error, asyncio.CancelledError):
-                        raise
-                    raise BrokerError(
-                        "app session could not be acquired; operator recovery is required"
-                    ) from None
+                await self._open_lease(manifest, owner)
+                return self._lease_info(service_id, owner)
             await self._renew(lease)
             return self._lease_info(service_id, owner)
 
@@ -708,6 +738,8 @@ class Broker:
                     info["context_id"] = record["context_id"]
                 return info
             return {"service_id": service_id, "state": "unowned"}
+        if lease.manifest.session_mode == "shared":
+            return self._shared_info(lease)
         if lease.owner != owner:
             return {"service_id": service_id, "state": "owned_by_another"}
         return {
@@ -722,6 +754,18 @@ class Broker:
             ),
             "expires_in_seconds": max(0, round(lease.expires - self._clock(), 3)),
             "recovery_required": lease.lost or not lease.worker.alive,
+        }
+
+    def _shared_info(self, lease: Lease) -> dict:
+        lost = lease.lost or not lease.worker.alive
+        return {
+            "service_id": lease.manifest.id,
+            "session_mode": "shared",
+            "state": "lost"
+            if lost
+            else ("shared_expired" if lease.expires <= self._clock() else "shared_active"),
+            "expires_in_seconds": max(0, round(lease.expires - self._clock(), 3)),
+            "recovery_required": lost,
         }
 
     async def service_session_status(self, service_id: str, *, owner_id: str | None) -> dict:
@@ -746,7 +790,12 @@ class Broker:
         if record and record["state"] == "lost":
             raise BrokerError("context is lost; operator recovery is required")
         lease = self._leases.get(service_id)
-        if not lease or lease.owner != owner or lease.context_id != context_id:
+        if (
+            not lease
+            or lease.manifest.session_mode != "exclusive"
+            or lease.owner != owner
+            or lease.context_id != context_id
+        ):
             raise BrokerError("context is missing, expired, or owned by another frontend")
         return lease
 
@@ -796,6 +845,14 @@ class Broker:
             raise BrokerError("arguments do not match the app's input schema") from None
 
         claimed = False
+        dispatch_closed = False
+
+        def close_dispatch():
+            nonlocal dispatch_closed
+            dispatch_closed = True
+            if relay is not None:
+                relay.close()
+
         async with self.lock(entry.manifest.id):
             if self._closed:
                 raise BrokerError("broker is closing")
@@ -810,7 +867,7 @@ class Broker:
                 if lease.lost or not lease.worker.alive:
                     raise BrokerError("service context is lost; release_service before reacquiring")
             elif context_id is not None:
-                raise BrokerError("transient services do not accept a context_id")
+                raise BrokerError("non-exclusive services do not accept a context_id")
 
             async def invoke(session):
                 nonlocal claimed
@@ -821,6 +878,8 @@ class Broker:
                 ):
                     raise BrokerError("app tool definition changed; refresh and describe again")
                 self._registration_unchanged(entry)
+                if dispatch_closed:
+                    raise BrokerError("app call ended before dispatch")
                 if write:
                     fingerprint = canonical_digest(
                         {"tool_id": tool_id, "revision": catalog_revision, "args": arguments}
@@ -837,15 +896,20 @@ class Broker:
                 return result
 
             try:
-                if lease:
-                    result = await lease.worker.execute(
-                        invoke, on_cancel=relay.close if relay is not None else None
-                    )
-                    await self._renew(lease)
-                    return result
-                async with asyncio.timeout(entry.manifest.timeout_seconds):
-                    async with service_session(entry.manifest) as session:
-                        return await invoke(session)
+                async with asyncio.timeout(
+                    entry.manifest.timeout_seconds
+                    if entry.manifest.session_mode == "shared"
+                    else None
+                ):
+                    if entry.manifest.session_mode == "shared":
+                        lease = await self._shared_lease(entry.manifest)
+                    if lease:
+                        result = await lease.worker.execute(invoke, on_cancel=close_dispatch)
+                        await self._renew(lease)
+                        return result
+                    async with asyncio.timeout(entry.manifest.timeout_seconds):
+                        async with service_session(entry.manifest) as session:
+                            return await invoke(session)
             except BaseException as error:
                 if claimed:
                     # Even cancellation or process loss leaves a durable claim. Never retry it.
@@ -867,6 +931,11 @@ class Broker:
                         "write outcome may be uncertain; inspect app state"
                         if claimed
                         else ("check app availability and refresh_services")
+                    )
+                    + (
+                        "; service context is lost; operator recovery is required"
+                        if self._recovery_blocker(entry.manifest)
+                        else ""
                     )
                 ) from None
 

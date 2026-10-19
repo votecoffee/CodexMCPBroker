@@ -44,6 +44,10 @@ INSTRUCTIONS = (
     "a lost context or assume another chat's project/review is yours. Lost contexts require "
     "local operator recovery with the broker stopped, after app state is reconciled; "
     "release/reacquire does not clear that barrier."
+    " Shared services retain one broker-owned adapter across frontends without context handles. "
+    "They require explicit app targets and app-owned state/authorization; there is no private "
+    "per-chat selection or review state. Shared session loss blocks every frontend until local "
+    "operator recovery. acquire_service and release_service apply only to exclusive services."
 )
 READ = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=False)
 CALL_READ = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=True)
@@ -353,9 +357,10 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
 
     @server.tool(annotations=READ, structured_output=False)
     async def service_session_status(service_id: str) -> CallToolResult:
-        """Inspect this frontend's lease/context health; another owner's handle is never returned.
+        """Inspect exclusive ownership or a shared adapter's health without renewing its lease.
 
-        Inspection does not renew a lease. Contexts expire after their configured idle budget.
+        Another owner's handle and shared internal handles are never returned.
+        Retained sessions expire after their configured idle budget.
         """
         return await backend.invoke("service_session_status", {"service_id": service_id})
 

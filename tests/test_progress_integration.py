@@ -273,7 +273,7 @@ async def test_progress_cannot_extend_app_deadline_or_recover_a_lost_write(stack
         assert (await call(session, handle, token=0)).isError and len(events) == count
 
 
-@pytest.mark.parametrize("mode", ["transient", "exclusive"])
+@pytest.mark.parametrize("mode", ["transient", "exclusive", "shared"])
 @pytest.mark.parametrize("http_confirmation_app", ["progress_mcp.py"], indirect=True)
 async def test_progress_through_an_http_app(stack, http_confirmation_app, mode):
     path = stack[0] / "services/progress-http.json"

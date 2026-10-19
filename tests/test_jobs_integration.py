@@ -376,3 +376,75 @@ async def test_transient_lost_reply_retains_claim_without_creating_an_exclusive_
         ).isError
         assert len(backend.jobs) == 1
         assert sum(method == "POST" and path == "/jobs" for method, path, _ in backend.calls) == 1
+
+
+async def test_shared_frontends_reuse_adapter_and_app_owned_jobs_without_context_handles(
+    stack, job_backend
+):
+    backend, url = job_backend
+    async with (
+        job_app(stack, url, session_mode="shared"),
+        frontends(stack[0], None, None) as (first, second),
+    ):
+        pid = data(await call(first, None, "adapter_info"))["pid"]
+        assert data(await call(second, None, "adapter_info"))["pid"] == pid
+        assert (await first.invoke("acquire_service", {"service_id": "jobs"})).isError
+        job = data(
+            await call(
+                first,
+                None,
+                "start_job",
+                {"target": "fixture-target", "expected_revision": 0},
+                request_id="retained-shared-job",
+            )
+        )
+        data(await second.invoke("refresh_services", {}))
+        results = await asyncio.gather(
+            call(first, None, "get_job", {"job_id": job["job_id"]}),
+            call(second, None, "get_job", {"job_id": job["job_id"]}),
+        )
+        assert [data(result) for result in results] == [job, job]
+        cancelled = data(
+            await call(
+                second,
+                None,
+                "cancel_job",
+                {"job_id": job["job_id"]},
+                request_id="retained-shared-cancel",
+            )
+        )
+        assert cancelled["status"] == "cancel_requested"
+        assert data(await call(first, None, "adapter_info"))["pid"] == pid
+        assert data(await call(first, None, "list_jobs"))["jobs"] == [cancelled]
+        status = data(await second.invoke("service_session_status", {"service_id": "jobs"}))
+        assert status["state"] == "shared_active" and "context_id" not in status
+        assert len(backend.jobs) == 1
+
+
+async def test_shared_lost_start_reply_blocks_both_chats_without_an_automatic_restart(
+    stack, job_backend
+):
+    backend, url = job_backend
+    async with (
+        job_app(stack, url, session_mode="shared", timeout=10),
+        frontends(stack[0], None, None) as (first, second),
+    ):
+        data(await call(first, None, "adapter_info"))  # Warm initialization separately.
+        assert (
+            await call(
+                first,
+                None,
+                "start_job",
+                {"target": "fixture-target", "expected_revision": 0, "delay_reply": 30},
+                request_id="retained-shared-lost",
+            )
+        ).isError
+        for client in (first, second):
+            status = data(await client.invoke("service_session_status", {"service_id": "jobs"}))
+            assert status["recovery_required"] and "context_id" not in status
+            assert (await call(client, None, "list_jobs")).isError
+        receipt = data(
+            await second.invoke("get_request_status", {"request_id": "retained-shared-lost"})
+        )
+        assert receipt["status"] == "uncertain"
+        assert len(backend.jobs) == 1 and len(backend.calls) == 1

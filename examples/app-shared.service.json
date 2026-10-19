@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "my-shared-app",
+  "display_name": "My Shared App",
+  "description": "A stateless MCP adapter for an independent service with intentionally shared state.",
+  "transport": {
+    "type": "streamable-http",
+    "url": "http://127.0.0.1:18181/mcp",
+    "bearer_token_env": "MY_APP_MCP_TOKEN"
+  },
+  "enabled": true,
+  "allow_writes": false,
+  "allowed_write_tools": [],
+  "read_only_tools": [],
+  "timeout_seconds": 20,
+  "session_mode": "shared",
+  "lease_seconds": 900,
+  "resource_id": "my-app-engine"
+}

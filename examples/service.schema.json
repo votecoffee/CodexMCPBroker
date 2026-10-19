@@ -201,7 +201,8 @@
       "default": "transient",
       "enum": [
         "transient",
-        "exclusive"
+        "exclusive",
+        "shared"
       ],
       "title": "Session Mode",
       "type": "string"
