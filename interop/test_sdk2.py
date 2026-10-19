@@ -54,7 +54,8 @@ async def sdk2_app(stack, python, *, timeout=20, audit=None):
     async with RemoteBackend(stack[1]) as admin:
         try:
             services = data(await admin.invoke("refresh_services", {}))["services"]
-            assert next(s for s in services if s["service_id"] == "sdk2")["status"] == "available"
+            status = next(s for s in services if s["service_id"] == "sdk2")
+            assert status["status"] == "available", status
             yield
         finally:
             path.unlink()

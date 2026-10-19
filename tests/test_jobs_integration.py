@@ -124,7 +124,8 @@ async def job_app(stack, url, *, timeout=20, session_mode="exclusive"):
     try:
         async with RemoteBackend(stack[1]) as admin:
             services = data(await admin.invoke("refresh_services", {}))["services"]
-            assert next(s for s in services if s["service_id"] == "jobs")["status"] == "available"
+            status = next(s for s in services if s["service_id"] == "jobs")
+            assert status["status"] == "available", status
         yield
     finally:
         path.unlink()

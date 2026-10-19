@@ -6,7 +6,7 @@ Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.11.0**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.11.1**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
 
@@ -103,6 +103,8 @@ For an integration that needs state across calls, review [app-exclusive.service.
 Registration is a local administrative action: it authorizes connecting to the endpoint or launching the configured executable. The broker scans its registration directory; app installers can use the same registration command. It does not automatically discover arbitrary installed applications.
 
 See the [app integration contract](APP_CONTRACT.md) and [registration schema](examples/service.schema.json) for authentication, lifecycle, ownership and validation requirements.
+
+Failed discovery includes a redacted `failure` object in `refresh_services` and `list_services`. Its `phase` distinguishes connection/initialization, tool listing, catalog reads and normal session cleanup; `kind: "timeout"` identifies a reported timeout and includes the configured budget. The phase is the last observed stage, not a root-cause diagnosis. Inspect the app and host resource conditions before another explicit attempt. Discovery does not retry automatically, and recovery barriers remain in force.
 
 ### Invoke tools
 

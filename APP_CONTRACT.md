@@ -45,6 +45,14 @@ Each tool supplies a specific name, useful description, input schema, and accura
 
 Schemas are validated locally. Network schema references are rejected. The catalog revision hashes the complete tool definition and service registration. It changes when routing, permissions, tool metadata, or schemas change. Calls must use the described revision, and the live advertised definition must still match it. Keep contracts backward compatible during rolling app updates.
 
+### Discovery diagnostics
+
+A failed `refresh_services` result includes a `failure` object for the affected service. `list_services` returns the recorded result without reconnecting. `phase` is the last observed stage: `registration`, `waiting_for_service`, `connect_initialize`, `list_tools`, `initialization_metadata`, `capability_catalog`, `close_session` or `validate_tools`. Connection and MCP initialization form one stage. `close_session` identifies normal cleanup after successful metadata reads; an exception raised while unwinding an earlier failed stage can retain that earlier phase.
+
+`kind` is `timeout`, `broker_error` or `error`. Timeout detection includes typed SDK/HTTP timeouts and the pinned SDK's 408 timeout response, including bounded inspection of exception groups. A timeout includes `timeout_seconds`, the registration's configured budget, not measured elapsed time or proof of which process caused the delay. App exception messages/data, transport credentials, stderr and tracebacks are excluded from these diagnostic fields. Existing actionable broker errors remain in `error` where applicable.
+
+If an owned worker is lost during discovery, its `recovery_required` result can include the same diagnostics. An existing recovery barrier is not probed to reconstruct a cause. Diagnostics do not authorize retry, context adoption, recovery acknowledgment or native operations; normal revocation, stale-route eviction and recovery handling still apply.
+
 Explicit `readOnlyHint: true` is required for the read channel, except exact names reviewed in the local legacy override. Unknown or explicit false annotations are write-capable. `allow_writes` is the service-wide master flag; an optional `allowed_write_tools` list narrows its scope as described below. Invocation tools use conservative broker annotations; the described definition retains the app annotations for the model to inspect.
 
 ### Invocation guidance

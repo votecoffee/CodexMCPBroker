@@ -47,6 +47,19 @@ def free_port():
         return sock.getsockname()[1]
 
 
+def wait_for_fixture(child, ready, label, *, timeout=20):
+    """Each process gets its own setup window; never retry a terminated child."""
+    deadline = time.monotonic() + timeout
+    while True:
+        if child.poll() is not None:
+            pytest.fail(f"{label} exited before readiness; inspect its isolated process log")
+        if ready():
+            return
+        if time.monotonic() > deadline:
+            pytest.fail(f"{label} startup timed out; inspect its isolated process log")
+        time.sleep(0.05)
+
+
 @pytest.fixture(scope="module")
 def stack(tmp_path_factory):
     state = tmp_path_factory.mktemp("stack")
@@ -68,8 +81,9 @@ def stack(tmp_path_factory):
         return child
 
     try:
+        apps = []
         for index, kind in [(1, "math"), (2, "notes")]:
-            launch(["demo", "--kind", kind, "--port", str(ports[index])])
+            apps.append(launch(["demo", "--kind", kind, "--port", str(ports[index])]))
             atomic_json(
                 state / "services" / f"{kind}.json",
                 {
@@ -83,37 +97,23 @@ def stack(tmp_path_factory):
                     "timeout_seconds": 3.0,
                 },
             )
-        deadline = time.monotonic() + 20
-        for port in ports[1:]:
-            while True:
-                try:
-                    with httpx.Client(timeout=0.5, trust_env=False) as client:
-                        client.get(f"http://127.0.0.1:{port}/mcp")
-                    break
-                except httpx.TransportError:
-                    if time.monotonic() > deadline:
-                        pytest.fail("example app startup timed out")
-                    time.sleep(0.05)
-        daemon_child = launch(["serve"])
-        headers = {"Authorization": f"Bearer {settings.token}"}
-        while True:
+
+        def app_ready(port):
             try:
                 with httpx.Client(timeout=0.5, trust_env=False) as client:
-                    response = client.get(settings.url + "/health", headers=headers)
-                    if response.status_code == 200:
-                        break
+                    client.get(f"http://127.0.0.1:{port}/mcp")
+                return True
             except httpx.TransportError:
-                pass
-            if time.monotonic() > deadline:
-                pytest.fail("broker startup timed out")
-            time.sleep(0.05)
+                return False
+
+        for child, port in zip(apps, ports[1:], strict=True):
+            wait_for_fixture(child, lambda port=port: app_ready(port), "example app")
+        daemon_child = launch(["serve"])
 
         def wait_broker():
-            deadline = time.monotonic() + 20
-            while not probe(settings):
-                if time.monotonic() > deadline or daemon_child.poll() is not None:
-                    raise RuntimeError("isolated test broker did not restart")
-                time.sleep(0.05)
+            wait_for_fixture(daemon_child, lambda: probe(settings) is not None, "broker")
+
+        wait_broker()
 
         def recover_fixture(service_id, context_id):
             nonlocal daemon_child

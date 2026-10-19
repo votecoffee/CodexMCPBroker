@@ -12,8 +12,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import httpx
 from jsonschema import ValidationError
 from jsonschema.validators import validator_for
+from mcp.shared.exceptions import McpError
 from mcp.types import CallToolResult, Tool
 
 from .capabilities import CapabilityState, read_catalog, tool_revision
@@ -44,6 +46,33 @@ def broker_reason(error: BaseException) -> BrokerError | None:
             if reason is not None:
                 return reason
     return None
+
+
+def discovery_failure(error: BaseException, phase: str, timeout: float | None) -> dict:
+    """Describe the failed stage without exporting app exceptions or stderr."""
+    pending = [error]
+    kind = "error"
+    # SDK task groups may wrap a timeout. Inspect a bounded number of typed
+    # exceptions; their messages, data, causes and tracebacks remain private.
+    for _ in range(64):
+        if not pending:
+            break
+        current = pending.pop()
+        if (
+            isinstance(current, TimeoutError | httpx.TimeoutException)
+            or isinstance(current, McpError)
+            and current.error.code == httpx.codes.REQUEST_TIMEOUT
+        ):
+            kind = "timeout"
+            break
+        if isinstance(current, BaseExceptionGroup):
+            pending.extend(current.exceptions[: 64 - len(pending)])
+        elif isinstance(current, BrokerError):
+            kind = "broker_error"
+    result = {"phase": phase, "kind": kind}
+    if kind == "timeout" and timeout is not None:
+        result["timeout_seconds"] = timeout
+    return result
 
 
 @dataclass(frozen=True)
@@ -278,6 +307,7 @@ class Broker:
             async def discover(path: Path):
                 service_id = path.stem
                 manifest = None
+                phase = "registration"
                 try:
                     manifest = load_manifest(path)
                     if manifest.id != path.stem:
@@ -295,11 +325,14 @@ class Broker:
                         return
                     if self._conflicting(manifest):
                         raise BrokerError("resource has conflicting registrations; remove aliases")
+                    phase = "waiting_for_service"
                     async with self.lock(service_id):
+                        phase = "registration"
                         self._registration_matches(manifest)
                         lease = self._leases.get(service_id)
                         if lease:
                             # Metadata refresh must preserve the owner's native context.
+                            phase = "list_tools"
                             tools = await lease.worker.execute(list_all_tools)
                             # Owned initialization may contain session-specific app data.
                             # Never publish it into a catalog shared with other frontends.
@@ -309,18 +342,25 @@ class Broker:
                                 if service_id in self._capabilities:
                                     capabilities[service_id] = self._capabilities[service_id]
                         else:
+                            phase = "connect_initialize"
                             async with asyncio.timeout(manifest.timeout_seconds):
                                 async with service_session(manifest) as session:
+                                    phase = "list_tools"
                                     tools = await list_all_tools(session)
+                                    phase = "initialization_metadata"
                                     metadata[service_id] = {
                                         "initialization": deepcopy(session.initialization),
                                         "observed_generation": self.generation + 1,
                                     }
                                     if manifest.capability_catalog is not None:
+                                        phase = "capability_catalog"
                                         capabilities[service_id] = await read_catalog(
                                             session, manifest, tools
                                         )
+                                    phase = "close_session"
+                        phase = "registration"
                         self._registration_matches(manifest)
+                    phase = "validate_tools"
                     for tool in tools:
                         if not re.fullmatch(TOOL_NAME_PATTERN, tool.name):
                             raise BrokerError("app advertised an unsupported tool name")
@@ -348,6 +388,9 @@ class Broker:
                         ),
                     }
                 except Exception as error:
+                    failure = discovery_failure(
+                        error, phase, manifest.timeout_seconds if manifest else None
+                    )
                     metadata.pop(service_id, None)
                     capabilities.pop(service_id, None)
                     lease = self._leases.get(service_id)
@@ -365,12 +408,14 @@ class Broker:
                             "service_id": service_id,
                             "status": "recovery_required",
                             "session_mode": manifest.session_mode,
+                            "failure": failure,
                         }
                         return
                     # Do not retain stale tools for failed or malformed registrations.
                     statuses[service_id] = {
                         "service_id": service_id,
                         "status": "unavailable",
+                        "failure": failure,
                         "error": str(error)
                         if isinstance(error, BrokerError)
                         else (
