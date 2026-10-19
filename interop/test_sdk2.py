@@ -199,7 +199,10 @@ async def test_timed_out_synchronous_write_keeps_uncertain_status_and_recovery_b
 ):
     audit = tmp_path / "sdk2-writes.jsonl"
     async with (
-        sdk2_app(stack, sdk2_python, timeout=5, audit=audit),
+        # The service budget also covers cold SDK imports and initialization.
+        # Keep enough startup margin, then prove a dispatched 30-second write
+        # exceeds the deadline through its audit record and uncertain receipt.
+        sdk2_app(stack, sdk2_python, timeout=15, audit=audit),
         frontends(stack[0], None, None) as (owner, other),
     ):
         context = await acquire(owner)

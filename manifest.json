@@ -94,8 +94,8 @@
     },
     {
       "path": "interop/test_sdk2.py",
-      "size": 9379,
-      "sha256": "848d3915ed896ae45cb39b0850065f29831d8dceef6db153216befc82216518c"
+      "size": 9615,
+      "sha256": "89b515ac3b2c3e02204ed8e5c90d20b73bbaf6807594076d995af6088c9347e0"
     },
     {
       "path": "LICENSE",
