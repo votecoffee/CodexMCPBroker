@@ -334,8 +334,8 @@
     },
     {
       "path": "tests/test_integration.py",
-      "size": 34928,
-      "sha256": "0f756672330cdf509de3d8bf3b9e03042c74109f681ecadc16eaab90bec34939"
+      "size": 35084,
+      "sha256": "16aaba669fa999a9bc2e5ab4977ec3ddba42748319fd78f3533ab63bad398426"
     },
     {
       "path": "tests/test_jobs_integration.py",

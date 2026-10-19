@@ -481,8 +481,10 @@ async def test_two_native_clients_cannot_overwrite_a_stale_notebook_revision(sta
 
 @asynccontextmanager
 async def exclusive_app(
-    stack, *, timeout=3.0, audit_path=None, fixture="stateful_mcp.py", session_mode="exclusive"
+    stack, *, timeout=20, audit_path=None, fixture="stateful_mcp.py", session_mode="exclusive"
 ):
+    # Ordinary workflow cases need cold SDK/process startup margin. Deadline
+    # cases supply their own shorter budget and deliberately stalled operation.
     state, settings, _ = stack
     path = state / "services/stateful.json"
     assert not path.exists()
