@@ -2,6 +2,8 @@
 
 An app owns its tools and business state. Universal Tools owns discovery and routing. Apps do not need to know about Codex conversations.
 
+The primary shared-code path is the [app framework](docs/app-framework.md), a versioned dependency providing an app-owned host with stable MCP schemas and controlled backend publication. This document describes the optional broker route and its shared engine contracts. Using the framework does not require installing Universal Tools or adopting that route.
+
 Apps retain their standalone MCP endpoint and Codex plugin after broker adoption. Both integrations use app-owned services and preserve app validation, target/review bindings and authorization. Broker registration is optional and separate from standalone plugin installation. See the [coexistence policy](docs/plugin-coexistence.md) for future installer selection and required app skills; no automatic plugin installation, disabling or runtime route failover is provided here.
 
 The broker-mode target is Universal Tools alone, with the app plugins absent. Apps can publish versioned [workflow contributions](docs/workflow-contributions.md) through the existing normalized capability/read-tool path. The reference profile supplies lazy guidance and read references without new broker methods; it does not hot-load native Codex skills, install helper code or establish host parity. Standalone packaging remains an independent app option.

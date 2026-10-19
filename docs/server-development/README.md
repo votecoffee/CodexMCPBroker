@@ -1,6 +1,6 @@
 # Developing broker-compatible MCP servers
 
-Use this guide when building a new app-owned MCP server or adding broker support to an existing one. The design applies to any application domain and implementation language. No vendor-specific broker adapter or new Universal Tools plugin is required for an ordinary supported MCP endpoint.
+Use this guide when building a new app-owned MCP server or adding broker support to an existing one. The primary shared-code path is the [app framework](../app-framework.md): a versioned package, stable app MCP front door and controlled backend publication. The universal broker is optional. The contracts apply across application domains and implementation languages; native .NET bindings are not implemented yet.
 
 CodexMCPBroker is experimental. **MCP protocol conformance, broker compatibility and native application acceptance are separate claims.** This guide defines a development profile for this broker; it is not an MCP certification program or a promise that every MCP feature is relayed.
 
@@ -10,6 +10,7 @@ CodexMCPBroker is experimental. **MCP protocol conformance, broker compatibility
 | --- | --- |
 | [Quickstart](quickstart.md) | Build a harmless read-only server and compare direct and broker calls in an isolated state. |
 | [Architecture](architecture.md) | Put shared application services behind the GUI, standalone plugin and broker route. |
+| [Shared app framework](../app-framework.md) | Reuse the packaged host/session/policy engine and update backends while keeping the native MCP front door stable. |
 | [Tool and workflow design](tools-and-workflows.md) | Design schemas, side-effect annotations, revisions, reviewed writes, jobs and results. |
 | [Sessions and recovery](sessions-and-recovery.md) | Choose transient, exclusive or shared mode and define resource ownership and loss behavior. |
 | [Registration and discovery](registration-and-discovery.md) | Register transports, manage dependencies and publish optional inner catalogs. |

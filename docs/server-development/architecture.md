@@ -6,6 +6,8 @@
 
 Put domain operations in an application service layer that can be called by the GUI and MCP gateway. Keep native engine access, files, credentials, target identity, revision checks, authorization and acceptance in that layer. The MCP gateway translates protocol requests into service operations; the broker selects and routes those tools.
 
+The [shared app framework](../app-framework.md) packages the common host, discovery, policy, ownership and receipt implementation. Use it as a tested versioned dependency. Apps keep their own standalone plugins; the universal broker is optional. Controlled publication replaces backend processes behind a stable MCP front door, while domain services and native acceptance remain app-owned. Avoid copying framework source into each app or performing in-process module/DLL reload across live native handles.
+
 ```mermaid
 flowchart LR
     GUI[Application GUI] --> S[App-owned domain services]
@@ -44,7 +46,7 @@ An independent app service is useful when jobs or business state must survive ad
 
 Ship the app's own standalone Codex plugin alongside broker registration support. App installation and normal operation must not require this broker. Use the same app-owned service contracts through both integrations.
 
-App workflows need an assessed invocation path for each supported route. In broker mode the target is Universal Tools alone: publish versioned [workflow contributions](../workflow-contributions.md) so its one skill can load required app guidance on demand. Standalone users receive the app plugin and its native skills. Do not require both plugins for routine broker use. See [plugin coexistence](../plugin-coexistence.md); native skill import and conditional installer selection are not automated by the broker.
+App workflows need an assessed invocation path for each supported route. A standalone app can use a stable native skill entrypoint with current feature/workflow guidance behind its read tools. In optional broker mode, the target is Universal Tools alone: use [workflow contributions](../workflow-contributions.md) and/or explicit [native skill packaging](../native-skill-bundles.md). Do not require both plugins for routine broker use. See [plugin coexistence](../plugin-coexistence.md); automatic app adoption and conditional installer selection remain future work.
 
 Treat route changes as explicit lifecycle events. Finish or reconcile stateful work before switching. A direct adapter cannot adopt a broker context, convert a preview token into another session or silently retry an uncertain write.
 

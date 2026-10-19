@@ -1,3 +1,3 @@
-"""One plugin, a local broker, and independently owned app MCP servers."""
+"""Shared app MCP framework and an optional universal discovery broker."""
 
-__version__ = "0.12.0"
+__version__ = "0.13.0"

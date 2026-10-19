@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-codex-tools"
-version = "0.12.0"
-description = "Local MCP service discovery and routing for one reusable Codex plugin"
+version = "0.13.0"
+description = "Shared app MCP framework with an optional universal discovery broker"
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.11"

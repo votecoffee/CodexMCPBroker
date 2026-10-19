@@ -66,6 +66,12 @@ The workflow contribution reference checks run the example app through the uncha
 
 Provider deadline cases cover both stdio and a prestarted HTTP fixture. They record entry into the delayed provider before checking that its timeout evicts owned search hints and retains the recovery barrier. The stdio case allows cold process initialization; the HTTP case keeps a short operation budget after server startup. Thus an initialization failure cannot substitute for the intended in-flight provider timeout.
 
+## Shared app framework profile
+
+Run `tests/test_framework.py` against disposable state and synthetic MCP backends. Check retained-context deferral and owner denial, backend replacement after release, new inner tools with identical native frontend definitions and still-connected MCP client sessions, rejected hashes/reused revisions/failed startup, configuration restoration, hash checks before probing/dispatch, independent backend gates, and restart identity binding. Shared-adapter retirement and write reconciliation are explicit local app-admin APIs; verify their guards and that reconciliation leaves the original receipt/request-ID protection intact. These checks do not perform native work or establish Codex desktop activation.
+
+Package checks must include the framework module, current dependency metadata and license in the wheel. Verify installation from the wheel rather than relying only on an editable checkout. Python and .NET bindings, package-feed distribution, app dependency adoption and optional universal aggregation each need their own evidence; a source wheel is not a published feed release.
+
 ## Native skill bundle profile
 
 Native skill packaging checks (`tests/test_skill_bundles.py` and `tests/test_skill_scripts.py`) use isolated state and a never-connected service descriptor. Verify complete references/assets/scripts and invocation-policy bytes, multiple bundles, pinned input snapshots, explicit updates/removal, rollback, namespace/dependency/path/size rejection, tampering, competing OS locks and interrupted publication. The PowerShell profile exercises both supported shells with a fake Codex command and verifies that integrity failure prevents installation instead of selecting the base package. Validate the example native skill with Skill Creator. No contributed helper runs during composition.

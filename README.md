@@ -2,13 +2,13 @@
 
 ![CodexMCPBroker icon](plugins/universal-tools/assets/icon-128.png)
 
-Local MCP service discovery and routing for one reusable Codex plugin
+Shared app MCP framework with an optional universal discovery broker
 
-Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
+Build app-owned MCP hosts from one versioned package. A stable MCP front door discovers versioned backends, preserving common policy, session and recovery behavior while reducing Codex reloads. Apps keep their standalone plugins. The optional universal broker can aggregate independently installed app services; that route remains a separate integration profile.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.12.0**.
+The optional plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. Apps use the `universal_tools.framework` API. The current version is **0.13.0**.
 
-**Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
+**Status: experimental and under active development. This tool is not mature or production-ready.** The shared framework and optional broker are **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Framework adoption, full app workflow parity and migration readiness have not been established; current app installations remain unchanged.
 
 The [beta completion plan](ROADMAP.md) separates the implemented broker foundation from remaining adapter/host acceptance and later native migration pilots. Parallel private contexts and full app/host payload parity are not currently promised.
 
@@ -30,7 +30,9 @@ Building a new server? Start with the [MCP server developer guide](docs/server-d
 
 ## Background
 
-Apps own their tools, native processes, data and authorization. CodexMCPBroker provides a common discovery and routing layer so each new app can register with the existing plugin.
+Apps own their tools, native processes, data and authorization. The [shared app framework](docs/app-framework.md) standardizes discovery, backend lifecycle, ownership, policy and receipts without requiring the universal broker. Publish a new backend revision and refresh its catalog after quiescing affected state; the native MCP front-door schemas stay fixed. Frequently changing guidance belongs behind app read tools. Native skill/package changes still require Codex reload.
+
+Manage the framework as a versioned package dependency, with tested app-specific pins and lock files. Python wheels are implemented; native .NET/NuGet bindings remain future work. See [package management and lifecycle](docs/app-framework.md#package-management). Source submodules and copied framework implementations are not the default model.
 
 Each app continues to distribute its standalone Codex plugin for independent use. **Broker-mode users should install Universal Tools instead of multiple app plugins.** The [native skill synchronizer](docs/native-skill-bundles.md) composes explicitly selected app skill packages into one Universal Tools package for installation and Codex reload. App-owned [workflow contributions](docs/workflow-contributions.md) also provide versioned guidance through existing discovery/read tools between package updates. Complete host/app parity remains unestablished. Future app installers may skip the standalone plugin after that app's broker route and guidance pass acceptance. See [installation choices](docs/plugin-coexistence.md). Automatic app selection is not implemented by this broker, and current app installations remain unchanged.
 
@@ -42,7 +44,13 @@ The broker exposes fourteen fixed tools. App tools are namespaced catalog entrie
 
 - Windows and PowerShell. Windows with Python 3.13 is the validated development environment.
 - Python 3.11 or newer with the Windows `py` launcher; setup defaults to Python 3.13.
-- Git to clone the source, and a Codex installation with the `codex plugin` CLI commands available.
+- Git to clone the source. The optional plugin installer also needs Codex with its `codex plugin` CLI commands available.
+
+### Framework development
+
+Follow the [framework guide](docs/app-framework.md) for the `ApplicationHost` API, a harmless publish/reload example, package pinning and app adoption gates. Build/install a verified local wheel or use an editable development dependency; this repository does not imply a published package feed. The framework host has its own runtime requirements, so preserve an existing app's dependencies by using a separate host environment when needed.
+
+### Optional universal broker launcher
 
 From PowerShell:
 

@@ -1,6 +1,19 @@
 # Beta completion plan
 
-The next finish line is a reviewable beta for selected app workflows. It is separate from production maturity and from permission to migrate an existing integration. Keep existing direct integrations available during assessment.
+The primary finish line is a reusable app framework that standardizes backend code and reduces Codex reloads. The universal broker remains an optional aggregation host. A reviewable beta is separate from production maturity and permission to migrate an existing integration. Keep existing direct integrations available during assessment.
+
+## Shared app framework first
+
+- [x] A versioned Python package and app-owned `ApplicationHost` using the existing policy/session/catalog/receipt engine.
+- [x] Stable MCP front-door schemas with live backend publication, context-aware deferral, candidate rejection and configuration rollback.
+- [x] Dedicated app state, native MCP session affinity and explicit local app-admin reconciliation/healthy shared-adapter retirement.
+- [x] Synthetic protocol checks retaining native MCP sessions while a new backend tool becomes searchable.
+- [ ] Publish verified package versions through an app-consumable feed; pin dependencies in each adopting app.
+- [ ] Implement/test native .NET bindings if required; share versioned contracts without duplicating domain services.
+- [ ] Complete real Codex standalone-plugin selection, resource/dependency behavior, reconnect/reload and native app acceptance.
+- [ ] Assess optional universal aggregation of framework-based hosts, including nested discovery/policy and route-aware guidance.
+
+The [framework guide](docs/app-framework.md) records current APIs, packaging, lifecycle boundaries and prototype limits. Backend refresh avoids native plugin changes only while the front-door schema and packaged skill entrypoint remain stable. Arbitrary in-process code/DLL replacement is outside the framework contract.
 
 ## Broker foundation
 

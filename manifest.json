@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -24,8 +24,8 @@
     },
     {
       "path": "APP_CONTRACT.md",
-      "size": 41017,
-      "sha256": "1f7a8cc5a92d43c1c0a8a413e3553de63f195f615293422f6d9801601d843729"
+      "size": 41376,
+      "sha256": "b6d9e18249829dbc301e48996d83ec908daf6dd073b1791e61df018abcedba3a"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -36,6 +36,11 @@
       "path": "docs/adapter-assessment.md",
       "size": 10715,
       "sha256": "8bb9848af7eae2905c32d9900f56c686a8d05361a1ffd21c79a445a3b01fcae8"
+    },
+    {
+      "path": "docs/app-framework.md",
+      "size": 11039,
+      "sha256": "e80d0985a4208555b7120932a41ec2db3519584915c2007c2e6376520ff0f60c"
     },
     {
       "path": "docs/capability-catalog.md",
@@ -59,8 +64,8 @@
     },
     {
       "path": "docs/server-development/architecture.md",
-      "size": 5146,
-      "sha256": "e0f6eebeec5d9ab70915d0b0f93f6b379132e369e4af06996bfed0acba229872"
+      "size": 5707,
+      "sha256": "e9a8484de5df0fbebd6f9cdb9eeb953f3b01e2cf337bda952c04c296bf50e5af"
     },
     {
       "path": "docs/server-development/quickstart.md",
@@ -69,8 +74,8 @@
     },
     {
       "path": "docs/server-development/README.md",
-      "size": 5706,
-      "sha256": "a37a7bba1e50b200ba1bfb4f187096751f6b322fcb93e3ba900ba7d80c214e99"
+      "size": 5994,
+      "sha256": "6741fdedcdf8a66d19cc6ea726005a8ed85f5813304df9ea7acb67d161299271"
     },
     {
       "path": "docs/server-development/registration-and-discovery.md",
@@ -118,6 +123,11 @@
       "sha256": "f55ef641fac6bea00d27a67f92f944ca1f39c18f105d19c293a500be8badd975"
     },
     {
+      "path": "examples/application.schema.json",
+      "size": 7726,
+      "sha256": "9e0f442a544b341f8e72716a624259093a8956549d649810b109e4fa8beed4ed"
+    },
+    {
       "path": "examples/capability-catalog.json",
       "size": 410,
       "sha256": "f9985cf914a98bf26626f8b8a08f4baa480f07749c96b4c730fd09e3cd05cc72"
@@ -126,6 +136,16 @@
       "path": "examples/capability-catalog.schema.json",
       "size": 1876,
       "sha256": "525067c5242974276a74160ba81fc4890fee00310af11606849d23952ef0b671"
+    },
+    {
+      "path": "examples/framework_app.py",
+      "size": 2026,
+      "sha256": "9ce6eb9dc7fce84a9bb8bd1827221167d8d10beaf7b73e2039ab3a074b4c3307"
+    },
+    {
+      "path": "examples/framework_worker.py",
+      "size": 1186,
+      "sha256": "065dfb2332a32771ddd5a3cb212095a7b2c221704c4bb156dbfd8d0439fa7929"
     },
     {
       "path": "examples/service.schema.json",
@@ -280,7 +300,7 @@
     {
       "path": "plugins/universal-tools/plugin.json",
       "size": 587,
-      "sha256": "675c94a51c7124c2e50c504814d17bb003bd38b1b6f5549eb9d79ed1498888cf"
+      "sha256": "de310739f5127961ac91bd7e71fcedfaaefa860d72e3b20ebce19aa483fb358b"
     },
     {
       "path": "plugins/universal-tools/server/launch.py",
@@ -299,13 +319,13 @@
     },
     {
       "path": "pyproject.toml",
-      "size": 971,
-      "sha256": "971102603291c198c9ca0aecbfc4c8985f9aca91cb17c5dc97503e8364637e72"
+      "size": 970,
+      "sha256": "c08fa0124fb215d631877525ddecbf1a369b3195c6c1c56cd2634f22ffcc0019"
     },
     {
       "path": "README.md",
-      "size": 30880,
-      "sha256": "0c8d5849a8a59ae758b2511238644dc4b97d0ec96dea8f51b816b0bd91ff9deb"
+      "size": 32214,
+      "sha256": "c46abfa1537ef602bc5a265edd03e4f0bb68ea5250153fb2025c702e72bfe04b"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -319,8 +339,8 @@
     },
     {
       "path": "ROADMAP.md",
-      "size": 4180,
-      "sha256": "9b994208d12fd052735261d02bd5dfa1b75a5cdd5f8a12f7270b19baede80001"
+      "size": 5634,
+      "sha256": "57bf43be3ab44c990228b7c53ae80cd53ad5eabe5d3ae0dd41ab3b629f8ea052"
     },
     {
       "path": "scripts/Broker.ps1",
@@ -380,7 +400,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 99,
-      "sha256": "c35314a3ea0e8f9f76d4fab585758408b8220c9d8b52b6b129ee1cc9da4d13ba"
+      "sha256": "7c6bb5cebe4fd13a844ca95697e37624ef2d5c35798167773b274b354b894a45"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -399,8 +419,8 @@
     },
     {
       "path": "src/universal_tools/cli.py",
-      "size": 16593,
-      "sha256": "c8836c868caa56002cb28d7508e0be7562d274c5670d3de3daaf24b3e0fb4b42"
+      "size": 16931,
+      "sha256": "1ea39b3ab83f98b5ec0483c1225304bf19a11c55c42c90460f67d383920fbe2e"
     },
     {
       "path": "src/universal_tools/daemon.py",
@@ -416,6 +436,11 @@
       "path": "src/universal_tools/elicitation.py",
       "size": 8299,
       "sha256": "6e78c4bf3006ad740370d3ca73d0baf865e0b28da0e73b9cbbe349984d3f5eb5"
+    },
+    {
+      "path": "src/universal_tools/framework.py",
+      "size": 20423,
+      "sha256": "716f3649fee48b759a308042f18cd060f0fe1ea6962c0fba43a5b2c3365903f1"
     },
     {
       "path": "src/universal_tools/identity.py",
@@ -464,8 +489,8 @@
     },
     {
       "path": "src/universal_tools/surface.py",
-      "size": 16064,
-      "sha256": "c0374589c74179779d74ded25389281c2fcb9305ae62ce06a3acf35940a7ad80"
+      "size": 16179,
+      "sha256": "85e2da22091726b0653a6097961a49b6bc6a628d72b42a88b389eecdfba6008e"
     },
     {
       "path": "src/universal_tools/transport.py",
@@ -546,6 +571,11 @@
       "path": "tests/test_fixture_startup.py",
       "size": 1496,
       "sha256": "59706a2f5d75ff83d8b6c74aaba877534b7185604b58cdb329d589a96d3dfa77"
+    },
+    {
+      "path": "tests/test_framework.py",
+      "size": 19807,
+      "sha256": "39b25d55b04b0fd0971610b1c1ce51a085bc964a636ead3460ba610337fb904e"
     },
     {
       "path": "tests/test_integration.py",
@@ -639,8 +669,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 22509,
-      "sha256": "4838a41b4d3cebf17a4121a0d9eeffa07791fbee40f25d36aab0813601f4c487"
+      "size": 23628,
+      "sha256": "caafe3dd68972cd311d3a755074cd70ec3c393b2708fef99855b4038d0ec5041"
     }
   ]
 }

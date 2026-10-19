@@ -163,7 +163,13 @@ class RemoteBackend:
                 relay.close()
 
 
-def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -> FastMCP:
+def create_surface(
+    backend: LocalBackend | RemoteBackend,
+    *,
+    port: int = 8768,
+    name: str = "Universal Tools",
+    instructions: str = "",
+) -> FastMCP:
     @asynccontextmanager
     async def frontend_lifespan(_):
         try:
@@ -172,8 +178,8 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
             await backend.aclose()
 
     server = FastMCP(
-        "Universal Tools",
-        instructions=INSTRUCTIONS,
+        name,
+        instructions=(instructions + "\n\n" if instructions else "") + INSTRUCTIONS,
         host="127.0.0.1",
         port=port,
         stateless_http=False,

@@ -303,6 +303,8 @@ def main(argv: list[str] | None = None):
     parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
     skill_parser(commands)
+    application = commands.add_parser("app-serve", help="run the shared framework for one app")
+    application.add_argument("--publication", type=Path, required=True)
     initialize_parser = commands.add_parser("init", help="create private local broker settings")
     initialize_parser.add_argument("--port", type=int, default=8768)
     request_limit = commands.add_parser(
@@ -343,6 +345,11 @@ def main(argv: list[str] | None = None):
     state = args.state.resolve()
     try:
         match args.command:
+            case "app-serve":
+                from .framework import serve_application
+
+                serve_application(state, args.publication)
+                return
             case "skills":
                 result = skill_command(state, args)
             case "init":
