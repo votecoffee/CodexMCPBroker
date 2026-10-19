@@ -6,6 +6,8 @@ Use [GitHub issues](https://github.com/votecoffee/CodexMCPBroker/issues) for que
 
 Follow [VERIFICATION.md](VERIFICATION.md) to create an environment, install the development lock, run tests and check formatting. Keep changes focused and preserve app-owned authorization, revision guards and uncertain-outcome handling. Use synthetic app fixtures for automated tests; native app/device workflows require a separately scoped validation plan.
 
+For a new app integration, follow the [server developer guide](docs/server-development/README.md) and keep domain operations in app-owned services. Add applications through supported MCP interfaces and registrations; propose generic broker extensions only when a selected workflow demonstrates a protocol need.
+
 ## Repository contents
 
 Public files should help any user install, integrate, develop or troubleshoot the broker. Use generic paths, synthetic examples and reusable instructions.

@@ -24,13 +24,13 @@
     },
     {
       "path": "APP_CONTRACT.md",
-      "size": 39836,
-      "sha256": "ddde25e0e3c3299160282a33d46aad045836c66c31bcb2a90fa0e95cc308866c"
+      "size": 40096,
+      "sha256": "6ecbba6bab29db01d63d322f527bc27fa6728907957292bfe9e95130c0c509ec"
     },
     {
       "path": "CONTRIBUTING.md",
-      "size": 2156,
-      "sha256": "f5491007549cbbb041bb3dda004287fa16b63321a74939a65e017f26b2b433d5"
+      "size": 2468,
+      "sha256": "3270445cdd85d286b8c12d42860dc14185a758fb5748b594a9b4e6c7ce8db154"
     },
     {
       "path": "docs/adapter-assessment.md",
@@ -46,6 +46,41 @@
       "path": "docs/plugin-coexistence.md",
       "size": 7360,
       "sha256": "59b8c1015c68398f99643d5ac1a6adc020247797ac678f55a608bb9d9a50a250"
+    },
+    {
+      "path": "docs/server-development/acceptance.md",
+      "size": 5896,
+      "sha256": "762269935bf86ef64134d8f2930758934318160009762e10d0876aa86674a857"
+    },
+    {
+      "path": "docs/server-development/architecture.md",
+      "size": 4976,
+      "sha256": "1fefd316f385c8dce520bce53d79d6e4ee8b8f4643dedb54fcd5624defcb342c"
+    },
+    {
+      "path": "docs/server-development/quickstart.md",
+      "size": 7403,
+      "sha256": "74903c6fb50dc35f487f1603ebeda395d38bf5c791159b113dc54aeb21974b8d"
+    },
+    {
+      "path": "docs/server-development/README.md",
+      "size": 5045,
+      "sha256": "8d7f1060909fe2b63ebcfd6857ce592bae8e260ac38732da4b13fc6b40fc3de9"
+    },
+    {
+      "path": "docs/server-development/registration-and-discovery.md",
+      "size": 7034,
+      "sha256": "27fe3c855b1f52a83f3eb5e46f902b6768bb0dd63114f39ef27281a5c5907880"
+    },
+    {
+      "path": "docs/server-development/sessions-and-recovery.md",
+      "size": 4876,
+      "sha256": "80eaa2514e1800a9de7f8b61731c42ea65a238ef1e11a5b5755678e63f8afd25"
+    },
+    {
+      "path": "docs/server-development/tools-and-workflows.md",
+      "size": 6004,
+      "sha256": "868bc0d6fd46c8a43ef2d6b51674fb6f2add3a7cd5121e49b9c8c1b48aed18e2"
     },
     {
       "path": "examples/app-capabilities.service.json",
@@ -124,8 +159,8 @@
     },
     {
       "path": "MIGRATION.md",
-      "size": 10323,
-      "sha256": "072ce6a5e9e7c22f9e15aca48a4e045d206f1ea9a7ed93b62c792eb8710250c1"
+      "size": 10655,
+      "sha256": "de6df8b5872a2acfab3114737fb75a9182205d59c03f35dd38de5ded3897793d"
     },
     {
       "path": "plugins/universal-tools/assets/icon-128.png",
@@ -199,8 +234,8 @@
     },
     {
       "path": "README.md",
-      "size": 29460,
-      "sha256": "bd05c1776b79d6b5907f9778208229d7300d18c18db9859b9f33ab7cfd70a04b"
+      "size": 29800,
+      "sha256": "4e8a83917de9452604605e92257005a002ebf754177916867f13c33a9cdd06fc"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -509,8 +544,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 19768,
-      "sha256": "e4e3c671cbca3ccbab693770dba462bdc0ba33b8a525c54bc975703cf385ed5b"
+      "size": 20424,
+      "sha256": "937218badf91b9d26a78468af17834b9b8cbc7280fd722a6d58bf899d7f52c83"
     }
   ]
 }

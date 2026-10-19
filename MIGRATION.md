@@ -8,6 +8,8 @@ Each app must continue shipping and supporting its standalone Codex plugin after
 
 See the [beta completion plan](ROADMAP.md) for the finite initial scope. Broker implementation, adapter/host acceptance and native migration acceptance are separate milestones. Exclusive ownership may constrain same-app concurrency; record that as a workflow limitation when a direct integration permits independent parallel contexts.
 
+New server implementations can use the [developer guide](docs/server-development/README.md) and its [acceptance record](docs/server-development/acceptance.md#capture-a-reusable-integration-record). A passing app-specific profile does not require application-name cases in the broker or imply that another server has been assessed.
+
 ## Select the review scope
 
 | Stage | Evidence needed | What it can establish |

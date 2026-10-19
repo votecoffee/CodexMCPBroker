@@ -14,6 +14,8 @@ The [beta completion plan](ROADMAP.md) separates the implemented broker foundati
 
 The [adapter assessment](docs/adapter-assessment.md) covers session ownership, app-owned jobs and production feature workers, including refresh, reload and failure handling. Passing those checks with fake native providers still leaves Codex host and native acceptance to complete for each selected workflow.
 
+Building a new server? Start with the [MCP server developer guide](docs/server-development/README.md), including a read-only quickstart, shared-service architecture, state/recovery contracts, registration/discovery and a reusable acceptance record. The guide distinguishes MCP conformance from this broker's supported integration profile.
+
 ## Table of Contents
 
 - [Background](#background)
