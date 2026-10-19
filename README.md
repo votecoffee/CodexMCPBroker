@@ -12,6 +12,8 @@ The plugin is named **Universal Tools**. The Python distribution and CLI retain 
 
 The [beta completion plan](ROADMAP.md) separates the implemented broker foundation from remaining adapter/host acceptance and later native migration pilots. Parallel private contexts and full app/host payload parity are not currently promised.
 
+The [adapter assessment](docs/adapter-assessment.md) covers session ownership, app-owned jobs and production feature workers, including refresh, reload and failure handling. Passing those checks with fake native providers still leaves Codex host and native acceptance to complete for each selected workflow.
+
 ## Table of Contents
 
 - [Background](#background)

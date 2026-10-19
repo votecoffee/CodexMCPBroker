@@ -45,6 +45,18 @@ Include local side effects in the policy assessment. An export/read tool may exp
 
 When comparing efficiency, separate cold startup, warm calls and native work. Use the same frozen adapter and payloads, state sample counts, and preserve raw measurements. Measure competing frontends separately from serialized service work. A faster shared worker is only useful if its state and authorization contract also passes review.
 
+## Exercise app-owned feature workers
+
+An in-process substitute for a feature engine does not establish compatibility with the app's production worker protocol. If the selected workflow uses child workers, build the original worker and its dependency closure from the same frozen revision as the MCP adapter. Keep native attachment and device providers replaced beneath the original handlers. Record the worker files, package locks, manifest hashes and actual execution paths; exclude native engineering assemblies when the worker contract requires serialized data only.
+
+1. Capture direct results through the original worker transport, then compare the broker workflow. Preserve dynamic worker IDs and generations and verify their bindings independently. Check that local analysis does not create a native attachment.
+2. Prepare a plan, refresh discovery from another frontend and verify that worker identity, generation, attachment and plan remain intact. A foreign frontend must be refused before dispatch when the registration is exclusive.
+3. Reload one worker through the app's advertised tool and write channel. Check the app's declared plan-invalidation rules, replacement identity and shutdown of the old process. Unrelated workers should retain their identity if the app promises a selective reload. A duplicate broker request ID must not reload again.
+4. Reject an invalid or tampered fixture bundle. Check whether the app preserves its previous worker and prepared plan, as its contract requires. Restore only the fixture input and verify the corresponding application-error receipt independently of native operation counts.
+5. Exercise a worker exit separately from losing the MCP adapter. For a deliberate crash, first verify the exact process ID and executable path against a worker created inside this fixture. Check the returned app error, broker context, explicit app recovery and cleanup. Never terminate processes by a general executable name. A normal application error does not itself imply an uncertain native write; loss of a write reply still requires the separate no-replay test.
+
+Keep run paths bounded. A deeply nested source export, staged worker cache or artifact directory can fail under a downstream runtime's path rules before worker dispatch. Preserve the failing path and direct result, then compare an identical hashed binary copy at a shorter isolated path. Record the deployment constraint and fixture adjustment; a successful short-path run does not establish support for long installation paths. Use the same path arrangement for direct and broker timing samples.
+
 ## Record the decision
 
 Use `passed`, `blocked` or `not assessed` for each gate; do not calculate a readiness percentage.
@@ -54,6 +66,7 @@ Use `passed`, `blocked` or `not assessed` for each gate; do not calculate a read
 | Metadata and wire contract | Frozen source/dependencies, initialization, definitions, required MCP features and result comparisons. |
 | Selected fake-backed workflow | Candidate mode, state ownership, target/revision bindings, approval matrix, payload limits and independent fake-operation counts. |
 | Failure and lifecycle | Release/expiry behavior, job shutdown, timeout/crash/restart, uncertain outcomes and no replay. |
+| Required feature workers | Original worker protocol, hashes and generations, refresh/reload behavior, failure recovery, process cleanup and deployment path constraints. |
 | Efficiency | Stated direct/cold/warm samples and remaining native/host costs. |
 | Codex host acceptance | Fresh-chat discovery, app instructions/skills, required media, approval and progress display. |
 | Native pilot | Separately authorized targets and operations, fresh preflight, app-owned validation/readback and reconciliation. |

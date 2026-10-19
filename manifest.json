@@ -34,8 +34,8 @@
     },
     {
       "path": "docs/adapter-assessment.md",
-      "size": 7937,
-      "sha256": "86fedf52be600d66d51572954ea5e2b8502e0133738e1a6132f17e16d1819931"
+      "size": 10715,
+      "sha256": "8bb9848af7eae2905c32d9900f56c686a8d05361a1ffd21c79a445a3b01fcae8"
     },
     {
       "path": "docs/capability-catalog.md",
@@ -194,8 +194,8 @@
     },
     {
       "path": "README.md",
-      "size": 28630,
-      "sha256": "6b56593172d3260b2c919d071e42a136539331e461a0c72556bc4e284271422f"
+      "size": 28939,
+      "sha256": "13c22f504d8a3561dccb3a38c33242f62b7ed7ea7695ab976f49a177f0dff415"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -504,8 +504,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 18342,
-      "sha256": "62afead22d882b85500d682659dbe3f18f5facf91d204307fde735c8dfd6e7ab"
+      "size": 19145,
+      "sha256": "fa7e1248c5a6c66cc9e8f827f155ae702fd89dca9de2153d603e7a2912e023e4"
     }
   ]
 }
