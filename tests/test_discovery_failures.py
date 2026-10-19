@@ -6,8 +6,8 @@ from contextlib import asynccontextmanager
 
 import httpx
 import pytest
-from mcp.shared.exceptions import McpError
-from mcp.types import ErrorData, ListToolsResult, Tool, ToolAnnotations
+from mcp.shared.exceptions import MCPError
+from mcp.types import REQUEST_TIMEOUT, ErrorData, ListToolsResult, Tool, ToolAnnotations
 from test_sessions import OWNER_A, acquire
 from test_sessions import stateful as stateful
 
@@ -46,7 +46,7 @@ async def discovery(tmp_path, monkeypatch):
         def __init__(self, service_id):
             self.service_id = service_id
 
-        async def list_tools(self, cursor=None):
+        async def list_tools(self, *, params=None):
             await stage(self.service_id, "list_tools")
             return ListToolsResult(
                 tools=[
@@ -87,7 +87,9 @@ async def discovery(tmp_path, monkeypatch):
                 "capability_catalog": {"tool": "inspect"},
             }
         )
-        atomic_json(broker.registry / f"{service_id}.json", manifest.model_dump(mode="json"))
+        atomic_json(
+            broker.registry / f"{service_id}.json", manifest.model_dump(mode="json", by_alias=True)
+        )
     await broker.refresh()
     assert set(broker.catalog) == {"bad/inspect", "healthy/inspect"}
     try:
@@ -128,9 +130,9 @@ async def test_timeout_identifies_last_stage_and_evicts_only_failed_app(discover
         (RuntimeError("PRIVATE-DISCOVERY-DATA"), "error"),
         (httpx.ReadTimeout("PRIVATE-DISCOVERY-DATA"), "timeout"),
         (
-            McpError(
+            MCPError.from_error_data(
                 ErrorData(
-                    code=408,
+                    code=REQUEST_TIMEOUT,
                     message="PRIVATE-DISCOVERY-DATA",
                     data={"token": "PRIVATE-DISCOVERY-DATA"},
                 )

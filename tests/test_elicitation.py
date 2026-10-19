@@ -1,15 +1,13 @@
 """Approval routing and rejected paths use synthetic clients, never real app approval."""
 
 import asyncio
-from types import SimpleNamespace
 
 import anyio
 import pytest
-from mcp import ClientSession
+from mcp.shared.jsonrpc_dispatcher import JSONRPCDispatcher
 from mcp.types import (
     ClientCapabilities,
     ElicitationCapability,
-    ElicitRequest,
     ElicitRequestFormParams,
     ElicitRequestURLParams,
     ElicitResult,
@@ -17,13 +15,12 @@ from mcp.types import (
     FormElicitationCapability,
     Implementation,
     InitializeRequestParams,
-    ServerRequest,
     UrlElicitationCapability,
 )
 from test_pool import channels as channels
 
 from universal_tools.elicitation import ElicitationRouter, ElicitationTarget
-from universal_tools.transport import InitializedSession
+from universal_tools.transport import RoutingDispatcher
 
 
 def form(**changes):
@@ -72,7 +69,7 @@ async def test_actions_preserve_origin_and_only_accepted_schema_valid_content(ac
     assert result.action == action
     assert result.content == ({"approved": True} if action == "accept" else None)
     assert client.calls == [
-        ("App fixture/confirm:\nReview the explicit target", form().requestedSchema, 23)
+        ("App fixture/confirm:\nReview the explicit target", form().requested_schema, 23)
     ]
 
 
@@ -127,7 +124,7 @@ async def test_enum_arrays_preserve_string_choices_and_reject_nested_choices(ite
     client.reply = ElicitResult(action="accept", content={"choices": ["alpha"]})
     params = form().model_copy(
         update={
-            "requestedSchema": {
+            "requested_schema": {
                 "type": "object",
                 "properties": {"choices": {"type": "array", "items": items}},
                 "required": ["choices"],
@@ -151,7 +148,7 @@ async def test_enum_arrays_preserve_string_choices_and_reject_nested_choices(ite
 )
 async def test_unsupported_schemas_cannot_fetch_references_or_open_a_form(schema):
     client = Client()
-    params = form().model_copy(update={"requestedSchema": schema})
+    params = form().model_copy(update={"requested_schema": schema})
     assert isinstance(await ElicitationTarget(client, 1).forward(params), ErrorData)
     assert not client.calls
 
@@ -203,27 +200,21 @@ async def test_queued_sdk_form_cannot_adopt_a_route_bound_after_its_receipt(
     monkeypatch, active_at_receipt
 ):
     client = Client()
-    session = InitializedSession(None, None, relay=True)
+    router = ElicitationRouter()
+    session = RoutingDispatcher(None, None, router)
     gate, tasks = asyncio.Event(), []
 
-    class QueuedGroup:
-        def start_soon(self, handler, responder):
-            async def delayed():
-                await gate.wait()
-                return await handler(responder)
+    async def dispatch(self, *args, **kwargs):
+        async def delayed():
+            await gate.wait()
+            return await self.router.callback(None, form())
 
-            tasks.append(asyncio.create_task(delayed()))
+        tasks.append(asyncio.create_task(delayed()))
 
-    async def sdk_callback(self, responder):
-        return await self._elicitation_callback(None, responder.request.root.params)
-
-    monkeypatch.setattr(ClientSession, "_received_request", sdk_callback)
-    session._task_group = QueuedGroup()
-    responder = SimpleNamespace(request=ServerRequest(ElicitRequest(params=form())))
-    router = session.elicitation_router
+    monkeypatch.setattr(JSONRPCDispatcher, "_dispatch_request", dispatch)
     first = ElicitationTarget(client, 1)
     async with router.bind(first if active_at_receipt else None):
-        await session._received_request(responder)
+        await session._dispatch_request(None, None, None, None)
     replacement = ElicitationTarget(client, 2)
     async with router.bind(replacement):
         gate.set()

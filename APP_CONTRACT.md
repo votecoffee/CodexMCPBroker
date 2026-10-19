@@ -12,6 +12,12 @@ Apps can separately distribute [native skill bundles](docs/native-skill-bundles.
 
 For a development sequence and copyable isolated example, use the [server developer guide](docs/server-development/README.md). This contract defines broker-specific behavior; MCP protocol conformance and app/host/native acceptance require their own evidence.
 
+## SDK and wire baseline
+
+Framework/broker 0.14 uses MCP Python SDK 2.3.0. The SDK version does not change registration/publication schema version 1. The current downstream contract uses the negotiated `2025-11-25` handshake; a newer SDK's modern discovery, cache and multi-round-trip features are separate acceptance work. The isolated compatibility profile also exercises an SDK 2.2 backend. See the [upgrade boundaries](docs/app-framework.md#mcp-sdk-23-upgrade).
+
+MCP documents use wire aliases when serialized, while Python SDK attributes use snake_case. Store custom tool/result/media extension data in `_meta`. Unknown top-level SDK model fields are ignored by SDK 2 and are outside the forwarding contract; ordinary supported result fields and `_meta` are preserved.
+
 ## HTTP registration
 
 ```json

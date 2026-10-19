@@ -33,7 +33,9 @@ def initialization(**overrides):
 def test_initialization_preserves_native_metadata_without_promoting_extensions():
     native = initialization(_meta={"private-extension": "not exported"})
     captured = initialization_metadata(native)
-    assert captured == native.model_dump(mode="json", exclude_none=True, exclude={"meta"})
+    assert captured == native.model_dump(
+        mode="json", by_alias=True, exclude_none=True, exclude={"meta"}
+    )
     assert set(captured) == {"protocolVersion", "serverInfo", "capabilities", "instructions"}
     assert captured["capabilities"]["resources"]["subscribe"] is True
     captured["capabilities"]["experimental"]["example"]["feature"] = "changed"
@@ -145,7 +147,7 @@ async def test_lost_session_blocks_metadata_without_reconnecting(stateful):
 async def test_revoked_and_failed_registrations_do_not_serve_stale_guidance(stateful):
     broker, sessions = stateful
     config = manifest(enabled=False)
-    atomic_json(broker.registry / "stateful.json", config.model_dump(mode="json"))
+    atomic_json(broker.registry / "stateful.json", config.model_dump(mode="json", by_alias=True))
     with pytest.raises(BrokerError, match="registration changed"):
         await broker.describe_service("stateful", owner_id=None)
     await broker.refresh()

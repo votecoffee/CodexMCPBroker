@@ -118,9 +118,9 @@ async def test_lazy_workflow_guidance_and_publication_keep_fixed_frontend_surfac
             )
             assert hashlib.sha256(result["content"].encode()).hexdigest() == reference["sha256"]
             bad = {**reference["read"]["arguments"], "expected_sha256": "0" * 64}
-            assert (await read(owner, reference["read"]["tool"], bad, context)).isError
+            assert (await read(owner, reference["read"]["tool"], bad, context)).is_error
             if context:
-                assert (await read(other, "read_workflow", arguments, context)).isError
+                assert (await read(other, "read_workflow", arguments, context)).is_error
             result = data(await read(owner, "summarize_text", {"text": "café 深 μ"}, context))
             assert result["text"] == "café 深 μ"
             definitions = {
@@ -142,7 +142,7 @@ async def test_lazy_workflow_guidance_and_publication_keep_fixed_frontend_surfac
                     )
                 )
             assert len(await search(owner)) == 2
-            assert (await read(owner, "read_workflow", arguments, context)).isError
+            assert (await read(owner, "read_workflow", arguments, context)).is_error
             for tool, revision in definitions.items():
                 assert (
                     data(

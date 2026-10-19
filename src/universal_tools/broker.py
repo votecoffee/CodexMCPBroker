@@ -13,10 +13,11 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import httpx2
 from jsonschema import ValidationError
 from jsonschema.validators import validator_for
-from mcp.shared.exceptions import McpError
-from mcp.types import CallToolResult, Tool
+from mcp.shared.exceptions import MCPError
+from mcp.types import REQUEST_TIMEOUT, CallToolResult, Tool
 
 from .capabilities import CapabilityState, read_catalog, tool_revision
 from .elicitation import ElicitationTarget, routed_call
@@ -59,9 +60,9 @@ def discovery_failure(error: BaseException, phase: str, timeout: float | None) -
             break
         current = pending.pop()
         if (
-            isinstance(current, TimeoutError | httpx.TimeoutException)
-            or isinstance(current, McpError)
-            and current.error.code == httpx.codes.REQUEST_TIMEOUT
+            isinstance(current, TimeoutError | httpx.TimeoutException | httpx2.TimeoutException)
+            or isinstance(current, MCPError)
+            and current.code == REQUEST_TIMEOUT
         ):
             kind = "timeout"
             break
@@ -87,7 +88,7 @@ class CatalogTool:
     @property
     def read_only(self) -> bool:
         # An explicit false annotation wins over any local legacy override.
-        hint = self.tool.annotations.readOnlyHint if self.tool.annotations else None
+        hint = self.tool.annotations.read_only_hint if self.tool.annotations else None
         return hint is True or (hint is None and self.tool.name in self.manifest.read_only_tools)
 
     @property
@@ -99,7 +100,7 @@ class CatalogTool:
         return tool_revision(self.manifest, self.tool)
 
     def describe(self) -> dict:
-        hint = self.tool.annotations.readOnlyHint if self.tool.annotations else None
+        hint = self.tool.annotations.read_only_hint if self.tool.annotations else None
         if self.read_only:
             classification_reason = (
                 "app_read_only_hint" if hint is True else "legacy_read_only_tool"
@@ -107,7 +108,7 @@ class CatalogTool:
         elif (
             hint is False
             and self.tool.annotations
-            and "readOnlyHint" in self.tool.annotations.model_fields_set
+            and "read_only_hint" in self.tool.annotations.model_fields_set
         ):
             classification_reason = "app_not_read_only_hint"
         else:
@@ -133,7 +134,7 @@ class CatalogTool:
             "max_argument_bytes": self.manifest.max_argument_bytes,
             "session_mode": self.manifest.session_mode,
             "context_required": self.manifest.session_mode == "exclusive",
-            "definition": self.tool.model_dump(mode="json", exclude_none=True),
+            "definition": self.tool.model_dump(mode="json", by_alias=True, exclude_none=True),
         }
 
 
@@ -364,9 +365,9 @@ class Broker:
                     for tool in tools:
                         if not re.fullmatch(TOOL_NAME_PATTERN, tool.name):
                             raise BrokerError("app advertised an unsupported tool name")
-                        check_schema(tool.inputSchema)
-                        if tool.outputSchema is not None:
-                            check_schema(tool.outputSchema)
+                        check_schema(tool.input_schema)
+                        if tool.output_schema is not None:
+                            check_schema(tool.output_schema)
                     entries = [CatalogTool(manifest, tool) for tool in tools]
                     catalog.update({entry.id: entry for entry in entries})
                     manifests[service_id] = manifest
@@ -911,7 +912,7 @@ class Broker:
                 f"({entry.manifest.max_argument_bytes})"
             )
         try:
-            validator_for(entry.tool.inputSchema)(entry.tool.inputSchema).validate(arguments)
+            validator_for(entry.tool.input_schema)(entry.tool.input_schema).validate(arguments)
         except ValidationError:
             raise BrokerError("arguments do not match the app's input schema") from None
 
@@ -963,7 +964,7 @@ class Broker:
                         relay.progress.label = f"App {entry.id} progress:\n"
                 result = await routed_call(session, entry.tool.name, arguments, relay)
                 if write:
-                    self.journal.finish(request_id, "app_error" if result.isError else "completed")
+                    self.journal.finish(request_id, "app_error" if result.is_error else "completed")
                 return result
 
             try:

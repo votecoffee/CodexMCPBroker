@@ -45,7 +45,10 @@ def result(value, *, text=False):
 
 @pytest.mark.parametrize("text", [False, True])
 def test_normalized_catalog_accepts_structured_or_single_json_text(text):
-    assert parse_document(result(document(), text=text)).model_dump(mode="json") == document()
+    assert (
+        parse_document(result(document(), text=text)).model_dump(mode="json", by_alias=True)
+        == document()
+    )
 
 
 @pytest.mark.parametrize(
@@ -133,7 +136,7 @@ class CatalogSession:
         self.started = asyncio.Event()
         self.closed = False
 
-    async def list_tools(self, cursor=None):
+    async def list_tools(self, *, params=None):
         assert asyncio.current_task() is self.task
         tools = [
             Tool(
@@ -161,7 +164,7 @@ class CatalogSession:
             ),
         ]
         if self.control.mode == "external_schema":
-            tools[0].outputSchema = {"$ref": "https://example.invalid/schema"}
+            tools[0].output_schema = {"$ref": "https://example.invalid/schema"}
         return ListToolsResult(tools=tools)
 
     async def call_tool(self, name, arguments):
@@ -209,7 +212,9 @@ async def catalogs(tmp_path, monkeypatch):
         broker = Broker(tmp_path / str(len(brokers)))
         brokers.append(broker)
         registration = manifest(**{"capability_catalog": {"tool": "catalog"}, **overrides})
-        atomic_json(broker.registry / "app.json", registration.model_dump(mode="json"))
+        atomic_json(
+            broker.registry / "app.json", registration.model_dump(mode="json", by_alias=True)
+        )
         await broker.refresh()
         return broker, sessions, control
 
@@ -234,7 +239,7 @@ async def test_catalog_search_resolves_a_read_only_discovery_reference_without_e
     native = await broker.call(
         reference["tool_id"], reference["catalog_revision"], reference["arguments"], write=False
     )
-    assert native.structuredContent["capability"] == "holes.drill"
+    assert native.structured_content["capability"] == "holes.drill"
     assert sessions[-1].calls == ["describe_feature"]
     with pytest.raises(BrokerError, match="unknown tool_id"):
         await broker.call("app/holes.drill", match["capability_revision"], {}, write=False)

@@ -24,7 +24,7 @@ Each stage should state what was actually exercised and retain a direct-versus-b
 
 Use the [adapter session assessment worksheet](docs/adapter-assessment.md) to trace state owners and shutdown effects, select a candidate mode, and record passed, blocked or unassessed gates. A fake-backed mode-suitability test can explain why a lifecycle is incompatible without changing the app's normal registration.
 
-Use the optional [cross-SDK profile](VERIFICATION.md#cross-sdk-profile) for a reproducible synthetic MCP 1.30-to-2.3 baseline. Record the negotiated protocol separately from SDK versions. Compare fields actually received on that protocol; client-model defaults and newer-protocol metadata are distinct from a broker forwarding loss. A successful older-protocol fixture does not certify features available only through a newer native client or replace an actual app adapter review.
+Use the optional [cross-SDK profile](VERIFICATION.md#cross-sdk-profile) for a reproducible synthetic MCP 2.3-to-2.3 isolated baseline. Record the negotiated protocol separately from SDK versions. Compare fields actually received on that protocol; client-model defaults and newer-protocol metadata are distinct from a broker forwarding loss. A successful older-protocol fixture does not certify features available only through a newer native client or replace an actual app adapter review.
 
 ## Check the workflow contract
 

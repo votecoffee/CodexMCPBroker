@@ -17,7 +17,7 @@ from universal_tools.models import BrokerError, atomic_json
 
 def test_shared_is_explicit_opt_in_and_included_in_the_published_schema():
     assert manifest().session_mode == "exclusive"  # Fixture explicitly opts in.
-    raw = manifest().model_dump(mode="json")
+    raw = manifest().model_dump(mode="json", by_alias=True)
     raw.pop("session_mode")
     assert type(manifest()).model_validate(raw).session_mode == "transient"
     schema = json.loads(
@@ -30,7 +30,8 @@ def test_shared_is_explicit_opt_in_and_included_in_the_published_schema():
 async def shared(stateful):
     broker, sessions = stateful
     atomic_json(
-        broker.registry / "stateful.json", manifest(session_mode="shared").model_dump(mode="json")
+        broker.registry / "stateful.json",
+        manifest(session_mode="shared").model_dump(mode="json", by_alias=True),
     )
     await broker.refresh()
     yield broker, sessions
@@ -44,9 +45,9 @@ async def test_shared_worker_is_lazy_and_reused_across_frontends_and_refresh(sha
     lease = broker._leases["stateful"]
     assert lease.owner is None
     for owner in (OWNER_B, None, OWNER_A):
-        assert (await invoke(broker, owner=owner)).structuredContent == first.structuredContent
+        assert (await invoke(broker, owner=owner)).structured_content == first.structured_content
     await broker.refresh()
-    assert (await invoke(broker, owner=OWNER_B)).structuredContent == first.structuredContent
+    assert (await invoke(broker, owner=OWNER_B)).structured_content == first.structured_content
     assert len(sessions) == before + 1 and not sessions[-1].closed
     assert broker.describe("stateful/inspect")["context_required"] is False
     assert broker.ownership.get("stateful")["state"] == "active"
@@ -88,7 +89,7 @@ async def test_shared_calls_still_serialize_and_keep_write_policy_and_receipts(s
     await asyncio.sleep(0)
     assert not second.done() and engine.calls == 2
     engine.unblock.set()
-    assert (await first).structuredContent == (await second).structuredContent
+    assert (await first).structured_content == (await second).structured_content
     count = engine.calls
     with pytest.raises(BrokerError, match="already"):
         await invoke(broker, owner=OWNER_B, write=True, request_id="shared-serial", value="first")
@@ -96,7 +97,9 @@ async def test_shared_calls_still_serialize_and_keep_write_policy_and_receipts(s
     assert broker.request_status("shared-serial")["status"] == "completed"
     atomic_json(
         broker.registry / "stateful.json",
-        manifest(session_mode="shared", allowed_write_tools=[]).model_dump(mode="json"),
+        manifest(session_mode="shared", allowed_write_tools=[]).model_dump(
+            mode="json", by_alias=True
+        ),
     )
     with pytest.raises(BrokerError, match="registration changed"):
         await invoke(broker)
@@ -125,7 +128,7 @@ async def test_clean_shared_idle_expiry_reopens_only_on_an_explicit_call(shared)
     assert not broker._leases
     assert len(sessions) == count
     second = await invoke(broker, owner=OWNER_B)
-    assert second.structuredContent["generation"] != first.structuredContent["generation"]
+    assert second.structured_content["generation"] != first.structured_content["generation"]
     assert len(sessions) == count + 1
 
 
@@ -134,7 +137,7 @@ async def test_normal_shared_app_error_preserves_worker_and_records_app_error(sh
     await invoke(broker)
     engine = sessions[-1]
     engine.app_error = True
-    assert (await invoke(broker, write=True, request_id="shared-app-error")).isError
+    assert (await invoke(broker, write=True, request_id="shared-app-error")).is_error
     assert broker.request_status("shared-app-error")["status"] == "app_error"
     engine.app_error = False
     await invoke(broker, owner=OWNER_B)
@@ -188,7 +191,7 @@ async def test_failed_shared_initialization_retains_reservation_without_claim(
     broker, sessions = shared
     atomic_json(
         broker.registry / "stateful.json",
-        manifest(session_mode="shared", timeout_seconds=0.2).model_dump(mode="json"),
+        manifest(session_mode="shared", timeout_seconds=0.2).model_dump(mode="json", by_alias=True),
     )
     await broker.refresh()
 
@@ -252,7 +255,7 @@ async def test_shared_cold_start_and_revalidation_share_one_budget_without_late_
     broker, sessions = shared
     atomic_json(
         broker.registry / "stateful.json",
-        manifest(session_mode="shared", timeout_seconds=1).model_dump(mode="json"),
+        manifest(session_mode="shared", timeout_seconds=1).model_dump(mode="json", by_alias=True),
     )
     await broker.refresh()
     connect = broker_module.service_session
@@ -264,10 +267,10 @@ async def test_shared_cold_start_and_revalidation_share_one_budget_without_late_
         async with connect(config) as session:
             list_tools = session.list_tools
 
-            async def delayed_list(cursor=None):
+            async def delayed_list(*, params=None):
                 calls.append("list")
                 await asyncio.sleep(0.3 if len(calls) == 1 else 0.5)
-                return await list_tools(cursor)
+                return await list_tools(params=params)
 
             session.list_tools = delayed_list
             yield session
@@ -296,7 +299,7 @@ async def test_failed_shared_teardown_keeps_barrier_when_registration_becomes_tr
     monkeypatch.setattr(worker, "close", failed_close)
     atomic_json(
         broker.registry / "stateful.json",
-        manifest(session_mode="transient").model_dump(mode="json"),
+        manifest(session_mode="transient").model_dump(mode="json", by_alias=True),
     )
     before = len(sessions)
     await broker.refresh()
@@ -313,7 +316,9 @@ async def test_shared_resource_rejects_aliases_before_opening_another_session(
     if declared_alias:
         atomic_json(
             broker.registry / "stateful.json",
-            manifest(session_mode="shared", resource_id="engine").model_dump(mode="json"),
+            manifest(session_mode="shared", resource_id="engine").model_dump(
+                mode="json", by_alias=True
+            ),
         )
         await broker.refresh()
     await invoke(broker)
@@ -330,7 +335,7 @@ async def test_shared_resource_rejects_aliases_before_opening_another_session(
             else {}
         ),
     )
-    atomic_json(broker.registry / "alias.json", alias.model_dump(mode="json"))
+    atomic_json(broker.registry / "alias.json", alias.model_dump(mode="json", by_alias=True))
     with pytest.raises(BrokerError, match="conflicting"):
         await invoke(broker)
     await broker.refresh()

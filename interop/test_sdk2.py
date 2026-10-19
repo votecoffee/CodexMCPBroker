@@ -1,4 +1,4 @@
-"""Explicit optional profile: SDK 1.30 broker/frontends against an SDK 2.3 server."""
+"""Explicit optional profile: SDK 2.3 broker/frontends against an SDK 2.3 server."""
 
 import asyncio
 import base64
@@ -33,9 +33,11 @@ def reference(sdk2_python, tmp_path_factory):
 
 
 @asynccontextmanager
-async def sdk2_app(stack, python, *, timeout=20, audit=None):
+async def sdk2_app(stack, python, *, timeout=20, audit=None, sdk22_root=None):
     path = stack[0] / "services/sdk2.json"
     args = [str(Path(__file__).with_name("sdk2_app.py"))]
+    if sdk22_root is not None:
+        args += ["--sdk-root", str(sdk22_root)]
     if audit is not None:
         args += ["--audit", str(audit)]
     atomic_json(
@@ -112,7 +114,7 @@ async def test_full_results_and_large_payloads_match_the_same_sdk_reference(
     async with sdk2_app(stack, sdk2_python), frontends(stack[0], None) as (owner,):
         result = await call(owner, await acquire(owner), name, {"payload": payload()})
         assert (
-            result.model_dump(mode="json", by_alias=True, exclude_none=True)
+            result.model_dump(mode="json", by_alias=True, exclude_none=True, exclude_unset=True)
             == reference["results"][name]
         )
         assert data(result) == payload()
@@ -122,10 +124,10 @@ async def test_image_bytes_and_mime_type_survive_both_broker_hops(stack, sdk2_py
     async with sdk2_app(stack, sdk2_python), frontends(stack[0], None) as (owner,):
         result = await call(owner, await acquire(owner), "image")
         assert (
-            result.model_dump(mode="json", by_alias=True, exclude_none=True)
+            result.model_dump(mode="json", by_alias=True, exclude_none=True, exclude_unset=True)
             == reference["results"]["image"]
         )
-        assert result.content[0].mimeType == "image/png"
+        assert result.content[0].mime_type == "image/png"
         assert base64.b64decode(result.content[0].data) == base64.b64decode(PNG)
 
 
@@ -137,8 +139,8 @@ async def test_application_error_is_preserved_without_losing_the_session(
         before = data(await call(owner, context, "state"))
         result = await call(owner, context, "reject")
         assert (
-            result.isError
-            and result.model_dump(mode="json", by_alias=True, exclude_none=True)
+            result.is_error
+            and result.model_dump(mode="json", by_alias=True, exclude_none=True, exclude_unset=True)
             == reference["results"]["reject"]
         )
         assert data(await call(owner, context, "state")) == before
@@ -148,16 +150,16 @@ async def test_owner_revisions_refresh_and_write_receipts_remain_independent(sta
     async with sdk2_app(stack, sdk2_python), frontends(stack[0], None, None) as (owner, other):
         context = await acquire(owner)
         args = {"candidate": "reviewed", "expected_revision": 0}
-        assert (await call(other, context, "edit", args, request_id="sdk2-stolen")).isError
-        assert (await owner.invoke("get_request_status", {"request_id": "sdk2-stolen"})).isError
+        assert (await call(other, context, "edit", args, request_id="sdk2-stolen")).is_error
+        assert (await owner.invoke("get_request_status", {"request_id": "sdk2-stolen"})).is_error
         assert (
             data(await call(owner, context, "edit", args, request_id="sdk2-edit"))["revision"] == 1
         )
-        assert (await call(owner, context, "edit", args, request_id="sdk2-edit")).isError
+        assert (await call(owner, context, "edit", args, request_id="sdk2-edit")).is_error
         before = data(await call(owner, context, "state"))
         data(await other.invoke("refresh_services", {}))
         assert data(await call(owner, context, "state")) == before
-        assert (await call(owner, context, "edit", args, request_id="sdk2-stale")).isError
+        assert (await call(owner, context, "edit", args, request_id="sdk2-stale")).is_error
         assert (
             data(await owner.invoke("get_request_status", {"request_id": "sdk2-stale"}))["status"]
             == "app_error"
@@ -170,8 +172,8 @@ async def test_invalid_input_is_not_dispatched_or_claimed(stack, sdk2_python):
         context = await acquire(owner)
         assert (
             await call(owner, context, "edit", {"candidate": "invalid"}, request_id="sdk2-invalid")
-        ).isError
-        assert (await owner.invoke("get_request_status", {"request_id": "sdk2-invalid"})).isError
+        ).is_error
+        assert (await owner.invoke("get_request_status", {"request_id": "sdk2-invalid"})).is_error
         assert data(await call(owner, context, "state"))["revision"] == 0
 
 
@@ -214,12 +216,58 @@ async def test_timed_out_synchronous_write_keeps_uncertain_status_and_recovery_b
             {"candidate": "maybe", "expected_revision": 0, "delay": 30},
             request_id="sdk2-timeout",
         )
-        assert result.isError
+        assert result.is_error
         assert (
             data(await owner.invoke("get_request_status", {"request_id": "sdk2-timeout"}))["status"]
             == "uncertain"
         )
         status = data(await owner.invoke("service_session_status", {"service_id": "sdk2"}))
         assert status["state"] == "lost" and status["recovery_required"]
-        assert (await other.invoke("acquire_service", {"service_id": "sdk2"})).isError
+        assert (await other.invoke("acquire_service", {"service_id": "sdk2"})).is_error
         assert len(audit.read_text(encoding="utf-8").splitlines()) == 1
+
+
+async def test_sdk23_framework_preserves_sdk22_app_data_and_revision_guards(
+    stack,
+    sdk2_python,
+    sdk22_root,
+):
+    async with (
+        sdk2_app(stack, sdk2_python, sdk22_root=sdk22_root),
+        frontends(stack[0], None) as (owner,),
+    ):
+        context = await acquire(owner)
+        assert data(await call(owner, context, "echo", {"payload": payload()})) == payload()
+        image = await call(owner, context, "image")
+        assert not image.is_error
+        assert image.content[0].mime_type == "image/png"
+        assert image.content[0].meta == {"fixture": "sdk2", "serial": 2**63 - 1}
+        assert base64.b64decode(image.content[0].data) == base64.b64decode(PNG)
+        assert (
+            data(
+                await call(
+                    owner,
+                    context,
+                    "edit",
+                    {"candidate": "caf\u00e9 \u6df1 \u03bc", "expected_revision": 0},
+                    request_id="sdk22-edit-one",
+                )
+            )["revision"]
+            == 1
+        )
+        assert (
+            await call(
+                owner,
+                context,
+                "edit",
+                {"candidate": "stale", "expected_revision": 0},
+                request_id="sdk22-stale-one",
+            )
+        ).is_error
+        state = data(await call(owner, context, "state"))
+        assert isinstance(state.pop("pid"), int)
+        assert state == {
+            "value": "caf\u00e9 \u6df1 \u03bc",
+            "revision": 1,
+        }
+        data(await owner.invoke("release_service", {"service_id": "sdk2", "context_id": context}))

@@ -2,7 +2,7 @@
 
 The primary development direction is a reusable app-owned MCP framework that reduces Codex reloads and standardizes backend code. The universal broker remains an optional aggregation experiment. Apps can use the framework with their own standalone Codex plugin and no Universal Tools installation.
 
-Version 0.13 introduces the Python `universal_tools.framework` API and an authenticated loopback reference host. This is an experimental foundation, not an adopted integration in existing apps. Real Codex activation, native behavior, performance and full standalone/aggregated parity remain acceptance work.
+Version 0.13 introduced the Python `universal_tools.framework` API and an authenticated loopback reference host. Version 0.14 migrates that foundation to MCP Python SDK 2.3.0. This is an experimental foundation, not an adopted integration in existing apps. Real Codex activation, native behavior, performance and full standalone/aggregated parity remain acceptance work.
 
 ## Stable front door, replaceable backends
 
@@ -34,7 +34,7 @@ Protocol tests keep the same native MCP client sessions connected across a backe
 
 The current Python distribution remains **`universal-codex-tools`**, preserving its existing name, while apps import the framework API. Distribute verified wheels and use each app's normal dependency management. Pin the exact tested framework version while the API is experimental, and keep transitive dependencies locked in that app's build. The repository builds a wheel; no public package-feed publication is implied. Install a verified local wheel or use an explicit local development dependency until a feed release is available.
 
-Python apps can use editable installs during coordinated development and versioned wheels for builds/releases. Keep dependency installation out of live tool calls. The framework currently pins MCP 1.30.0 and other runtime dependencies; embed it only in a compatible environment. An app with conflicting SDK/native requirements can run the host in a separate environment and expose its backend using the supported MCP contract. Do not silently downgrade an existing app's SDK.
+Python apps can use editable installs during coordinated development and versioned wheels for builds/releases. Keep dependency installation out of live tool calls. Version 0.14 uses MCP Python SDK 2.3.0 and other runtime dependencies; embed it only in a compatible environment. An app with conflicting SDK/native requirements can run the host in a separate environment and expose its backend using the supported MCP contract. Do not silently downgrade an existing app's SDK.
 
 Native .NET bindings can be distributed through NuGet with `PackageReference` when implemented. They are not shipped in this checkpoint. Keep lifecycle/publication contracts versioned across languages, while native engine adapters remain language-specific. An out-of-process MCP backend can already be implemented in another language; that is distinct from an in-process .NET framework library.
 
@@ -85,3 +85,15 @@ A native MCP session is not itself evidence of Codex chat isolation. Where the h
 Run `tests/test_framework.py`, then the relevant [acceptance stages](server-development/acceptance.md) for an actual app. Preserve original handlers, compare complete results, verify two-client state and failure behavior, and measure direct/host latency. The shared engine still serializes calls to one backend. Long-running native work should use app-owned jobs and explicit targets. Native project/controller access and real migrations are not part of the synthetic framework profile.
 
 This checkpoint does not provide native .NET packages, automatic app migration, a public package feed, complete dependency-closure verification or arbitrary in-process DLL/Python hot reload. Resources, prompts, sampling, roots, tasks, URL forms and general notifications retain the existing engine limitations. Optional universal aggregation of a framework-based app needs its own discovery, nested policy, guidance and host assessment; an app using the SDK does not automatically certify that route.
+
+## MCP SDK 2.3 upgrade
+
+Version 0.14 requires `mcp==2.3.0`. Supported app interoperability targets SDK 2.2 and later; SDK 1.x compatibility is not maintained. The explicit matrix currently verifies SDK 2.2.0 and 2.3.0; later SDK releases still require validation. Update the framework package and its dependency lock together in a stopped, app-owned environment. Do not replace a live backend environment or downgrade an app SDK to adopt the framework. Existing app publication and registration schema versions remain unchanged.
+
+SDK version and wire-protocol revision are separate. Downstream sessions explicitly perform the legacy handshake and use the negotiated `2025-11-25` contract. The current acceptance profile covers that contract; this upgrade does not claim support for modern discovery/cache behavior, input-required multi-round-trip workflows or other newly available protocol features. Apps requiring those features need a separately assessed route.
+
+SDK 2 provides a request-scoped `ServerSession` proxy. For standalone native clients, ownership follows the retained legacy connection, rather than the short-lived proxy or caller-supplied client metadata. The pinned adapter captures this connection explicitly for each tool call. Stateless modern clients without an authenticated frontend identity cannot acquire implicit ownership. App-owned authenticated frontend affinity remains a separate boundary from local-user authentication.
+
+The form adapter captures its route before the SDK dispatcher schedules a callback, preserving rejection of delayed forms from an earlier operation. It advertises forms only, rejects URL/task forms, and retains cancellation/deadline behavior. If an app propagates the exact RPC refusal generated by that call's relay, it becomes an ordinary error result with the refusal code in `_meta`. Unrelated RPC errors and transport timeouts retain failure/recovery semantics; no approval answer is synthesized. This uses a small pinned dispatcher integration; SDK changes to this seam require the queued-form and protocol profiles again.
+
+Use SDK 2 snake_case Python attributes and `model_dump(by_alias=True, mode="json")` for MCP wire documents. Custom extension data belongs in `_meta`, not unknown top-level SDK model fields: SDK 2 ignores unrecognized fields. The framework disables the new SDK HTTP client's default one-MiB SSE event ceiling to preserve existing large-result behavior; argument and inbound HTTP limits remain independent. This includes app result/media metadata. A framework refresh is not a native application or Codex UI acceptance test.

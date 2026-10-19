@@ -49,7 +49,8 @@ async def capability_app(stack, tmp_path, transport="stdio", timeout=20.0):
             async with httpx.AsyncClient(timeout=0.5, trust_env=False) as client:
                 while True:
                     try:
-                        await client.get(url)
+                        async with client.stream("GET", url):
+                            pass
                         break
                     except httpx.TransportError:
                         if time.monotonic() > deadline or child.poll() is not None:
@@ -174,8 +175,8 @@ async def test_discovery_reference_preserves_native_revision_target_and_write_ru
             )
         )
         assert result["commits"] == 1 and result["arguments"] == {"diameter": 12.5}
-        assert (await refresh(other, context)).isError
-        assert (await describe(other, match)).isError
+        assert (await refresh(other, context)).is_error
+        assert (await describe(other, match)).is_error
         assert (await matches(other))[0] == public
         service = data(await other.invoke("describe_service", {"service_id": "cap-index"}))
         assert match["app_catalog_revision"] not in json.dumps(service)
@@ -198,7 +199,7 @@ async def test_reloaded_inner_operations_appear_without_changing_outer_tools_or_
         data(await refresh(owner, context))
         added = (await matches(owner, "bolt"))[0]
         assert added["capability_id"] == "fasteners.bolt"
-        assert (await describe(owner, previous)).isError
+        assert (await describe(owner, previous)).is_error
         assert (
             outer
             == data(await owner.invoke("describe_tool", {"tool_id": "cap-index/run_feature"}))[
@@ -218,7 +219,7 @@ async def test_reloaded_inner_operations_appear_without_changing_outer_tools_or_
             context,
             "catalog-stale-001",
         )
-        assert stale.isError
+        assert stale.is_error
         assert data(await call(owner, "state", {}, context))["commits"] == 0
 
 
@@ -282,7 +283,7 @@ async def test_provider_timeout_cannot_leave_searchable_owned_hints(
             )
         )
         before = len(audit.read_text(encoding="utf-8").splitlines())
-        assert (await refresh(owner, context)).isError
+        assert (await refresh(owner, context)).is_error
         observed = [json.loads(line) for line in audit.read_text(encoding="utf-8").splitlines()]
         assert len(observed) == before + 1 and observed[-1]["delay"] == delay
         assert not await matches(owner)

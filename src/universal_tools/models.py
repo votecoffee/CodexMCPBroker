@@ -169,7 +169,7 @@ class ServiceManifest(StrictModel):
 
     @property
     def digest(self) -> str:
-        return canonical_digest(self.model_dump(mode="json"))
+        return canonical_digest(self.model_dump(mode="json", by_alias=True))
 
 
 def load_manifest(path: Path) -> ServiceManifest:

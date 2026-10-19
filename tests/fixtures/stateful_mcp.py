@@ -7,7 +7,7 @@ import os
 import secrets
 from pathlib import Path
 
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.types import ToolAnnotations
 
 parser = argparse.ArgumentParser()
@@ -16,15 +16,17 @@ parser.add_argument("--label", default="synthetic")
 parser.add_argument("--port", type=int)
 options = parser.parse_args()
 instance = secrets.token_hex(16)
-server = FastMCP(
+server = MCPServer(
     "Synthetic stateful app",
     instructions=f"Synthetic session guidance: {instance}. Inspect the target before applying.",
     log_level="WARNING",
-    host="127.0.0.1",
-    port=options.port or 8765,
-    stateless_http=False,
-    json_response=False,
 )
+server_http_options = {
+    "host": "127.0.0.1",
+    "port": options.port or 8765,
+    "stateless_http": False,
+    "json_response": False,
+}
 value = ""
 plans = {}
 commits = 0
@@ -132,4 +134,7 @@ def transport_headers(ctx: Context) -> dict:
     }
 
 
-server.run(transport="streamable-http" if options.port else "stdio")
+server.run(
+    transport="streamable-http" if options.port else "stdio",
+    **(server_http_options if options.port else {}),
+)

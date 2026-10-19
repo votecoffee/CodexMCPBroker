@@ -4,7 +4,7 @@ import argparse
 import asyncio
 import secrets
 
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.types import ToolAnnotations
 
 parser = argparse.ArgumentParser()
@@ -12,14 +12,16 @@ parser.add_argument("--label", default="synthetic")
 parser.add_argument("--port", type=int)
 options = parser.parse_args()
 instance = secrets.token_hex(16)
-server = FastMCP(
+server = MCPServer(
     "Synthetic progress app",
     log_level="WARNING",
-    host="127.0.0.1",
-    port=options.port or 8765,
-    stateless_http=False,
-    json_response=False,
 )
+server_http_options = {
+    "host": "127.0.0.1",
+    "port": options.port or 8765,
+    "stateless_http": False,
+    "json_response": False,
+}
 commits = 0
 previous_progress_token = None
 
@@ -27,7 +29,7 @@ previous_progress_token = None
 @server.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def progress_work(ctx: Context, label: str, delay: float = 0.15, steps: int = 3) -> dict:
     global previous_progress_token
-    token = ctx.request_context.meta.progressToken if ctx.request_context.meta else None
+    token = ctx.request_context.meta.get("progress_token") if ctx.request_context.meta else None
     if token is not None:
         for stray in ("unrequested-token", previous_progress_token):
             if stray is not None:
@@ -78,4 +80,7 @@ async def progress_edit(
     return {**result, "commits": commits}
 
 
-server.run(transport="streamable-http" if options.port else "stdio")
+server.run(
+    transport="streamable-http" if options.port else "stdio",
+    **(server_http_options if options.port else {}),
+)

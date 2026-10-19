@@ -3,13 +3,13 @@
 import argparse
 import os
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--generation", type=int, choices=[1, 2], required=True)
 options = parser.parse_args()
-server = FastMCP("Example text backend", log_level="WARNING")
+server = MCPServer("Example text backend", log_level="WARNING")
 READ = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 
 

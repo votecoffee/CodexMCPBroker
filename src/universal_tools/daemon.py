@@ -107,7 +107,7 @@ def serve(state: Path) -> None:
         settings = load_settings(state)
         broker = Broker(state, max_request_body_bytes=settings.max_request_body_bytes)
         mcp = create_surface(LocalBackend(broker), port=settings.port)
-        base_app = mcp.streamable_http_app()
+        base_app = mcp.streamable_http_app(**mcp.http_options)
 
         @asynccontextmanager
         async def lifespan(app):

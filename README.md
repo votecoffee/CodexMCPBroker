@@ -6,7 +6,7 @@ Shared app MCP framework with an optional universal discovery broker
 
 Build app-owned MCP hosts from one versioned package. A stable MCP front door discovers versioned backends, preserving common policy, session and recovery behavior while reducing Codex reloads. Apps keep their standalone plugins. The optional universal broker can aggregate independently installed app services; that route remains a separate integration profile.
 
-The optional plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. Apps use the `universal_tools.framework` API. The current version is **0.13.0**.
+The optional plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. Apps use the `universal_tools.framework` API. The current version is **0.14.0**, using **MCP Python SDK 2.3.0**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** The shared framework and optional broker are **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Framework adoption, full app workflow parity and migration readiness have not been established; current app installations remain unchanged.
 
@@ -291,7 +291,7 @@ See [APP_CONTRACT.md](APP_CONTRACT.md) for downstream service contracts, [MIGRAT
 
 Questions and bug reports belong in [GitHub issues](https://github.com/votecoffee/CodexMCPBroker/issues). Pull requests are welcome. Follow [CONTRIBUTING.md](CONTRIBUTING.md) for development checks, public documentation rules and release packaging.
 
-An optional [cross-SDK profile](VERIFICATION.md#cross-sdk-profile) checks the MCP 1.30 broker against a synthetic MCP 2.3 server in a separate environment. It compares the negotiated `2025-11-25` path, full results, media, ownership and uncertain writes. It does not upgrade the broker runtime or establish native app compatibility or support for newer protocol features.
+An optional [cross-SDK profile](VERIFICATION.md#cross-sdk-profile) checks the MCP 2.3 framework/broker against a synthetic MCP 2.3 server in a separate environment, with an additional MCP 2.2 backend compatibility fixture. It compares the negotiated `2025-11-25` path, full results, media, ownership and uncertain writes. The runtime now uses SDK 2.3; this profile does not establish native app compatibility or support for newer protocol features.
 
 ## License
 

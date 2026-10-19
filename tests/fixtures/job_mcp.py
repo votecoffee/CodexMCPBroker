@@ -4,13 +4,13 @@ import argparse
 import os
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--backend", required=True)
 options = parser.parse_args()
-server = FastMCP("Synthetic background jobs", log_level="WARNING")
+server = MCPServer("Synthetic background jobs", log_level="WARNING")
 READ = ToolAnnotations(readOnlyHint=True)
 WRITE = ToolAnnotations(readOnlyHint=False)
 

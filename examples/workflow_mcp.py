@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 READ = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
@@ -16,8 +16,8 @@ def digest(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def create_server(publication: Path) -> FastMCP:
-    server = FastMCP(
+def create_server(publication: Path) -> MCPServer:
+    server = MCPServer(
         "Synthetic workflow contributions",
         instructions="Discover app workflow guides before using their referenced tools.",
         log_level="WARNING",

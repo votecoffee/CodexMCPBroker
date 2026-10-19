@@ -4,63 +4,55 @@ from __future__ import annotations
 
 import os
 from contextlib import asynccontextmanager
-from datetime import timedelta
 
-import httpx
+import httpx2
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamable_http_client
+from mcp.shared.jsonrpc_dispatcher import JSONRPCDispatcher
 from mcp.types import (
     ElicitationCapability,
-    ElicitRequest,
     FormElicitationCapability,
-    InitializeRequest,
     InitializeResult,
+    PaginatedRequestParams,
     Tool,
 )
 
-from .elicitation import ElicitationRouter, rejected
+from .elicitation import ElicitationRouter
 from .identity import CLIENT_HEADER
 from .metadata import initialization_metadata
 from .models import BrokerError, HttpTransport, ServiceManifest
 
 
+class RoutingDispatcher(JSONRPCDispatcher):
+    """Capture the originating form route before SDK 2 schedules its callback."""
+
+    def __init__(self, read, write, router):
+        super().__init__(read, write)
+        self.router = router
+
+    async def _dispatch_request(self, *args, **kwargs):
+        with self.router.capture():
+            await super()._dispatch_request(*args, **kwargs)
+
+
 class InitializedSession(ClientSession):
     initialization: dict
 
-    def __init__(self, *args, relay: bool = False, **kwargs):
+    def __init__(self, read, write, *args, relay: bool = False, **kwargs):
         self.elicitation_router = ElicitationRouter() if relay else None
         if self.elicitation_router is not None:
             kwargs["elicitation_callback"] = self.elicitation_router.callback
-        super().__init__(*args, **kwargs)
+            kwargs["dispatcher"] = RoutingDispatcher(read, write, self.elicitation_router)
+            read = write = None
+        super().__init__(read, write, *args, **kwargs)
 
-    async def _received_request(self, responder):
-        # SDK 1.30 awaits callbacks in its receive loop. A pending form must
-        # not block tool results/cancellation. Keep responders in the SDK's
-        # own task group so its normal cancellation and teardown still apply.
-        if isinstance(responder.request.root, ElicitRequest):
-            if responder.request.root.params.task is not None:
-                with responder:
-                    await responder.respond(rejected("task-augmented elicitation is not supported"))
-                return
-            if self.elicitation_router is not None:
-                with self.elicitation_router.capture():
-                    self._task_group.start_soon(super()._received_request, responder)
-            else:
-                self._task_group.start_soon(super()._received_request, responder)
-        else:
-            await super()._received_request(responder)
-
-    async def send_request(self, request, result_type, *args, **kwargs):
-        # SDK 1.30 advertises both modes for any callback. This bridge implements
-        # forms only; narrow the public initialize request before it goes on wire.
-        if self.elicitation_router is not None and isinstance(request.root, InitializeRequest):
-            request = request.model_copy(deep=True)
-            request.root.params.capabilities.elicitation = ElicitationCapability(
-                form=FormElicitationCapability()
-            )
-            request.root.params.capabilities.tasks = None
-        return await super().send_request(request, result_type, *args, **kwargs)
+    def _build_capabilities(self, version):
+        capabilities = super()._build_capabilities(version)
+        if self.elicitation_router is not None:
+            capabilities.elicitation = ElicitationCapability(form=FormElicitationCapability())
+            capabilities.tasks = None
+        return capabilities
 
     async def initialize(self) -> InitializeResult:
         result = await super().initialize()
@@ -81,14 +73,17 @@ async def http_session(
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     if client_id is not None:
         headers[CLIENT_HEADER] = client_id
-    async with httpx.AsyncClient(
-        headers=headers, timeout=httpx.Timeout(timeout), follow_redirects=False, trust_env=False
+    async with httpx2.AsyncClient(
+        headers=headers, timeout=httpx2.Timeout(timeout), follow_redirects=False, trust_env=False
     ) as client:
-        async with streamable_http_client(url, http_client=client) as (read, write, _):
+        async with streamable_http_client(url, http_client=client, max_sse_event_size=None) as (
+            read,
+            write,
+        ):
             async with InitializedSession(
                 read,
                 write,
-                timedelta(seconds=timeout),
+                timeout,
                 relay=relay,
                 elicitation_callback=elicitation_callback,
             ) as session:
@@ -125,7 +120,7 @@ async def service_session(manifest: ServiceManifest):
                 async with InitializedSession(
                     read,
                     write,
-                    timedelta(seconds=manifest.timeout_seconds),
+                    manifest.timeout_seconds,
                     relay=True,
                 ) as session:
                     await session.initialize()
@@ -137,16 +132,16 @@ async def list_all_tools(session: ClientSession) -> list[Tool]:
     cursor = None
     seen = set()
     for _ in range(100):
-        result = await session.list_tools(cursor=cursor)
+        result = await session.list_tools(params=PaginatedRequestParams(cursor=cursor))
         tools.extend(result.tools)
         if len(tools) > 2000:
             raise BrokerError("app tool count exceeds the v0.1 limit")
-        if not result.nextCursor:
+        if not result.next_cursor:
             if len({tool.name for tool in tools}) != len(tools):
                 raise BrokerError("app advertised duplicate tool names")
             return tools
-        if result.nextCursor in seen:
+        if result.next_cursor in seen:
             raise BrokerError("app returned a repeated pagination cursor")
-        cursor = result.nextCursor
+        cursor = result.next_cursor
         seen.add(cursor)
     raise BrokerError("app tool pagination exceeds the v0.1 limit")

@@ -9,6 +9,7 @@ from jsonschema.validators import validator_for
 from mcp.types import CallToolResult, Tool
 from pydantic import Field, field_validator
 
+from .elicitation import routed_call
 from .models import (
     TOOL_NAME_PATTERN,
     BrokerError,
@@ -44,7 +45,9 @@ class CapabilityDocument(StrictModel):
 
 
 def tool_revision(manifest: ServiceManifest, tool: Tool) -> str:
-    return canonical_digest({"service": manifest.digest, "tool": tool.model_dump(mode="json")})
+    return canonical_digest(
+        {"service": manifest.digest, "tool": tool.model_dump(mode="json", by_alias=True)}
+    )
 
 
 @dataclass(frozen=True)
@@ -59,7 +62,7 @@ class CapabilitySnapshot:
             {
                 "service": self.manifest.digest,
                 "bindings": self.bindings,
-                "catalog": self.document.model_dump(mode="json"),
+                "catalog": self.document.model_dump(mode="json", by_alias=True),
             }
         )
 
@@ -119,10 +122,10 @@ class CapabilityState:
 
 
 def parse_document(result: CallToolResult) -> CapabilityDocument:
-    if result.isError:
+    if result.is_error:
         raise BrokerError("capability catalog provider returned an app error")
     try:
-        payload = result.structuredContent
+        payload = result.structured_content
         if payload is None:
             if len(result.content) != 1 or result.content[0].type != "text":
                 raise ValueError("one JSON object is required")
@@ -143,18 +146,18 @@ def parse_document(result: CallToolResult) -> CapabilityDocument:
 
 def read_binding(manifest, tools, request):
     tool = tools.get(request.tool)
-    if tool is None or tool.annotations is None or tool.annotations.readOnlyHint is not True:
+    if tool is None or tool.annotations is None or tool.annotations.read_only_hint is not True:
         raise BrokerError("catalog provider and discovery tools must declare readOnlyHint=true")
     try:
-        check_schema(tool.inputSchema)
-        if tool.outputSchema is not None:
-            check_schema(tool.outputSchema)
+        check_schema(tool.input_schema)
+        if tool.output_schema is not None:
+            check_schema(tool.output_schema)
         size = len(
             json.dumps(request.arguments, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         )
         if size > manifest.max_argument_bytes:
             raise ValueError("service argument limit")
-        validator_for(tool.inputSchema)(tool.inputSchema).validate(request.arguments)
+        validator_for(tool.input_schema)(tool.input_schema).validate(request.arguments)
     except Exception:
         raise BrokerError(
             "catalog discovery arguments do not fit the tool schema or budget"
@@ -175,7 +178,7 @@ async def read_catalog(session, manifest, tools=None) -> CapabilityState:
     except BrokerError as error:
         return CapabilityState(error=str(error))
     # No elicitation route is bound for an automated metadata probe.
-    result = await session.call_tool(provider.tool, deepcopy(provider.arguments))
+    result = await routed_call(session, provider.tool, deepcopy(provider.arguments), None)
     try:
         document = parse_document(result)
         for item in document.capabilities:

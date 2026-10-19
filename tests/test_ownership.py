@@ -128,7 +128,7 @@ async def test_registry_changes_cannot_bypass_an_unresolved_service(stateful, mo
         manifest(
             session_mode=mode,
             transport={"type": "streamable-http", "url": "http://127.0.0.1:19993/mcp"},
-        ).model_dump(mode="json"),
+        ).model_dump(mode="json", by_alias=True),
     )
     count = len(sessions)
     await broker.refresh()

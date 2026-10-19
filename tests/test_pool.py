@@ -98,8 +98,8 @@ async def test_sequential_calls_reuse_one_actor_and_application_errors_keep_the_
     pool = create()
     for value in range(20):
         assert (await call(pool, value=str(value))).content[0].text == str(value)
-    assert (await call(pool, "app_error")).isError
-    assert not (await call(pool)).isError
+    assert (await call(pool, "app_error")).is_error
+    assert not (await call(pool)).is_error
     assert len(opened) == 1 and len(opened[0].calls) == 22 and not opened[0].closed
 
 
@@ -142,7 +142,7 @@ async def test_operation_timeout_retires_its_channel_without_harming_another(cha
     pool = create(timeout=0.05)
     slow = asyncio.create_task(call(pool, "wait"))
     await wait_started(opened, 1)
-    assert not (await call(pool, value="independent")).isError
+    assert not (await call(pool, value="independent")).is_error
     with pytest.raises(TimeoutError):
         await slow
     assert opened[0].closed and not opened[1].closed
@@ -184,7 +184,7 @@ async def test_sdk_cancellation_does_not_strand_a_borrowed_channel(channels):
     opened[0].unblock.set()
     await asyncio.wait_for(task, 2)
     assert opened[0].closed and not pool._workers
-    assert not (await call(pool)).isError
+    assert not (await call(pool)).is_error
     assert len(opened) == 2
 
 
@@ -215,7 +215,7 @@ async def test_initialization_has_its_own_deadline_and_cannot_dispatch_an_operat
         await asyncio.wait_for(call(pool), 2)
     assert not opened and not pool._workers
     gate.set()
-    assert not (await call(pool)).isError
+    assert not (await call(pool)).is_error
     assert len(opened) == 1
 
 
@@ -262,7 +262,7 @@ async def test_frontend_redacts_failed_write_without_replay_or_identity_change(m
     monkeypatch.setattr(surface_module, "http_session", connect)
     async with RemoteBackend(Settings(token="s" * 48)) as backend:
         result = await backend.invoke("call_write_tool", {"request_id": "intended-write-001"})
-        assert result.isError and "get_request_status" in result.content[0].text
+        assert result.is_error and "get_request_status" in result.content[0].text
         assert "PRIVATE" not in result.content[0].text
         assert attempts == [("call_write_tool", {"request_id": "intended-write-001"})]
         assert connections == [backend.client_id] and not backend.pool._workers

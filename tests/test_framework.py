@@ -49,7 +49,7 @@ async def test_update_defers_owned_context_then_changes_backend_without_frontend
         ]
         first = data(await read(owner, context=context))
         assert first["generation"] == 1
-        assert (await read(other, context=context)).isError
+        assert (await read(other, context=context)).is_error
         publish(tmp_path, 2, json.loads((tmp_path / "settings.json").read_bytes())["port"])
         deferred = data(await other.invoke("refresh_services", {}))
         assert deferred["backend_publications"][0]["status"] == "deferred"
@@ -71,7 +71,7 @@ async def test_update_defers_owned_context_then_changes_backend_without_frontend
                     "arguments": {"text": "old"},
                 },
             )
-        ).isError
+        ).is_error
         context = data(await owner.invoke("acquire_service", {"service_id": "text-engine"}))[
             "context_id"
         ]
@@ -191,13 +191,13 @@ async def test_original_app_write_policy_and_duplicate_receipts_survive_framewor
         blocked = await write(
             "slow_edit", {"candidate": "not allowed", "delay": 0}, "framework-blocked-1"
         )
-        assert blocked.isError
+        assert blocked.is_error
         plan = data(
             await write("prepare", {"candidate": "reviewed fixture"}, "framework-prepare-1")
         )
         applied = data(await write("apply", {"plan_id": plan["plan_id"]}, "framework-apply-1"))
         assert applied["value"] == "reviewed fixture"
-        assert (await write("apply", {"plan_id": plan["plan_id"]}, "framework-apply-1")).isError
+        assert (await write("apply", {"plan_id": plan["plan_id"]}, "framework-apply-1")).is_error
         assert (
             data(await client.invoke("get_request_status", {"request_id": "framework-apply-1"}))[
                 "status"
@@ -243,7 +243,7 @@ async def test_cancelled_candidate_publication_never_leaves_a_dispatchable_stage
         client = host.client()
         assert (
             await client.invoke("describe_tool", {"tool_id": "text-engine/count_words"})
-        ).isError
+        ).is_error
         assert (
             data(await client.invoke("refresh_services", {}))["backend_publications"][0]["status"]
             == "applied"
@@ -328,8 +328,8 @@ async def test_changed_artifact_cannot_be_dispatched_or_probed(tmp_path):
         copy.write_bytes(copy.read_bytes() + b"\n# changed after publication\n")
         client = host.client()
         result = await client.invoke("acquire_service", {"service_id": "text-engine"})
-        assert result.isError and "artifact changed" in result.content[0].text
-        assert (await client.invoke("refresh_services", {})).isError
+        assert result.is_error and "artifact changed" in result.content[0].text
+        assert (await client.invoke("refresh_services", {})).is_error
         assert not host._engine._leases
 
 
@@ -402,7 +402,7 @@ async def test_same_native_mcp_sessions_discover_new_backend_tools_without_reini
         async with http_session(settings.url + "/mcp", settings.token) as first:
             async with http_session(settings.url + "/mcp", settings.token) as second:
                 definitions = [
-                    tool.model_dump(mode="json", exclude_none=True)
+                    tool.model_dump(mode="json", by_alias=True, exclude_none=True)
                     for tool in (await first.list_tools()).tools
                 ]
                 assert {tool["name"] for tool in definitions} == TOOLS
@@ -414,7 +414,7 @@ async def test_same_native_mcp_sessions_discover_new_backend_tools_without_reini
                     await second.call_tool(
                         "release_service", {"service_id": "text-engine", "context_id": context}
                     )
-                ).isError
+                ).is_error
                 data(
                     await first.call_tool(
                         "release_service", {"service_id": "text-engine", "context_id": context}
@@ -427,7 +427,7 @@ async def test_same_native_mcp_sessions_discover_new_backend_tools_without_reini
                 ]
                 assert matches[0]["tool_id"] == "text-engine/count_words"
                 assert [
-                    tool.model_dump(mode="json", exclude_none=True)
+                    tool.model_dump(mode="json", by_alias=True, exclude_none=True)
                     for tool in (await first.list_tools()).tools
                 ] == definitions
     finally:

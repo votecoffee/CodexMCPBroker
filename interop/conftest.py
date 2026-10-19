@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-if version("mcp") != "1.30.0":
-    raise pytest.UsageError("Run this profile with the broker's locked mcp==1.30.0 environment")
+if version("mcp") != "2.3.0":
+    raise pytest.UsageError("Run this profile with the broker's locked mcp==2.3.0 environment")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests"))
 
@@ -16,6 +16,7 @@ from universal_tools.cli import process_options  # noqa: E402
 
 
 def pytest_addoption(parser):
+    parser.addoption("--sdk22-root", help="Isolated SDK 2.2 overlay directory; see VERIFICATION.md")
     parser.addoption("--sdk2-python", help="Separate Python environment containing mcp==2.3.0")
 
 
@@ -37,3 +38,11 @@ def sdk2_python(request):
     if result.returncode or result.stdout.strip() != "2.3.0":
         raise pytest.UsageError("The separate server environment must contain mcp==2.3.0")
     return python
+
+
+@pytest.fixture(scope="session")
+def sdk22_root(request):
+    value = request.config.getoption("--sdk22-root")
+    if not value or not Path(value).is_dir():
+        raise pytest.UsageError("This profile requires --sdk22-root; see VERIFICATION.md")
+    return Path(value).resolve()

@@ -66,9 +66,9 @@ def test_cli_configures_only_body_limit_without_printing_credentials(tmp_path, c
 async def test_both_surface_types_use_the_configured_limit(tmp_path):
     broker = Broker(tmp_path, max_request_body_bytes=32 * 1024 * 1024)
     local = create_surface(LocalBackend(broker))
-    assert local.settings.max_request_body_size == 32 * 1024 * 1024
+    assert local.http_options["max_request_body_size"] == 32 * 1024 * 1024
     settings = Settings(token="x" * 48, max_request_body_bytes=32 * 1024 * 1024)
     async with RemoteBackend(settings) as backend:
         frontend = create_surface(backend)
-        assert frontend.settings.max_request_body_size == 32 * 1024 * 1024
+        assert frontend.http_options["max_request_body_size"] == 32 * 1024 * 1024
     await broker.aclose()

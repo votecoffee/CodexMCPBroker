@@ -54,7 +54,7 @@ async def test_shared_worker_does_not_send_previous_or_equal_progress_tokens_to_
         )
         assert data(results[0])["instance"] == data(results[1])["instance"]
         for events, label in ((a, "first"), (b, "second")):
-            assert events and all(event.progressToken == 0 for event in events)
+            assert events and all(event.progress_token == 0 for event in events)
             assert all(
                 event.message == f"App stateful/progress_work progress:\n{label}"
                 for event in events

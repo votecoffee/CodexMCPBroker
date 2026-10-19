@@ -89,7 +89,8 @@ async def bulk_app(stack, tmp_path, transport, *, limit=MAX_ARGUMENT_BYTES, mode
             async with httpx.AsyncClient(timeout=0.5, trust_env=False) as client:
                 while True:
                     try:
-                        await client.get(connection["url"])
+                        async with client.stream("GET", connection["url"]):
+                            pass
                         break
                     except httpx.TransportError:
                         if child.poll() is not None or time.monotonic() > deadline:
@@ -158,7 +159,7 @@ async def test_sixteen_million_utf16_units_survive_both_hops(bulk_stack, tmp_pat
         request = "bulk-valid-" + transport
         assert (
             await call(other, context, {"candidate_xml": "foreign"}, request + "-stolen")
-        ).isError
+        ).is_error
         result = data(await call(owner, context, {"candidate_xml": text}, request))
         assert result == dict(
             sha256=expected,
@@ -170,7 +171,7 @@ async def test_sixteen_million_utf16_units_survive_both_hops(bulk_stack, tmp_pat
             data(await owner.invoke("get_request_status", dict(request_id=request)))["status"]
             == "completed"
         )
-        assert (await call(owner, context, {"candidate_xml": text}, request)).isError
+        assert (await call(owner, context, {"candidate_xml": text}, request)).is_error
         assert data(await call(owner, context, {}, None, name="state")) == {"commits": 1}
         data(await owner.invoke("release_service", dict(service_id="bulk", context_id=context)))
 
@@ -195,8 +196,10 @@ async def test_argument_budget_is_independent_of_the_larger_http_limit(bulk_stac
         assert data(await call(owner, context, arguments, "bulk-exact"))["commits"] == 1
         arguments["candidate_xml"] += "x"
         rejected = await call(owner, context, arguments, "bulk-too-large")
-        assert rejected.isError and "max_argument_bytes" in rejected.content[0].text
-        assert (await owner.invoke("get_request_status", dict(request_id="bulk-too-large"))).isError
+        assert rejected.is_error and "max_argument_bytes" in rejected.content[0].text
+        assert (
+            await owner.invoke("get_request_status", dict(request_id="bulk-too-large"))
+        ).is_error
         assert data(await call(owner, context, {}, None, name="state")) == {"commits": 1}
         data(await owner.invoke("release_service", dict(service_id="bulk", context_id=context)))
 

@@ -78,7 +78,7 @@ def test_manifest_rejects_extra_fields_and_relative_commands():
 
 def test_registration_does_not_overwrite_implicitly(tmp_path):
     source = tmp_path / "source.json"
-    atomic_json(source, manifest().model_dump(mode="json"))
+    atomic_json(source, manifest().model_dump(mode="json", by_alias=True))
     assert register(tmp_path, source) == "app"
     with pytest.raises(BrokerError, match="already registered"):
         register(tmp_path, source)
@@ -203,7 +203,9 @@ def test_description_explains_channel_and_registration_policy(
         "registration_blocker": blocker,
     }
     assert description["callable"] is (blocker is None)
-    assert description["definition"] == entry.tool.model_dump(mode="json", exclude_none=True)
+    assert description["definition"] == entry.tool.model_dump(
+        mode="json", by_alias=True, exclude_none=True
+    )
 
 
 @pytest.mark.parametrize("explicit_null", [False, True])
@@ -270,7 +272,7 @@ class FakeSession:
         self.maximum = 0
         self.fail = False
 
-    async def list_tools(self, cursor=None):
+    async def list_tools(self, *, params=None):
         return ListToolsResult(tools=self.tools)
 
     async def call_tool(self, name, arguments):
@@ -296,7 +298,10 @@ async def fake(tmp_path, monkeypatch):
 
     monkeypatch.setattr(broker_module, "service_session", connect)
     broker = Broker(tmp_path)
-    atomic_json(broker.registry / "app.json", manifest(allow_writes=True).model_dump(mode="json"))
+    atomic_json(
+        broker.registry / "app.json",
+        manifest(allow_writes=True).model_dump(mode="json", by_alias=True),
+    )
     await broker.refresh()
     return broker, session
 
@@ -320,7 +325,9 @@ async def test_same_app_calls_serialize(fake):
 
 async def test_independent_apps_can_run_together(fake):
     broker, session = fake
-    atomic_json(broker.registry / "other.json", manifest("other").model_dump(mode="json"))
+    atomic_json(
+        broker.registry / "other.json", manifest("other").model_dump(mode="json", by_alias=True)
+    )
     await broker.refresh()
     await asyncio.gather(
         call(broker),
@@ -366,7 +373,9 @@ async def test_refresh_removes_invalid_and_disabled_services(fake):
     result = await broker.refresh()
     assert result["tool_count"] == 0
     assert result["services"][0]["status"] == "unavailable"
-    atomic_json(broker.registry / "app.json", manifest(enabled=False).model_dump(mode="json"))
+    atomic_json(
+        broker.registry / "app.json", manifest(enabled=False).model_dump(mode="json", by_alias=True)
+    )
     result = await broker.refresh()
     assert result["services"][0]["status"] == "disabled"
 
@@ -412,7 +421,10 @@ async def test_write_policy_revocation_is_immediate(fake):
     session.tools = [tool(False)]
     await broker.refresh()
     revision = broker.describe("app/echo")["catalog_revision"]
-    atomic_json(broker.registry / "app.json", manifest(allow_writes=False).model_dump(mode="json"))
+    atomic_json(
+        broker.registry / "app.json",
+        manifest(allow_writes=False).model_dump(mode="json", by_alias=True),
+    )
     with pytest.raises(BrokerError, match="registration changed"):
         await broker.call(
             "app/echo", revision, {"value": "write"}, write=True, request_id="request-0004"
@@ -430,7 +442,9 @@ async def test_stale_schema_revision_changes_on_policy_and_metadata(fake):
 
 async def test_search_and_namespace_collisions(fake):
     broker, session = fake
-    atomic_json(broker.registry / "second.json", manifest("second").model_dump(mode="json"))
+    atomic_json(
+        broker.registry / "second.json", manifest("second").model_dump(mode="json", by_alias=True)
+    )
     await broker.refresh()
     assert [item["tool_id"] for item in broker.search("echo")["matches"]] == [
         "app/echo",

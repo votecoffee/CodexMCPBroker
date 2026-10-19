@@ -46,7 +46,7 @@ class StatefulSession:
         self.started = asyncio.Event()
         self.unblock = None
 
-    async def list_tools(self, cursor=None):
+    async def list_tools(self, *, params=None):
         assert asyncio.current_task() is self.enter_task
         return ListToolsResult(
             tools=[
@@ -100,7 +100,9 @@ async def stateful(tmp_path, monkeypatch):
 
     monkeypatch.setattr(broker_module, "service_session", connect)
     broker = Broker(tmp_path)
-    atomic_json(broker.registry / "stateful.json", manifest().model_dump(mode="json"))
+    atomic_json(
+        broker.registry / "stateful.json", manifest().model_dump(mode="json", by_alias=True)
+    )
     await broker.refresh()
     try:
         yield broker, sessions
@@ -134,7 +136,7 @@ async def test_state_survives_calls_refresh_and_owner_renewal(stateful):
     await broker.refresh()
     assert await acquire(broker) == context
     result = await invoke(broker, context)
-    assert result.structuredContent == {"generation": generation, "value": "draft"}
+    assert result.structured_content == {"generation": generation, "value": "draft"}
     assert len(sessions) == 2  # Temporary discovery + one owned worker, never a refresh worker.
     assert sessions[0].closed and not sessions[1].closed
 
@@ -176,7 +178,7 @@ async def test_release_closes_old_engine_before_new_owner_gets_clean_context(sta
     assert old_engine.closed
     replacement = await acquire(broker, OWNER_B)
     assert replacement != context
-    assert (await invoke(broker, replacement, OWNER_B)).structuredContent["value"] == ""
+    assert (await invoke(broker, replacement, OWNER_B)).structured_content["value"] == ""
     with pytest.raises(BrokerError, match="missing"):
         await invoke(broker, context, OWNER_B)
 
@@ -220,7 +222,7 @@ async def test_app_error_preserves_context_for_inspection(stateful):
     context = await acquire(broker)
     sessions[-1].app_error = True
     result = await invoke(broker, context, write=True, request_id="persistent-app-error")
-    assert result.isError
+    assert result.is_error
     assert broker.request_status("persistent-app-error")["status"] == "app_error"
     assert (await broker.service_session_status("stateful", owner_id=OWNER_A))["state"] == "active"
 
@@ -229,7 +231,7 @@ async def test_timeout_retires_worker_and_claim_remains_uncertain(stateful):
     broker, sessions = stateful
     atomic_json(
         broker.registry / "stateful.json",
-        manifest(timeout_seconds=0.2).model_dump(mode="json"),
+        manifest(timeout_seconds=0.2).model_dump(mode="json", by_alias=True),
     )
     await broker.refresh()
     context = await acquire(broker)
@@ -265,7 +267,10 @@ async def test_cancellation_cannot_transfer_a_running_context(stateful):
 async def test_registration_change_revokes_calls_and_refresh_closes_context(stateful):
     broker, sessions = stateful
     context = await acquire(broker)
-    atomic_json(broker.registry / "stateful.json", manifest(enabled=False).model_dump(mode="json"))
+    atomic_json(
+        broker.registry / "stateful.json",
+        manifest(enabled=False).model_dump(mode="json", by_alias=True),
+    )
     with pytest.raises(BrokerError, match="registration changed"):
         await invoke(broker, context)
     await broker.refresh()
@@ -279,7 +284,7 @@ async def test_alias_cannot_bypass_exclusive_resource_ownership(stateful):
     await acquire(broker)
     atomic_json(
         broker.registry / "alias.json",
-        manifest(id="alias", session_mode="transient").model_dump(mode="json"),
+        manifest(id="alias", session_mode="transient").model_dump(mode="json", by_alias=True),
     )
     with pytest.raises(BrokerError, match="conflicting"):
         await invoke(broker, broker._leases["stateful"].context_id)
@@ -293,7 +298,7 @@ async def test_explicit_resource_id_blocks_distinct_routes_to_same_native_resour
     broker, _ = stateful
     atomic_json(
         broker.registry / "stateful.json",
-        manifest(resource_id="shared-engine").model_dump(mode="json"),
+        manifest(resource_id="shared-engine").model_dump(mode="json", by_alias=True),
     )
     atomic_json(
         broker.registry / "alias.json",
@@ -301,7 +306,7 @@ async def test_explicit_resource_id_blocks_distinct_routes_to_same_native_resour
             id="alias",
             resource_id="shared-engine",
             transport={"type": "streamable-http", "url": "http://127.0.0.1:19992/mcp"},
-        ).model_dump(mode="json"),
+        ).model_dump(mode="json", by_alias=True),
     )
     await broker.refresh()
     assert not broker.catalog
@@ -311,7 +316,7 @@ async def test_transient_policy_still_opens_and_closes_each_call(stateful):
     broker, sessions = stateful
     atomic_json(
         broker.registry / "stateful.json",
-        manifest(session_mode="transient").model_dump(mode="json"),
+        manifest(session_mode="transient").model_dump(mode="json", by_alias=True),
     )
     await broker.refresh()
     count = len(sessions)
@@ -372,7 +377,7 @@ async def test_hung_initialization_is_bounded_and_creates_no_lease(stateful, mon
 
     atomic_json(
         broker.registry / "stateful.json",
-        manifest(timeout_seconds=0.2).model_dump(mode="json"),
+        manifest(timeout_seconds=0.2).model_dump(mode="json", by_alias=True),
     )
     await broker.refresh()
     monkeypatch.setattr(broker_module, "service_session", hang)

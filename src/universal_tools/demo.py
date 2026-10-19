@@ -6,8 +6,8 @@ import asyncio
 import json
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import CallToolResult, ImageContent, TextContent, ToolAnnotations
 
 from .models import atomic_json
@@ -16,15 +16,18 @@ READ = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=F
 WRITE = ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=False)
 
 
-def create_demo(kind: str, port: int, data: Path | None = None) -> FastMCP:
-    app = FastMCP(
+def create_demo(kind: str, port: int, data: Path | None = None) -> MCPServer:
+    app = MCPServer(
         f"Example {kind}",
-        host="127.0.0.1",
-        port=port,
-        stateless_http=True,
-        json_response=True,
         log_level="WARNING",
     )
+    app_http_options = {
+        "host": "127.0.0.1",
+        "port": port,
+        "stateless_http": True,
+        "json_response": True,
+    }
+    app.http_options = app_http_options
     lock = asyncio.Lock()
 
     @app.tool(annotations=READ)

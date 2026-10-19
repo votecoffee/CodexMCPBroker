@@ -54,7 +54,8 @@ async def payload_app(stack, tmp_path, transport, *, limit=DEFAULT_ARGUMENT_BYTE
             async with httpx.AsyncClient(timeout=0.5, trust_env=False) as client:
                 while True:
                     try:
-                        await client.get(url)
+                        async with client.stream("GET", url):
+                            pass
                         break
                     except httpx.TransportError:
                         if time.monotonic() > deadline or child.poll() is not None:
@@ -135,14 +136,14 @@ async def test_tool_write_scope_and_ownership_survive_both_hops(stack, tmp_path,
         }
         denied_id = "policy-denied-" + transport
         blocked = await invoke(owner, "unapproved_edit", {}, context, request_id=denied_id)
-        assert blocked.isError and "allowed_write_tools" in blocked.content[0].text
-        assert (await owner.invoke("get_request_status", {"request_id": denied_id})).isError
+        assert blocked.is_error and "allowed_write_tools" in blocked.content[0].text
+        assert (await owner.invoke("get_request_status", {"request_id": denied_id})).is_error
         arguments = {"encoded": base64.b64encode(b"fixture").decode(), "number": 2**63 - 1}
         stolen_id = "policy-stolen-" + transport
         assert (
             await invoke(other, "stage_payload", arguments, context, request_id=stolen_id)
-        ).isError
-        assert (await owner.invoke("get_request_status", {"request_id": stolen_id})).isError
+        ).is_error
+        assert (await owner.invoke("get_request_status", {"request_id": stolen_id})).is_error
         assert data(await invoke(owner, "state", {}, context)) == {"commits": 0, "reads": 0}
         approved_id = "policy-approved-" + transport
         result = data(
@@ -151,7 +152,7 @@ async def test_tool_write_scope_and_ownership_survive_both_hops(stack, tmp_path,
         assert result["commits"] == 1 and result["number"] == 2**63 - 1
         assert (
             await invoke(owner, "stage_payload", arguments, context, request_id=approved_id)
-        ).isError
+        ).is_error
         assert data(await invoke(owner, "state", {}, context))["commits"] == 1
 
 
@@ -163,7 +164,7 @@ async def test_default_budget_rejects_bulk_calls_without_app_effects_or_write_cl
             "context_id"
         ]
         result = await invoke(owner, "roundtrip", {"payload": {"text": "x" * 330_587}}, context)
-        assert result.isError and "max_argument_bytes" in result.content[0].text
+        assert result.is_error and "max_argument_bytes" in result.content[0].text
         result = await invoke(
             owner,
             "stage_payload",
@@ -171,10 +172,10 @@ async def test_default_budget_rejects_bulk_calls_without_app_effects_or_write_cl
             context,
             request_id="default-budget-001",
         )
-        assert result.isError and "max_argument_bytes" in result.content[0].text
+        assert result.is_error and "max_argument_bytes" in result.content[0].text
         assert (
             await owner.invoke("get_request_status", {"request_id": "default-budget-001"})
-        ).isError
+        ).is_error
         assert data(await invoke(owner, "state", {}, context)) == {"commits": 0, "reads": 0}
 
 
@@ -233,7 +234,7 @@ async def test_eight_mib_argument_budget_accepts_exact_limit_and_rejects_one_mor
         assert data(await invoke(owner, "roundtrip", arguments, context)) == arguments["payload"]
         arguments["payload"]["text"] += "x"
         too_large = await invoke(owner, "roundtrip", arguments, context)
-        assert too_large.isError and "max_argument_bytes" in too_large.content[0].text
+        assert too_large.is_error and "max_argument_bytes" in too_large.content[0].text
         assert data(await invoke(owner, "state", {}, context)) == {"commits": 0, "reads": 1}
 
 

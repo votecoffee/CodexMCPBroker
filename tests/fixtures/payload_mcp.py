@@ -4,19 +4,21 @@ import argparse
 import base64
 import hashlib
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int)
 options = parser.parse_args()
-server = FastMCP(
+server = MCPServer(
     "Synthetic payload app",
-    host="127.0.0.1",
-    port=options.port or 8765,
     log_level="WARNING",
-    max_request_body_size=10 * 1024 * 1024,
 )
+server_http_options = {
+    "host": "127.0.0.1",
+    "port": options.port or 8765,
+    "max_request_body_size": 10 * 1024 * 1024,
+}
 READ = ToolAnnotations(readOnlyHint=True)
 WRITE = ToolAnnotations(readOnlyHint=False)
 commits = 0
@@ -55,4 +57,7 @@ def state() -> dict:
     return {"commits": commits, "reads": reads}
 
 
-server.run(transport="streamable-http" if options.port else "stdio")
+server.run(
+    transport="streamable-http" if options.port else "stdio",
+    **(server_http_options if options.port else {}),
+)

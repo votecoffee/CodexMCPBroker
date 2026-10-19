@@ -20,7 +20,7 @@ from pydantic import Field, field_validator, model_validator
 
 from .broker import Broker
 from .daemon import InstanceLock, ProtectedApp
-from .identity import client_identity
+from .identity import client_identity, frontend_connection
 from .models import (
     ID_PATTERN,
     MAX_MANIFEST_BYTES,
@@ -70,7 +70,7 @@ class BackendPublication(StrictModel):
         return self
 
     def effective(self):
-        value = self.service.model_dump(mode="json")
+        value = self.service.model_dump(mode="json", by_alias=True)
         value["description"] += "\nBackend publication: " + self.revision
         return ServiceManifest.model_validate(value)
 
@@ -129,13 +129,17 @@ class ApplicationBackend(LocalBackend):
     def __init__(self, host):
         super().__init__(host._engine)
         self.host = host
-        self.session = None
+        self.native_connections = False
         self._identities = weakref.WeakKeyDictionary()
 
     async def invoke(self, name, arguments, *, relay=None):
         identity = client_identity.get()
-        if identity is None and self.session is not None:
-            session = self.session()
+        if identity is None and self.native_connections:
+            session = frontend_connection.get()
+            if session is None:
+                return error_result(
+                    "use a retained MCP connection or an authenticated app frontend"
+                )
             identity = self._identities.setdefault(session, secrets.token_urlsafe(32))
         if identity is None:
             return error_result("use an ApplicationClient or an active MCP session")
@@ -160,8 +164,8 @@ class ApplicationBackend(LocalBackend):
                     return await super().invoke(name, arguments, relay=relay)
             self.host._require_started()
             result = await super().invoke(name, arguments, relay=relay)
-            if name == "broker_status" and not result.isError:
-                return json_result({**result.structuredContent, **self.host.publication_status()})
+            if name == "broker_status" and not result.is_error:
+                return json_result({**result.structured_content, **self.host.publication_status()})
             return result
         except BrokerError as error:
             return error_result(str(error))
@@ -215,7 +219,7 @@ class ApplicationHost:
         value = (definition or self.definition).model_copy(
             update={"backends": [selected[k] for k in sorted(selected)]}
         )
-        raw = value.model_dump(mode="json")
+        raw = value.model_dump(mode="json", by_alias=True)
         revision = canonical_digest(raw)
         destination = self.root / "releases" / revision
         if not destination.exists():
@@ -226,13 +230,13 @@ class ApplicationHost:
             for backend in value.backends:
                 atomic_json(
                     stage / "services" / (backend.service.id + ".json"),
-                    backend.effective().model_dump(mode="json"),
+                    backend.effective().model_dump(mode="json", by_alias=True),
                 )
             stage.rename(destination)
         if load_application(destination / "definition.json") != value:
             raise BrokerError("framework release definition was modified")
         expected = {
-            backend.service.id + ".json": backend.effective().model_dump(mode="json")
+            backend.service.id + ".json": backend.effective().model_dump(mode="json", by_alias=True)
             for backend in value.backends
         }
         actual = {
@@ -443,7 +447,7 @@ class ApplicationHost:
             name=self.definition.display_name,
             instructions=self.definition.instructions,
         )
-        self.backend.session = lambda: server.get_context().session
+        self.backend.native_connections = True
         return server
 
 
@@ -457,7 +461,7 @@ def serve_application(state, publication):
         state, publication, max_request_body_bytes=settings.max_request_body_bytes
     )
     server = host.create_server(port=settings.port)
-    base = server.streamable_http_app()
+    base = server.streamable_http_app(**server.http_options)
 
     @asynccontextmanager
     async def lifespan(_):

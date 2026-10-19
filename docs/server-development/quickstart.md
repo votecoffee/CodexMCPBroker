@@ -24,10 +24,10 @@ Save the following two Python files as UTF-8 inside `$GuideRoot`. Keep all examp
 ```python
 import hashlib
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
-server = FastMCP(
+server = MCPServer(
     "Example text service",
     instructions="Summarize supplied text. This example never opens files or native applications.",
     log_level="WARNING",
@@ -74,9 +74,9 @@ async def connect(arguments):
 
 
 def data(result):
-    if result.isError:
+    if result.is_error:
         raise RuntimeError(result.model_dump_json())
-    return result.structuredContent or json.loads(result.content[0].text)
+    return result.structured_content or json.loads(result.content[0].text)
 
 
 def wire(value):

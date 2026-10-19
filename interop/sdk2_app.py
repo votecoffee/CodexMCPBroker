@@ -12,8 +12,17 @@ from typing import Any
 
 from interop_payloads import PNG, payload
 
-if version("mcp") != "2.3.0":
-    raise RuntimeError("This fixture requires its separate mcp==2.3.0 environment")
+parser = argparse.ArgumentParser()
+parser.add_argument("--reference", type=Path)
+parser.add_argument("--audit", type=Path)
+parser.add_argument("--sdk-root", type=Path)
+options = parser.parse_args()
+if options.sdk_root is not None:
+    sys.path.insert(0, str(options.sdk_root.resolve()))
+sdk_version = version("mcp")
+expected_version = "2.2.0" if options.sdk_root else "2.3.0"
+if sdk_version != expected_version:
+    raise RuntimeError(f"This fixture requires its explicit mcp=={expected_version} environment")
 
 from mcp import Client  # noqa: E402
 from mcp.client.stdio import StdioServerParameters  # noqa: E402
@@ -21,11 +30,9 @@ from mcp.server import MCPServer  # noqa: E402
 from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 from mcp.types import ImageContent, ToolAnnotations  # noqa: E402
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--reference", type=Path)
-parser.add_argument("--audit", type=Path)
-options = parser.parse_args()
-server = MCPServer("Synthetic SDK2 app", version="2.3.0", instructions="Synthetic fixture only.")
+server = MCPServer(
+    "Synthetic SDK2 app", version=sdk_version, instructions="Synthetic fixture only."
+)
 READ = ToolAnnotations(read_only_hint=True, open_world_hint=False)
 WRITE = ToolAnnotations(read_only_hint=False, destructive_hint=True, open_world_hint=False)
 value, revision = "", 0

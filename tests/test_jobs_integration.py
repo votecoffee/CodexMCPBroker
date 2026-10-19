@@ -168,11 +168,11 @@ async def test_background_handles_poll_without_replay_or_foreign_context_access(
         job_id = started["job_id"]
         assert started["status"] == "queued"
         dispatched = len(backend.calls)
-        assert (await call(owner, context, "start_job", args, request_id="job-start")).isError
-        assert (await call(other, context, "get_job", {"job_id": job_id})).isError
+        assert (await call(owner, context, "start_job", args, request_id="job-start")).is_error
+        assert (await call(other, context, "get_job", {"job_id": job_id})).is_error
         assert (
             await call(other, context, "cancel_job", {"job_id": job_id}, request_id="job-steal")
-        ).isError
+        ).is_error
         assert len(backend.calls) == dispatched
         data(await other.invoke("refresh_services", {}))
         backend.transition(job_id, "running")
@@ -194,14 +194,14 @@ async def test_job_validation_and_app_revisions_are_separate_from_request_receip
             await call(
                 owner, context, "start_job", {"target": "fixture-target"}, request_id="job-bad"
             )
-        ).isError
+        ).is_error
         assert not backend.calls
-        assert (await owner.invoke("get_request_status", {"request_id": "job-bad"})).isError
+        assert (await owner.invoke("get_request_status", {"request_id": "job-bad"})).is_error
         args = {"target": "fixture-target", "expected_revision": 0}
         # Routing a start through the read channel is rejected before HTTP.
-        assert (await call(owner, context, "start_job", args)).isError and not backend.calls
+        assert (await call(owner, context, "start_job", args)).is_error and not backend.calls
         data(await call(owner, context, "start_job", args, request_id="job-valid"))
-        assert (await call(owner, context, "start_job", args, request_id="job-stale")).isError
+        assert (await call(owner, context, "start_job", args, request_id="job-stale")).is_error
         assert (
             data(await owner.invoke("get_request_status", {"request_id": "job-stale"}))["status"]
             == "app_error"
@@ -274,7 +274,7 @@ async def test_lost_start_reply_requires_reconciliation_of_the_existing_backend_
             began = time.monotonic()
             assert (
                 await call(owner, context, "start_job", args, request_id="job-lost-start")
-            ).isError
+            ).is_error
             assert time.monotonic() - began < 20
             assert (
                 data(await owner.invoke("get_request_status", {"request_id": "job-lost-start"}))[
@@ -285,13 +285,13 @@ async def test_lost_start_reply_requires_reconciliation_of_the_existing_backend_
 
             status = data(await owner.invoke("service_session_status", {"service_id": "jobs"}))
             assert status["state"] == "lost" and status["recovery_required"]
-            assert (await other.invoke("acquire_service", {"service_id": "jobs"})).isError
+            assert (await other.invoke("acquire_service", {"service_id": "jobs"})).is_error
             assert (
                 await call(owner, context, "start_job", args, request_id="job-lost-start")
-            ).isError
+            ).is_error
             assert (
                 await call(owner, context, "start_job", args, request_id="job-no-retry")
-            ).isError
+            ).is_error
             assert len(backend.jobs) == 1 and len(backend.calls) == 1
         # Reconcile only this fixture's fake backend and stopped broker. A
         # real acknowledgement needs app-owned inspection and authorization.
@@ -318,7 +318,7 @@ async def test_transient_frontends_share_backend_jobs_with_separate_adapter_proc
     ):
         pid = data(await call(first, None, "adapter_info"))["pid"]
         assert data(await call(first, None, "adapter_info"))["pid"] != pid
-        assert (await first.invoke("acquire_service", {"service_id": "jobs"})).isError
+        assert (await first.invoke("acquire_service", {"service_id": "jobs"})).is_error
         job = data(
             await call(
                 first,
@@ -361,7 +361,7 @@ async def test_transient_lost_reply_retains_claim_without_creating_an_exclusive_
         args = {"target": "fixture-target", "expected_revision": 0, "delay_reply": 30}
         assert (
             await call(first, None, "start_job", args, request_id="transient-lost-start")
-        ).isError
+        ).is_error
         assert (
             data(await second.invoke("get_request_status", {"request_id": "transient-lost-start"}))[
                 "status"
@@ -374,7 +374,7 @@ async def test_transient_lost_reply_retains_claim_without_creating_an_exclusive_
         assert data(await call(second, None, "list_jobs"))["jobs"] == list(backend.jobs.values())
         assert (
             await call(second, None, "start_job", args, request_id="transient-lost-start")
-        ).isError
+        ).is_error
         assert len(backend.jobs) == 1
         assert sum(method == "POST" and path == "/jobs" for method, path, _ in backend.calls) == 1
 
@@ -389,7 +389,7 @@ async def test_shared_frontends_reuse_adapter_and_app_owned_jobs_without_context
     ):
         pid = data(await call(first, None, "adapter_info"))["pid"]
         assert data(await call(second, None, "adapter_info"))["pid"] == pid
-        assert (await first.invoke("acquire_service", {"service_id": "jobs"})).isError
+        assert (await first.invoke("acquire_service", {"service_id": "jobs"})).is_error
         job = data(
             await call(
                 first,
@@ -439,11 +439,11 @@ async def test_shared_lost_start_reply_blocks_both_chats_without_an_automatic_re
                 {"target": "fixture-target", "expected_revision": 0, "delay_reply": 30},
                 request_id="retained-shared-lost",
             )
-        ).isError
+        ).is_error
         for client in (first, second):
             status = data(await client.invoke("service_session_status", {"service_id": "jobs"}))
             assert status["recovery_required"] and "context_id" not in status
-            assert (await call(client, None, "list_jobs")).isError
+            assert (await call(client, None, "list_jobs")).is_error
         receipt = data(
             await second.invoke("get_request_status", {"request_id": "retained-shared-lost"})
         )

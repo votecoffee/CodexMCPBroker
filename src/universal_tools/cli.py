@@ -46,7 +46,7 @@ def initialize(state: Path, port: int) -> Settings:
             )
         return settings
     settings = Settings(port=port, token=secrets.token_urlsafe(48))
-    atomic_json(path, settings.model_dump(mode="json"))
+    atomic_json(path, settings.model_dump(mode="json", by_alias=True))
     if os.name != "nt":
         path.chmod(0o600)
     return settings
@@ -58,7 +58,7 @@ def register(state: Path, manifest_path: Path, replace: bool = False) -> str:
     with InstanceLock(state / "registration.lock"):
         if destination.exists() and not replace:
             raise BrokerError("service already registered; use --replace for an intentional update")
-        atomic_json(destination, manifest.model_dump(mode="json"))
+        atomic_json(destination, manifest.model_dump(mode="json", by_alias=True))
     return manifest.id
 
 
@@ -68,9 +68,12 @@ def configure_request_limit(state: Path, maximum_bytes: int) -> dict:
     with InstanceLock(state / "startup.lock"), InstanceLock(state / "broker.lock"):
         settings = load_settings(state)
         replacement = Settings.model_validate(
-            {**settings.model_dump(mode="json"), "max_request_body_bytes": maximum_bytes}
+            {
+                **settings.model_dump(mode="json", by_alias=True),
+                "max_request_body_bytes": maximum_bytes,
+            }
         )
-        atomic_json(state / "settings.json", replacement.model_dump(mode="json"))
+        atomic_json(state / "settings.json", replacement.model_dump(mode="json", by_alias=True))
     return {
         "max_request_body_bytes": replacement.max_request_body_bytes,
         "next": "start the broker; per-service argument budgets and app limits still apply",
@@ -163,9 +166,11 @@ def _start_locked(state: Path, *, demo: bool) -> dict:
 
 async def remote_operation(state: Path, name: str, arguments: dict | None = None):
     result = await RemoteBackend(load_settings(state)).invoke(name, arguments or {})
-    if result.isError:
+    if result.is_error:
         raise BrokerError(" ".join(item.text for item in result.content if item.type == "text"))
-    return result.structuredContent or result.model_dump(mode="json", exclude_none=True)
+    return result.structured_content or result.model_dump(
+        mode="json", by_alias=True, exclude_none=True
+    )
 
 
 def stop(state: Path) -> dict:
@@ -371,7 +376,10 @@ def main(argv: list[str] | None = None):
                 return
             case "demo":
                 app = create_demo(args.kind, args.port, state / "example-notes.json")
-                app.run(transport="stdio" if args.stdio else "streamable-http")
+                app.run(
+                    transport="stdio" if args.stdio else "streamable-http",
+                    **({} if args.stdio else app.http_options),
+                )
                 return
             case "status":
                 result = probe(load_settings(state)) or {"running": False}

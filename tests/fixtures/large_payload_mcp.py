@@ -3,19 +3,21 @@
 import argparse
 import hashlib
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int)
 options = parser.parse_args()
-server = FastMCP(
+server = MCPServer(
     "Synthetic bulk receiver",
-    host="127.0.0.1",
-    port=options.port or 8765,
-    max_request_body_size=128 * 1024 * 1024,
     log_level="WARNING",
 )
+server_http_options = {
+    "host": "127.0.0.1",
+    "port": options.port or 8765,
+    "max_request_body_size": 128 * 1024 * 1024,
+}
 commits = 0
 
 
@@ -37,4 +39,7 @@ def state() -> dict:
     return {"commits": commits}
 
 
-server.run(transport="streamable-http" if options.port else "stdio")
+server.run(
+    transport="streamable-http" if options.port else "stdio",
+    **(server_http_options if options.port else {}),
+)

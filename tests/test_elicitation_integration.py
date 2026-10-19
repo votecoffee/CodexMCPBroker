@@ -89,7 +89,7 @@ async def test_confirmation_reaches_only_the_calling_frontend_and_preserves_the_
             context,
             request_id=f"confirm-denied-{action}-{approved}",
         )
-        assert denied.isError and not unexpected and not prompts
+        assert denied.is_error and not unexpected and not prompts
         result = data(
             await remote_call(
                 owner,
@@ -133,7 +133,7 @@ async def test_unavailable_confirmation_paths_make_zero_fixture_commits(stack, m
         result = await remote_call(
             owner, operation, args, context, request_id=f"confirm-rejected-{mode}"
         )
-        assert result.isError
+        assert result.is_error
         assert len(prompts) == (1 if mode == "invalid" else 0)
         assert data(await remote_call(owner, "confirmation_state", {}, context))["commits"] == 0
         status = data(
@@ -209,7 +209,7 @@ async def test_app_deadline_cannot_be_overridden_by_a_late_acceptance(stack, tmp
                     ):
                         await asyncio.sleep(0.05)
             gate.set()
-            assert (await asyncio.wait_for(pending, 12)).isError
+            assert (await asyncio.wait_for(pending, 12)).is_error
             assert not audit.exists()
             status = data(await owner.invoke("get_request_status", {"request_id": request_id}))
             assert status["status"] == "uncertain"
@@ -368,7 +368,8 @@ def http_confirmation_app(tmp_path, request):
             with httpx.Client(trust_env=False, timeout=0.5) as client:
                 while True:
                     try:
-                        client.get(f"http://127.0.0.1:{port}/mcp")
+                        with client.stream("GET", f"http://127.0.0.1:{port}/mcp"):
+                            pass
                         break
                     except httpx.TransportError:
                         if time.monotonic() > deadline or process.poll() is not None:

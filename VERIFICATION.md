@@ -68,6 +68,8 @@ Provider deadline cases cover both stdio and a prestarted HTTP fixture. They rec
 
 ## Shared app framework profile
 
+Run `tests/test_sdk23.py` for typed pagination, forms-only capabilities, exact local form-refusal normalization, unrelated RPC/timeout propagation and rejection of implicit ownership on modern stateless requests. Native protocol profiles must preserve connection affinity across SDK 2 request-scoped session proxies, authenticate transport session reuse and keep explicit HTTP/body budgets. HTTP readiness probes should inspect response headers and close the stream; an SDK 2 GET can return an open SSE stream rather than a finite error body.
+
 Run `tests/test_framework.py` against disposable state and synthetic MCP backends. Check retained-context deferral and owner denial, backend replacement after release, new inner tools with identical native frontend definitions and still-connected MCP client sessions, rejected hashes/reused revisions/failed startup, configuration restoration, hash checks before probing/dispatch, independent backend gates, and restart identity binding. Shared-adapter retirement and write reconciliation are explicit local app-admin APIs; verify their guards and that reconciliation leaves the original receipt/request-ID protection intact. These checks do not perform native work or establish Codex desktop activation.
 
 Package checks must include the framework module, current dependency metadata and license in the wheel. Verify installation from the wheel rather than relying only on an editable checkout. Python and .NET bindings, package-feed distribution, app dependency adoption and optional universal aggregation each need their own evidence; a source wheel is not a published feed release.
@@ -80,17 +82,18 @@ For actual cache behavior, use a disposable child-process `CODEX_HOME` and priva
 
 ## Cross-SDK profile
 
-The optional `interop/` profile uses the broker's locked MCP 1.30 client and a separate MCP 2.3 server environment. It is outside the default `tests/` collection so ordinary development does not install a second SDK or silently skip matrix checks. Invoke it explicitly from the repository root:
+The optional `interop/` profile uses the framework/broker's locked MCP 2.3 client, a separate MCP 2.3 server environment and an explicitly selected MCP 2.2 compatibility overlay. It is outside the default `tests/` collection so ordinary development does not install a second environment or silently skip isolated compatibility checks. Invoke it explicitly from the repository root:
 
 ```powershell
 py -3.13 -m venv .local/interop-sdk2
 .\.local\interop-sdk2\Scripts\python.exe -m pip install -r interop/requirements-mcp2-lock.txt
-.\.venv\Scripts\python.exe -m pytest -q interop --sdk2-python .local/interop-sdk2/Scripts/python.exe
+.\.venv\Scripts\python.exe -m pip install --no-deps --target .local/interop-sdk22 -r interop/requirements-mcp22-overlay.txt
+.\.venv\Scripts\python.exe -m pytest -q interop --sdk2-python .local/interop-sdk2/Scripts/python.exe --sdk22-root .local/interop-sdk22
 ```
 
-Use the broker development interpreter for pytest; `--sdk2-python` must identify a separate interpreter with `mcp==2.3.0`. The profile rejects missing or incorrect SDK versions. Its dependency snapshot targets Windows/Python 3.13. Do not install it over the broker's runtime lock. No normal registrations, installed plugins, native apps, projects or devices participate.
+Use the broker development interpreter for pytest; `--sdk2-python` must identify a separate interpreter with `mcp==2.3.0`. The profile rejects missing or incorrect SDK versions. Its dependency snapshot targets Windows/Python 3.13. Use a separate environment to keep independent endpoint dependencies explicit. The SDK 2.2 overlay is loaded only by the synthetic SDK 2.2 fixture; it must never replace the framework environment. Missing overlay input fails the profile rather than silently skipping SDK 2.2 coverage. No normal registrations, installed plugins, native apps, projects or devices participate.
 
-The synthetic SDK 2.3 client supplies a same-SDK reference using its legacy handshake. The broker/frontends must preserve initialization, tool definitions and complete received result fields, including text, structured content, image bytes/MIME/metadata, Unicode and 64-bit integers with a one-MiB binary/base64 payload. Snapshots exclude unset SDK model fields: newer client defaults are not assumed to have arrived on the wire. Application errors, revision guards, competing owners, refresh continuity, clean release, validation before write claims, and synchronous timeout with an uncertain receipt and durable recovery barrier are also checked. Only the disposable fixture's stopped broker can acknowledge its own lost reservation during cleanup.
+The SDK 2.2 fixture additionally checks large Unicode/binary arguments, media bytes/MIME/custom `_meta`, revision rejection, retained state and clean release against the upgraded framework. The synthetic SDK 2.3 client supplies a same-SDK reference using its legacy handshake. The broker/frontends must preserve initialization, tool definitions and complete received result fields, including text, structured content, image bytes/MIME/metadata, Unicode and 64-bit integers with a one-MiB binary/base64 payload. Snapshots exclude unset SDK model fields: newer client defaults are not assumed to have arrived on the wire. Application errors, revision guards, competing owners, refresh continuity, clean release, validation before write claims, and synchronous timeout with an uncertain receipt and durable recovery barrier are also checked. Only the disposable fixture's stopped broker can acknowledge its own lost reservation during cleanup.
 
 This profile checks the negotiated `2025-11-25` path described by the [MCP lifecycle contract](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle). It does not enable the newer SDK's default protocol, its discovery/cache APIs, result envelopes, extensions or other unsupported features. An app can use a newer SDK while retaining an older wire contract; its actual adapter still needs separate metadata, workflow, host and native acceptance. Capture that adapter's exact source/dependencies and compare both direct and broker paths with a fake native backend, keeping app-specific captures local.
 

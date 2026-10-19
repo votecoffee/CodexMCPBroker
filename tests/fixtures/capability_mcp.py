@@ -4,22 +4,21 @@ import argparse
 import asyncio
 import json
 import secrets
+import weakref
 from pathlib import Path
 
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.types import ToolAnnotations
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int)
 parser.add_argument("--audit", type=Path)
 options = parser.parse_args()
-server = FastMCP(
+server = MCPServer(
     "Synthetic capability app",
-    host="127.0.0.1",
-    port=options.port or 8765,
     log_level="WARNING",
-    stateless_http=False,
 )
+server_http_options = {"host": "127.0.0.1", "port": options.port or 8765, "stateless_http": False}
 READ = ToolAnnotations(readOnlyHint=True)
 WRITE = ToolAnnotations(readOnlyHint=False)
 instance = secrets.token_hex(16)
@@ -29,10 +28,12 @@ invalid = confirmation = False
 delay = 0.0
 
 
+scopes = weakref.WeakKeyDictionary()
+
+
 def revision(ctx):
-    if not hasattr(ctx.session, "fixture_scope"):
-        ctx.session.fixture_scope = secrets.token_hex(16)
-    return f"opaque-native:{ctx.session.fixture_scope}:{generation}"
+    scope = scopes.setdefault(ctx.session._connection, secrets.token_hex(16))
+    return f"opaque-native:{scope}:{generation}"
 
 
 @server.tool(annotations=READ)
@@ -46,7 +47,7 @@ async def catalog(ctx: Context) -> dict:
     if confirmation:
         await ctx.session.elicit_form(
             "Invalid metadata-only confirmation",
-            {"type": "object"},
+            {"type": "object", "properties": {}},
             related_request_id=ctx.request_id,
         )
     names = ["holes.drill"] + (["fasteners.bolt"] if generation > 1 else [])
@@ -116,4 +117,7 @@ def state() -> dict:
     }
 
 
-server.run(transport="streamable-http" if options.port else "stdio")
+server.run(
+    transport="streamable-http" if options.port else "stdio",
+    **(server_http_options if options.port else {}),
+)

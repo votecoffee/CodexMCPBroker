@@ -63,7 +63,9 @@ async def test_search_describe_and_dispatch_agree_on_write_scope(fake):
     session.tools = [allowed, blocked, read]
     atomic_json(
         broker.registry / "app.json",
-        manifest(allow_writes=True, allowed_write_tools=["edit"]).model_dump(mode="json"),
+        manifest(allow_writes=True, allowed_write_tools=["edit"]).model_dump(
+            mode="json", by_alias=True
+        ),
     )
     await broker.refresh()
     matches = {item["tool_id"]: item["callable"] for item in broker.search()["matches"]}
@@ -97,12 +99,14 @@ async def test_allowlist_revocation_blocks_old_revisions_without_refresh(fake):
     broker, session = fake
     session.tools = [tool(False)]
     registration = manifest(allow_writes=True, allowed_write_tools=["echo"])
-    atomic_json(broker.registry / "app.json", registration.model_dump(mode="json"))
+    atomic_json(broker.registry / "app.json", registration.model_dump(mode="json", by_alias=True))
     await broker.refresh()
     before = broker.describe("app/echo")["catalog_revision"]
     atomic_json(
         broker.registry / "app.json",
-        registration.model_copy(update={"allowed_write_tools": []}).model_dump(mode="json"),
+        registration.model_copy(update={"allowed_write_tools": []}).model_dump(
+            mode="json", by_alias=True
+        ),
     )
     with pytest.raises(BrokerError, match="registration changed"):
         await broker.call(
@@ -121,7 +125,7 @@ async def test_queued_write_rechecks_policy_and_budget_changes_before_claiming(f
     broker, session = fake
     session.tools = [tool(False)]
     registration = manifest(allow_writes=True, allowed_write_tools=["echo"])
-    atomic_json(broker.registry / "app.json", registration.model_dump(mode="json"))
+    atomic_json(broker.registry / "app.json", registration.model_dump(mode="json", by_alias=True))
     await broker.refresh()
     revision = broker.describe("app/echo")["catalog_revision"]
     async with broker.lock("app"):
@@ -138,7 +142,7 @@ async def test_queued_write_rechecks_policy_and_budget_changes_before_claiming(f
         assert not pending.done()
         atomic_json(
             broker.registry / "app.json",
-            registration.model_copy(update=change).model_dump(mode="json"),
+            registration.model_copy(update=change).model_dump(mode="json", by_alias=True),
         )
     with pytest.raises(BrokerError, match="registration changed"):
         await pending
@@ -150,7 +154,7 @@ async def test_queued_write_rechecks_policy_and_budget_changes_before_claiming(f
 async def test_utf8_budget_includes_the_complete_argument_object_and_accepts_exact_limit(fake):
     broker, session = fake
     registration = manifest(max_argument_bytes=14)
-    atomic_json(broker.registry / "app.json", registration.model_dump(mode="json"))
+    atomic_json(broker.registry / "app.json", registration.model_dump(mode="json", by_alias=True))
     await broker.refresh()
     # Twelve bytes for {"value":""}, plus two UTF-8 bytes for the value.
     revision = broker.describe("app/echo")["catalog_revision"]
@@ -166,10 +170,11 @@ async def test_oversized_write_is_not_claimed_and_another_app_keeps_its_default_
     session.tools = [tool(False)]
     atomic_json(
         broker.registry / "app.json",
-        manifest(allow_writes=True, max_argument_bytes=16).model_dump(mode="json"),
+        manifest(allow_writes=True, max_argument_bytes=16).model_dump(mode="json", by_alias=True),
     )
     atomic_json(
-        broker.registry / "other.json", manifest("other", allow_writes=True).model_dump(mode="json")
+        broker.registry / "other.json",
+        manifest("other", allow_writes=True).model_dump(mode="json", by_alias=True),
     )
     await broker.refresh()
     arguments = {"value": "x" * 1000}
