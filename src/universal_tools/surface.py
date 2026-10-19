@@ -36,6 +36,8 @@ INSTRUCTIONS = (
     " Form elicitation is relayed to the originating client when it supports forms. "
     "Preserve app-required confirmations; never fabricate answers or weaken app policy "
     "after a decline, cancellation, unsupported client or timeout."
+    " Request-bound progress is optional telemetry; it does not prove completion or native "
+    "cancellation and cannot extend app deadlines. Inspect app results/status for outcomes."
     " For an exclusive service, acquire_service first and pass its context_id on every app call. "
     "Only this frontend owns that context. acquire_service renews an existing lease; "
     "release_service closes it and may discard unsaved native state. Never silently recreate "
@@ -267,7 +269,13 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
         context_id: str | None = None,
     ) -> CallToolResult:
         """Call a classified read-only app operation using its described revision and schema."""
-        route = ElicitationTarget(ctx.session, ctx.request_id)
+        route = ElicitationTarget(
+            ctx.session,
+            ctx.request_id,
+            progress_token=ctx.request_context.meta.progressToken
+            if ctx.request_context.meta
+            else None,
+        )
         try:
             return await backend.invoke(
                 "call_read_tool",
@@ -280,7 +288,7 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
                 relay=route,
             )
         finally:
-            route.close()
+            await route.aclose()
 
     @server.tool(annotations=WRITE, structured_output=False)
     async def call_write_tool(
@@ -295,7 +303,13 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
 
         Use a new request_id for each intended write. Never blindly retry after a lost response.
         """
-        route = ElicitationTarget(ctx.session, ctx.request_id)
+        route = ElicitationTarget(
+            ctx.session,
+            ctx.request_id,
+            progress_token=ctx.request_context.meta.progressToken
+            if ctx.request_context.meta
+            else None,
+        )
         try:
             return await backend.invoke(
                 "call_write_tool",
@@ -309,7 +323,7 @@ def create_surface(backend: LocalBackend | RemoteBackend, *, port: int = 8768) -
                 relay=route,
             )
         finally:
-            route.close()
+            await route.aclose()
 
     @server.tool(annotations=READ, structured_output=False)
     async def get_request_status(request_id: str) -> CallToolResult:

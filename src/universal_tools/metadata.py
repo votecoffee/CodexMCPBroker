@@ -16,6 +16,7 @@ BROKER_SUPPORT = {
     "server_requests": False,
     "elicitation_form": True,
     "elicitation_url": False,
+    "progress": True,
     "notifications": False,
 }
 

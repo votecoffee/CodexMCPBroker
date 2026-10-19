@@ -480,7 +480,7 @@ async def test_two_native_clients_cannot_overwrite_a_stale_notebook_revision(sta
 
 
 @asynccontextmanager
-async def exclusive_app(stack, *, timeout=3.0, audit_path=None):
+async def exclusive_app(stack, *, timeout=3.0, audit_path=None, fixture="stateful_mcp.py"):
     state, settings, _ = stack
     path = state / "services/stateful.json"
     assert not path.exists()
@@ -492,7 +492,7 @@ async def exclusive_app(stack, *, timeout=3.0, audit_path=None):
             "transport": {
                 "type": "stdio",
                 "command": sys.executable,
-                "args": [str(Path(__file__).parent / "fixtures/stateful_mcp.py")]
+                "args": [str(Path(__file__).parent / "fixtures" / fixture)]
                 + (["--audit", str(audit_path)] if audit_path is not None else []),
             },
             "session_mode": "exclusive",

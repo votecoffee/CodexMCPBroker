@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -24,8 +24,8 @@
     },
     {
       "path": "APP_CONTRACT.md",
-      "size": 25193,
-      "sha256": "1a368dd2c12c8c5e300a4339c5de27717fe8547771064361d5f29002bd8950ea"
+      "size": 27756,
+      "sha256": "1ce92be6dbdd400d8aa761c09be82e0dbabf50873d58e3942a426f5f47b587a3"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -79,8 +79,8 @@
     },
     {
       "path": "MIGRATION.md",
-      "size": 6093,
-      "sha256": "542ad7f57dff2f486e872d0ae67eeec241ef756bdc4e54e81e64fc23e225586e"
+      "size": 6495,
+      "sha256": "9e04f43ac972e9ebb6ca41ac9f1f4a426ddd7b454b307b0a6c862fd420dd795a"
     },
     {
       "path": "plugins/universal-tools/mcp.json",
@@ -90,7 +90,7 @@
     {
       "path": "plugins/universal-tools/plugin.json",
       "size": 477,
-      "sha256": "bf32511349c5007302e483f2744aeb2533de657197f2da9ebbaabce581fa2a73"
+      "sha256": "b07982519b95ed89c3a40a265039c7e541a031ac15ffcf4976849aa255bbf0ee"
     },
     {
       "path": "plugins/universal-tools/server/launch.py",
@@ -99,18 +99,18 @@
     },
     {
       "path": "plugins/universal-tools/skills/universal-tools/SKILL.md",
-      "size": 4725,
-      "sha256": "696b621fc2ccf2c8a6c544477cfb62b4ef64a411d9fd8f47be7058e3891c243b"
+      "size": 5051,
+      "sha256": "c95d76a02f90ad9354b30d8675a7a7188f05bafbf25812418ffe3ddc3f048014"
     },
     {
       "path": "pyproject.toml",
       "size": 953,
-      "sha256": "3f09075d3afc79b6b7643b08ec3fc97df51a177d5d12e7c3d5baae39eed9e22d"
+      "sha256": "42670af5df1f2adc7cc764989f017bd1abc1c591efc08d22de1120956b52ada2"
     },
     {
       "path": "README.md",
-      "size": 20440,
-      "sha256": "a251e3fc4bb1f7ad147bfb388e29a1ee0e03d877a1ea687c48bb06df5699ed04"
+      "size": 21048,
+      "sha256": "ad7910a85eefbea16279fad777c0e504d53c4c5cfaaae0137670fd0a595bd2f5"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -165,7 +165,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 98,
-      "sha256": "01ac6f0244d3400573286631ad36bcc4cf77cc7f467b0c0fe10b644fd2a43161"
+      "sha256": "093bc921934c61d62a9fdcf83a448a8d4c62333d207693d92511c8add4b39840"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -174,8 +174,8 @@
     },
     {
       "path": "src/universal_tools/broker.py",
-      "size": 39346,
-      "sha256": "5c270847a6b71643fe9bdccda2bf5d16395aa97e98b42b0f73324f2956f8db21"
+      "size": 39474,
+      "sha256": "ae5797d242441d704cb3b8c4c07ca1765078661fadcea6ce9abdcf20b4d03588"
     },
     {
       "path": "src/universal_tools/capabilities.py",
@@ -199,8 +199,8 @@
     },
     {
       "path": "src/universal_tools/elicitation.py",
-      "size": 6937,
-      "sha256": "8c841807f3070650b6cd67be32aab8395ec8420d2f189bfaa033c32971c57cb8"
+      "size": 7689,
+      "sha256": "8f9ea4c879d21958c22432b293d898a57e4ba2e31a767d6fcd43143948b9792f"
     },
     {
       "path": "src/universal_tools/identity.py",
@@ -214,8 +214,8 @@
     },
     {
       "path": "src/universal_tools/metadata.py",
-      "size": 936,
-      "sha256": "954899d33088e785cbf1ff9365f195f4aab74c8940d9922fc429d1b7f9a5c697"
+      "size": 958,
+      "sha256": "b3507d1620c40e40404bd7ab2ebc78bdc016b9c7f0f50c5d5b96a11e96551177"
     },
     {
       "path": "src/universal_tools/models.py",
@@ -226,6 +226,11 @@
       "path": "src/universal_tools/ownership.py",
       "size": 5583,
       "sha256": "fb3c11db67efe8fd8bd048826820ef7ef2bc812954e72f19247ccc5199710826"
+    },
+    {
+      "path": "src/universal_tools/progress.py",
+      "size": 3576,
+      "sha256": "30700279ec2a6a68f148d8e2f930af0325b88991edbb53411fbe94a8195d49d9"
     },
     {
       "path": "src/universal_tools/schemas.py",
@@ -239,8 +244,8 @@
     },
     {
       "path": "src/universal_tools/surface.py",
-      "size": 14969,
-      "sha256": "5ab630c69a2e689a2657f44640bb2e6b55b6d898caa4d47a5e352c2e97ad7836"
+      "size": 15497,
+      "sha256": "cb763e9fa51508fbb47dd6d5c57ccbbd99750c327d295570e191f73d4239c05a"
     },
     {
       "path": "src/universal_tools/transport.py",
@@ -256,6 +261,11 @@
       "path": "tests/fixtures/payload_mcp.py",
       "size": 1351,
       "sha256": "c777ae1431478862e84a979d3390f7140b3c00c2280aa613a3f0f1824efdf3ea"
+    },
+    {
+      "path": "tests/fixtures/progress_mcp.py",
+      "size": 2829,
+      "sha256": "ca5512e296663791dc036acd5ae84cffbfdc8537c9ef2ecf92d8d30cbf9292e1"
     },
     {
       "path": "tests/fixtures/stateful_mcp.py",
@@ -284,13 +294,13 @@
     },
     {
       "path": "tests/test_elicitation_integration.py",
-      "size": 16478,
-      "sha256": "358aae74c0f9ab87b3eeff3663fc37aa05895c8e864e652f74374e3ce59be12c"
+      "size": 16596,
+      "sha256": "fc296cd568cbc7f63e12b3da2f81f27c06084792cbbb7c39dc0f02c9453dfcd0"
     },
     {
       "path": "tests/test_integration.py",
-      "size": 34791,
-      "sha256": "6f58a9e4d9b2e2d18a4223a496d0df5483dd2973350b6c6742471ebaa9430880"
+      "size": 34812,
+      "sha256": "3f7540bcdb77b9381a7450b2586c6abc68b4554ae6f1207df739c7019697ede5"
     },
     {
       "path": "tests/test_metadata.py",
@@ -323,14 +333,24 @@
       "sha256": "878ad96d42a3343b610975420141b53c5c5ba6107d093778fbffe5bf290f7a65"
     },
     {
+      "path": "tests/test_progress.py",
+      "size": 6741,
+      "sha256": "9f399e6430d36fce314c2ec4a469f982effbcd5843f19f2157cad8b576bd543a"
+    },
+    {
+      "path": "tests/test_progress_integration.py",
+      "size": 11973,
+      "sha256": "af8571f9c9396b586b56e51de5444041d54df40bd0d452b9902a3974a335aabb"
+    },
+    {
       "path": "tests/test_sessions.py",
       "size": 16274,
       "sha256": "6507f7c5480c1334e705bd60308999fab773400f7f347a7147f91d534415a722"
     },
     {
       "path": "VERIFICATION.md",
-      "size": 7610,
-      "sha256": "c499cba60216a5e58e800e01310e7b9c7da7094642aa1956fa01047079aaafd9"
+      "size": 8254,
+      "sha256": "de91121f98c72484be996120ea9a260dc768b8e8b43f3875c8a44f36dfa16266"
     }
   ]
 }

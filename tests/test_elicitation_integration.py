@@ -343,13 +343,17 @@ async def test_concurrent_app_forms_do_not_swap_answers_on_pooled_broker_channel
 
 
 @pytest.fixture
-def http_confirmation_app(tmp_path):
+def http_confirmation_app(tmp_path, request):
     port = free_port()
     with (tmp_path / "synthetic-http.log").open("wb") as log:
         process = subprocess.Popen(
             [
                 sys.executable,
-                str(Path(__file__).parent / "fixtures/stateful_mcp.py"),
+                str(
+                    Path(__file__).parent
+                    / "fixtures"
+                    / getattr(request, "param", "stateful_mcp.py")
+                ),
                 "--port",
                 str(port),
             ],

@@ -829,6 +829,8 @@ class Broker:
                     claimed = True
                 if relay is not None:
                     relay.label = f"App {entry.id} requests input:\n"
+                    if relay.progress is not None:
+                        relay.progress.label = f"App {entry.id} progress:\n"
                 result = await routed_call(session, entry.tool.name, arguments, relay)
                 if write:
                     self.journal.finish(request_id, "app_error" if result.isError else "completed")

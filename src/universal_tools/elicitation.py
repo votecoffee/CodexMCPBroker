@@ -16,6 +16,8 @@ from mcp.types import (
     ErrorData,
 )
 
+from .progress import ProgressRelay
+
 FORM_TIMEOUT = 60
 
 
@@ -66,7 +68,15 @@ def form_validator(params: ElicitRequestFormParams) -> Draft202012Validator:
 
 
 class ElicitationTarget:
-    def __init__(self, session, request_id, *, label: str = "", timeout: float = FORM_TIMEOUT):
+    def __init__(
+        self,
+        session,
+        request_id,
+        *,
+        label: str = "",
+        timeout: float = FORM_TIMEOUT,
+        progress_token=None,
+    ):
         self.session = session
         self.request_id = request_id
         self.label = label
@@ -74,9 +84,21 @@ class ElicitationTarget:
         self.closed = asyncio.Event()
         self.requests = 0
         self.pending = False
+        self.progress = (
+            ProgressRelay(session, request_id, progress_token)
+            if progress_token is not None
+            else None
+        )
 
     def close(self):
         self.closed.set()
+        if self.progress is not None:
+            self.progress.close()
+
+    async def aclose(self):
+        self.close()
+        if self.progress is not None:
+            await self.progress.aclose()
 
     def supports_form(self) -> bool:
         client = self.session.client_params
@@ -167,7 +189,14 @@ class ElicitationRouter:
 
 async def routed_call(session, name, arguments, target: ElicitationTarget | None):
     router = getattr(session, "elicitation_router", None)
-    if router is None:  # Synthetic sessions and clients without relay support.
-        return await session.call_tool(name, arguments)
-    async with router.bind(target):
-        return await session.call_tool(name, arguments)
+    options = {}
+    if target is not None and target.progress is not None:
+        options["progress_callback"] = target.progress.offer
+    try:
+        if router is None:  # Synthetic sessions and clients without form relay support.
+            return await session.call_tool(name, arguments, **options)
+        async with router.bind(target):
+            return await session.call_tool(name, arguments, **options)
+    finally:
+        if target is not None:
+            await target.aclose()
