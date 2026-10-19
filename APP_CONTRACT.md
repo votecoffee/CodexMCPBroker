@@ -2,6 +2,8 @@
 
 An app owns its tools and business state. Universal Tools owns discovery and routing. Apps do not need to know about Codex conversations.
 
+Apps retain their standalone MCP endpoint and Codex plugin after broker adoption. Both integrations use app-owned services and preserve app validation, target/review bindings and authorization. Broker registration is optional and separate from standalone plugin installation. See the [coexistence policy](docs/plugin-coexistence.md) for future installer selection and required app skills; no automatic plugin installation, disabling or runtime route failover is provided here.
+
 ## HTTP registration
 
 ```json

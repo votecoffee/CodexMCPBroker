@@ -24,8 +24,8 @@
     },
     {
       "path": "APP_CONTRACT.md",
-      "size": 39358,
-      "sha256": "5104d18dfafe0192d9b46317bc1c08d22f8b4ee33d8805f44653654b660bb728"
+      "size": 39836,
+      "sha256": "ddde25e0e3c3299160282a33d46aad045836c66c31bcb2a90fa0e95cc308866c"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -41,6 +41,11 @@
       "path": "docs/capability-catalog.md",
       "size": 6958,
       "sha256": "670c9e5e4350f68eb38a722fad99ae3270e9393a8ca41bb9584e8e4f7740fa8f"
+    },
+    {
+      "path": "docs/plugin-coexistence.md",
+      "size": 7360,
+      "sha256": "59b8c1015c68398f99643d5ac1a6adc020247797ac678f55a608bb9d9a50a250"
     },
     {
       "path": "examples/app-capabilities.service.json",
@@ -119,8 +124,8 @@
     },
     {
       "path": "MIGRATION.md",
-      "size": 9803,
-      "sha256": "4b79f6e9127ff2c52b305c2ebf7193a415be933c0ceb1c830069f137f81ca059"
+      "size": 10323,
+      "sha256": "072ce6a5e9e7c22f9e15aca48a4e045d206f1ea9a7ed93b62c792eb8710250c1"
     },
     {
       "path": "plugins/universal-tools/assets/icon-128.png",
@@ -194,8 +199,8 @@
     },
     {
       "path": "README.md",
-      "size": 28939,
-      "sha256": "13c22f504d8a3561dccb3a38c33242f62b7ed7ea7695ab976f49a177f0dff415"
+      "size": 29460,
+      "sha256": "bd05c1776b79d6b5907f9778208229d7300d18c18db9859b9f33ab7cfd70a04b"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -209,8 +214,8 @@
     },
     {
       "path": "ROADMAP.md",
-      "size": 3556,
-      "sha256": "0f285bc04d559bc4747d473eabe4633ee915d92c56189e45560170667342567b"
+      "size": 3840,
+      "sha256": "c12689c72521becaafdcf4b97a2efb98e81a4b5b69d75bc52814435768743f6e"
     },
     {
       "path": "scripts/Broker.ps1",
@@ -504,8 +509,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 19145,
-      "sha256": "fa7e1248c5a6c66cc9e8f827f155ae702fd89dca9de2153d603e7a2912e023e4"
+      "size": 19768,
+      "sha256": "e4e3c671cbca3ccbab693770dba462bdc0ba33b8a525c54bc975703cf385ed5b"
     }
   ]
 }

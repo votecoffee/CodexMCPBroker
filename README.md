@@ -30,6 +30,8 @@ The [adapter assessment](docs/adapter-assessment.md) covers session ownership, a
 
 Apps own their tools, native processes, data and authorization. CodexMCPBroker provides a common discovery and routing layer so each new app can register with the existing plugin.
 
+Each app continues to distribute its own standalone Codex plugin after broker adoption. The broker is an additional optional route. Future app installers may prefer it when the app's broker workflow and required skills are ready; merely finding Universal Tools installed is insufficient. See [standalone plugins and broker integration](docs/plugin-coexistence.md) for proposed installer choices, skill preservation and coexistence. Automatic selection is not implemented, and current app installations remain unchanged.
+
 The broker exposes fourteen fixed tools. App tools are namespaced catalog entries selected through search and description. Opt-in app catalog providers also make inner capabilities searchable behind those outer tools. Neither becomes an individual native Codex tool definition. Separate chats share the broker, while each chat connects through its own stdio frontend. Integrations can opt into an exclusively owned context or a retained shared adapter for an app-owned service.
 
 ## Install

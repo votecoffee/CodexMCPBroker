@@ -4,6 +4,8 @@ CodexMCPBroker remains experimental and optional. Its current primitives support
 
 Keep an app's direct integration installed while assessing it. Use a separate broker state, disposable adapters or fake native backends, and explicit test targets. Do not replace normal registrations, change native approval settings or connect to a project/device merely to assess metadata. Store installation-specific captures, paths, reports and decisions locally rather than in the public source.
 
+Each app must continue shipping and supporting its standalone Codex plugin after broker adoption. Assess the [plugin coexistence and installer policy](docs/plugin-coexistence.md), including skill availability, explicit standalone selection and preservation of existing choices. Conditional installation is a future app-installer feature, not a reason to remove a plugin during this assessment. Finish or reconcile a workflow before switching routes; never retry an uncertain broker write through the standalone plugin.
+
 See the [beta completion plan](ROADMAP.md) for the finite initial scope. Broker implementation, adapter/host acceptance and native migration acceptance are separate milestones. Exclusive ownership may constrain same-app concurrency; record that as a workflow limitation when a direct integration permits independent parallel contexts.
 
 ## Select the review scope
