@@ -6,6 +6,8 @@
 
 Implement negotiated MCP initialization, complete tool listing and tool calls using a suitable SDK. Pin the app's dependency/runtime versions and record the negotiated protocol in tests. The app does not have to use Python or share the broker's SDK environment.
 
+Record app release identity separately from SDK and protocol versions. Inspect actual `serverInfo` output: an SDK default version may describe the library rather than the app release. Do not base installer compatibility on that default alone; use an explicit app version when supported and retain source/package/profile identity in acceptance evidence.
+
 | Transport | Current registration boundary |
 | --- | --- |
 | `stdio` | An executable plus an argument array; explicit working directory and permitted environment variable names where needed. Keep stdout for MCP and diagnostics on stderr. No shell command string. |
@@ -78,7 +80,7 @@ app-plugin/
 
 Use the current [official OpenAI packaging documentation](https://developers.openai.com/plugins/build/plugins) for plugin identity, local-executor metadata and MCP launch configuration. Resolve installed dependencies through the app's launcher/configuration; do not embed another developer's interpreter or workspace path in a public package. Do not copy a broker service descriptor into `mcp.json`: their schemas and purposes differ.
 
-Keep app skills explicit about their supported routes. A broker path discovers/describes the app's tools, acquires its required context and preserves broker request/revision fields. A standalone path uses the direct MCP definitions. Both follow the same app-owned target, preview, review and reconciliation rules. Missing tools or a failed write must not make the skill install a plugin, loosen policy or silently change routes.
+Publish broker-facing [workflow guides](../workflow-contributions.md) from the app service so Universal Tools can load them without the standalone plugin. Keep standalone native skills in that app's package; reusable content may share a source, with explicit invocation bindings for each route. A broker path discovers/describes the app's tools, acquires its required context and preserves broker request/revision fields. A standalone path uses direct definitions. Both follow the same app-owned target, preview, review and reconciliation rules. Missing tools or a failed write must not make a skill install a plugin, loosen policy or silently change routes.
 
 Package installation, plugin enablement, direct-server enablement, app registration and required skill availability are separate checks. Validate the selected combination in a fresh Codex chat; the read-only quickstart intentionally does not configure any installed plugin.
 

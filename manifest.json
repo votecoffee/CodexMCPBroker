@@ -24,8 +24,8 @@
     },
     {
       "path": "APP_CONTRACT.md",
-      "size": 40096,
-      "sha256": "6ecbba6bab29db01d63d322f527bc27fa6728907957292bfe9e95130c0c509ec"
+      "size": 40555,
+      "sha256": "1e772a16e075951f106aa17fa7a5023b6d3f46d11e07f62f3d18726c91cf6342"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -44,18 +44,18 @@
     },
     {
       "path": "docs/plugin-coexistence.md",
-      "size": 7360,
-      "sha256": "59b8c1015c68398f99643d5ac1a6adc020247797ac678f55a608bb9d9a50a250"
+      "size": 7952,
+      "sha256": "a2a347056ffefe685fc5b31a982912fa79348e7eebccf37de56089b2acd8c36d"
     },
     {
       "path": "docs/server-development/acceptance.md",
-      "size": 5896,
-      "sha256": "762269935bf86ef64134d8f2930758934318160009762e10d0876aa86674a857"
+      "size": 5962,
+      "sha256": "b2b7535825e1fd803c0a93e28a9a7f61a2b750a58c83fb8aed667038fcff1ca5"
     },
     {
       "path": "docs/server-development/architecture.md",
-      "size": 4976,
-      "sha256": "1fefd316f385c8dce520bce53d79d6e4ee8b8f4643dedb54fcd5624defcb342c"
+      "size": 5146,
+      "sha256": "e0f6eebeec5d9ab70915d0b0f93f6b379132e369e4af06996bfed0acba229872"
     },
     {
       "path": "docs/server-development/quickstart.md",
@@ -64,13 +64,13 @@
     },
     {
       "path": "docs/server-development/README.md",
-      "size": 5045,
-      "sha256": "8d7f1060909fe2b63ebcfd6857ce592bae8e260ac38732da4b13fc6b40fc3de9"
+      "size": 5465,
+      "sha256": "d3918084f14c0909d9c281d06966df8d90f63c2f31596ecbf7687eb0ea368a10"
     },
     {
       "path": "docs/server-development/registration-and-discovery.md",
-      "size": 7034,
-      "sha256": "27fe3c855b1f52a83f3eb5e46f902b6768bb0dd63114f39ef27281a5c5907880"
+      "size": 7618,
+      "sha256": "84765d8cb1bb2ab08c8b6cde09e5ea1b92adb4b17c3b006a3eca0a9e473c152b"
     },
     {
       "path": "docs/server-development/sessions-and-recovery.md",
@@ -81,6 +81,11 @@
       "path": "docs/server-development/tools-and-workflows.md",
       "size": 6004,
       "sha256": "868bc0d6fd46c8a43ef2d6b51674fb6f2add3a7cd5121e49b9c8c1b48aed18e2"
+    },
+    {
+      "path": "docs/workflow-contributions.md",
+      "size": 9007,
+      "sha256": "9fb2fda276ee124e00dab0fd3fb686149b525b8332428e873047137ad8be5fad"
     },
     {
       "path": "examples/app-capabilities.service.json",
@@ -123,6 +128,16 @@
       "sha256": "222973c8868134c94d8bfc519131bef30130d7ad15b4553c7b48ef315a1d1b69"
     },
     {
+      "path": "examples/workflow.schema.json",
+      "size": 2205,
+      "sha256": "699c0ecfdbb27da1194a404c5d5c636ac1557ea47191ceb8e34b6e544106293d"
+    },
+    {
+      "path": "examples/workflow_mcp.py",
+      "size": 5347,
+      "sha256": "0f39d114fbd6ad59dfc526f24498092921b166eed353435333253f24af261dd9"
+    },
+    {
       "path": "InstallAndRun.cmd",
       "size": 305,
       "sha256": "2c1b671915e2737d567af407b4aacc3ffbf1f045fef48966c0342bc5af277385"
@@ -159,8 +174,8 @@
     },
     {
       "path": "MIGRATION.md",
-      "size": 10655,
-      "sha256": "de6df8b5872a2acfab3114737fb75a9182205d59c03f35dd38de5ded3897793d"
+      "size": 10814,
+      "sha256": "074021d4a4904e3e5844d4ce122fcbaf46db59969d9796283441ed6ced775775"
     },
     {
       "path": "plugins/universal-tools/assets/icon-128.png",
@@ -223,9 +238,14 @@
       "sha256": "7e7ca2586bbeaf6a42d87c62d6eb12ced5a18bb4055aabcce97d2ffbfeb46dd4"
     },
     {
+      "path": "plugins/universal-tools/skills/universal-tools/references/workflows.md",
+      "size": 1989,
+      "sha256": "029e58b22bb515c7b4f2767eef763ce274d0ba4ce8028fe9e8f7164b584741d1"
+    },
+    {
       "path": "plugins/universal-tools/skills/universal-tools/SKILL.md",
-      "size": 5051,
-      "sha256": "c95d76a02f90ad9354b30d8675a7a7188f05bafbf25812418ffe3ddc3f048014"
+      "size": 5546,
+      "sha256": "8845ec077f848016da13ac7ad71b1eb6ef88738d58957a27a1014e4dc5f7cf40"
     },
     {
       "path": "pyproject.toml",
@@ -234,8 +254,8 @@
     },
     {
       "path": "README.md",
-      "size": 29800,
-      "sha256": "4e8a83917de9452604605e92257005a002ebf754177916867f13c33a9cdd06fc"
+      "size": 29957,
+      "sha256": "a244a12d8bbeffb2cb21212d2fffaf1d05d62b59ef0832c739d03573d93542e2"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -249,8 +269,8 @@
     },
     {
       "path": "ROADMAP.md",
-      "size": 3840,
-      "sha256": "c12689c72521becaafdcf4b97a2efb98e81a4b5b69d75bc52814435768743f6e"
+      "size": 4008,
+      "sha256": "6c4ba2e1159b0a154fb7ad04ea67f3ad5884a6fd1e023038b5729153bb6213cf"
     },
     {
       "path": "scripts/Broker.ps1",
@@ -543,9 +563,14 @@
       "sha256": "07b104a95cd44ed47dece1a470f0c678a7debd121d85d7762053c3dd5fa8ee68"
     },
     {
+      "path": "tests/test_workflow_integration.py",
+      "size": 6612,
+      "sha256": "7b56141b2d4a6d65147fb917fb4c44693d0b00b2a225d1cffab3dc9f37a1bb00"
+    },
+    {
       "path": "VERIFICATION.md",
-      "size": 20424,
-      "sha256": "937218badf91b9d26a78468af17834b9b8cbc7280fd722a6d58bf899d7f52c83"
+      "size": 21133,
+      "sha256": "ce48f747d785a7dbd2b29668dfe8a5c2a8062713e31277c500649a9f54670180"
     }
   ]
 }

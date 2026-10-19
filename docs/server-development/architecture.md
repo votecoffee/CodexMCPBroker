@@ -44,7 +44,7 @@ An independent app service is useful when jobs or business state must survive ad
 
 Ship the app's own standalone Codex plugin alongside broker registration support. App installation and normal operation must not require this broker. Use the same app-owned service contracts through both integrations.
 
-App skills need an assessed invocation path for each supported route. Retaining a plugin for its skills while disabling its direct server is one candidate; skipping its installation requires another approved guidance mechanism. See [plugin coexistence](../plugin-coexistence.md). Neither packaging choice is currently automated by the broker.
+App workflows need an assessed invocation path for each supported route. In broker mode the target is Universal Tools alone: publish versioned [workflow contributions](../workflow-contributions.md) so its one skill can load required app guidance on demand. Standalone users receive the app plugin and its native skills. Do not require both plugins for routine broker use. See [plugin coexistence](../plugin-coexistence.md); native skill import and conditional installer selection are not automated by the broker.
 
 Treat route changes as explicit lifecycle events. Finish or reconcile stateful work before switching. A direct adapter cannot adopt a broker context, convert a preview token into another session or silently retry an uncertain write.
 

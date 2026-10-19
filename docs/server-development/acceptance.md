@@ -20,7 +20,7 @@ Record unsupported requirements as blockers. Mark a feature that is outside the 
 | Failure and reconciliation | Queue versus in-flight timeout, worker versus adapter loss, lost reply after a recorded fake effect, original write receipt, durable barriers, explicit reconciliation and zero replay/cross-route retry. |
 | Required workers/jobs | Production IPC/generations/manifests, reload success/rejection, cleanup, job state after adapter release and cancellation acknowledgment versus actual outcome. |
 | Payload and efficiency | Valid large and invalid inputs, encodings and JSON/base64 overhead, exact results/media, direct/cold/warm measurements with stated samples and competing frontends. |
-| Codex host | Actual fresh-chat discovery, route-aware app instructions/skills, tool selection, media, human form UI, progress and failures using disposable data. Protocol clients cannot establish UI behavior. |
+| Codex host | Actual fresh-chat discovery with Universal Tools alone and app plugins absent; contributed instructions/references, tool selection, media, human form UI, progress and failures compared with the standalone workflow. Protocol clients cannot establish UI behavior. |
 | Installation/coexistence | Standalone without broker; absent/disabled/incompatible broker; explicit override; upgrade/reinstall choice preservation; no automatic route switch with active/uncertain work. |
 | Native pilot | Separately authorized disposable targets, fresh app preflight/review, native acceptance/readback and failure reconciliation. Preserve original data and an available standalone route. |
 

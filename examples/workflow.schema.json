@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "App workflow contribution, version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "revision", "description", "instructions", "tools", "references"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,128}$"},
+    "revision": {"type": "string", "minLength": 1, "maxLength": 256},
+    "description": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "instructions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "text", "sha256"],
+      "properties": {
+        "format": {"const": "markdown"},
+        "text": {"type": "string", "minLength": 1, "maxLength": 32768},
+        "sha256": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "tools": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tool", "purpose"],
+        "properties": {
+          "tool": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,128}$"},
+          "service_id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$"},
+          "purpose": {"type": "string", "minLength": 1, "maxLength": 1024}
+        }
+      }
+    },
+    "references": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "sha256", "read"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,128}$"},
+          "description": {"type": "string", "minLength": 1, "maxLength": 1024},
+          "sha256": {"$ref": "#/$defs/digest"},
+          "read": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tool", "arguments"],
+            "properties": {
+              "tool": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,128}$"},
+              "arguments": {"type": "object"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

@@ -13,6 +13,7 @@ CodexMCPBroker is experimental. **MCP protocol conformance, broker compatibility
 | [Tool and workflow design](tools-and-workflows.md) | Design schemas, side-effect annotations, revisions, reviewed writes, jobs and results. |
 | [Sessions and recovery](sessions-and-recovery.md) | Choose transient, exclusive or shared mode and define resource ownership and loss behavior. |
 | [Registration and discovery](registration-and-discovery.md) | Register transports, manage dependencies and publish optional inner catalogs. |
+| [Workflow contributions](../workflow-contributions.md) | Supply app guidance through one Universal Tools plugin, while retaining independent standalone packaging. |
 | [Acceptance and release](acceptance.md) | Run a staged test matrix and complete a reusable integration record. |
 
 The [app contract](../../APP_CONTRACT.md) and checked-in [service schema](../../examples/service.schema.json) are the broker's detailed references. The [capability catalog contract](../capability-catalog.md) governs optional inner discovery. Follow the [plugin coexistence policy](../plugin-coexistence.md) for standalone packaging and future installer choices. Avoid copying limits into app code without versioning the integration profile.
@@ -35,7 +36,7 @@ Supported routes are local stdio executables and MCP Streamable HTTP at literal 
 
 Resources, prompts, sampling, roots, URL elicitation, task APIs, general notifications and app UI routing are outside the current relay contract. App skills are not automatically distributed. One exclusive registration has one frontend owner; shared calls are serialized and deliberately share app state/authorization. Independent private parallel contexts require additional app-defined fencing. See [limitations](../../README.md#limitations).
 
-Every app retains its own MCP server and standalone Codex plugin after adoption. Conditional app-plugin installation and automatic route selection remain proposed installer work. The current broker neither installs app plugins nor switches a failed operation to a direct route.
+Every app distributes its own MCP server and standalone Codex plugin after adoption. Broker-mode users should need only Universal Tools; app plugins are for the standalone choice, with coexistence optional. The workflow contribution profile is a reference path through existing tools, not native skill hot-loading or established host parity. Conditional app-plugin installation and automatic route selection remain proposed installer work. The broker neither installs app plugins nor switches a failed operation to a direct route.
 
 ## Standards and implementation choices
 

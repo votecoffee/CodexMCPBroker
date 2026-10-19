@@ -4,6 +4,8 @@ An app owns its tools and business state. Universal Tools owns discovery and rou
 
 Apps retain their standalone MCP endpoint and Codex plugin after broker adoption. Both integrations use app-owned services and preserve app validation, target/review bindings and authorization. Broker registration is optional and separate from standalone plugin installation. See the [coexistence policy](docs/plugin-coexistence.md) for future installer selection and required app skills; no automatic plugin installation, disabling or runtime route failover is provided here.
 
+The broker-mode target is Universal Tools alone, with the app plugins absent. Apps can publish versioned [workflow contributions](docs/workflow-contributions.md) through the existing normalized capability/read-tool path. The reference profile supplies lazy guidance and read references without new broker methods; it does not hot-load native Codex skills, install helper code or establish host parity. Standalone packaging remains an independent app option.
+
 For a development sequence and copyable isolated example, use the [server developer guide](docs/server-development/README.md). This contract defines broker-specific behavior; MCP protocol conformance and app/host/native acceptance require their own evidence.
 
 ## HTTP registration
