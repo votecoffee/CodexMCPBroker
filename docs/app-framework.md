@@ -78,6 +78,8 @@ Publication uses immutable generated registration snapshots under `<state>/frame
 
 Native MCP clients receive independent session affinity without accepting owner IDs as tool arguments. In-process clients get separate generated identities. The bearer credential remains a local-user authentication boundary; affinity is not separate-user authentication. Durable lost-context barriers survive host restart. The existing stopped-runtime recovery procedure applies to this dedicated state after app-owned reconciliation.
 
+A native MCP session is not itself evidence of Codex chat isolation. Where the host shares connections, use separate frontend instances and the existing `RemoteBackend`/`create_surface` stdio adapter around the app-owned host; that adapter does not require a universal daemon. Validate actual multi-chat frontend lifetimes and ownership before adoption. Keep app startup app-owned rather than using the optional broker's automatic-start command for framework state.
+
 ## Adoption and limits
 
 Run `tests/test_framework.py`, then the relevant [acceptance stages](server-development/acceptance.md) for an actual app. Preserve original handlers, compare complete results, verify two-client state and failure behavior, and measure direct/host latency. The shared engine still serializes calls to one backend. Long-running native work should use app-owned jobs and explicit targets. Native project/controller access and real migrations are not part of the synthetic framework profile.
