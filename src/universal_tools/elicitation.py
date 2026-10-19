@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
+from contextvars import ContextVar
 from copy import deepcopy
 
 import anyio
@@ -164,10 +165,23 @@ class ElicitationTarget:
 class ElicitationRouter:
     def __init__(self):
         self.target: ElicitationTarget | None = None
+        self._received_target: ContextVar[ElicitationTarget | None] = ContextVar(
+            "received_elicitation_target"
+        )
+
+    @contextmanager
+    def capture(self):
+        # SDK callbacks run in child tasks. Preserve the route at message
+        # receipt, including an absent route, before scheduling that task.
+        token = self._received_target.set(self.target)
+        try:
+            yield
+        finally:
+            self._received_target.reset(token)
 
     async def callback(self, _, params):
-        target = self.target
-        if target is None:
+        target = self._received_target.get(self.target)
+        if target is None or target is not self.target or target.closed.is_set():
             return rejected("elicitation is only available during its originating tool call")
         result = await target.forward(params)
         if self.target is not target or target.closed.is_set():

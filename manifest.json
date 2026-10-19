@@ -24,8 +24,8 @@
     },
     {
       "path": "APP_CONTRACT.md",
-      "size": 34640,
-      "sha256": "77550b262f4a829c686eaaa6941dd8e62a837d074dbf482810b7a26ebb5abd6d"
+      "size": 35073,
+      "sha256": "98b7504391617bfe9b0ac86e08da6c943ddbf8a8bb7107ce545ffe5c32b13b41"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -229,8 +229,8 @@
     },
     {
       "path": "src/universal_tools/elicitation.py",
-      "size": 7689,
-      "sha256": "8f9ea4c879d21958c22432b293d898a57e4ba2e31a767d6fcd43143948b9792f"
+      "size": 8299,
+      "sha256": "6e78c4bf3006ad740370d3ca73d0baf865e0b28da0e73b9cbbe349984d3f5eb5"
     },
     {
       "path": "src/universal_tools/identity.py",
@@ -279,8 +279,8 @@
     },
     {
       "path": "src/universal_tools/transport.py",
-      "size": 5899,
-      "sha256": "a9a14f4c7a96e80d47cbed67451848d825424badb4e5de27b5e0699381a778ac"
+      "size": 6115,
+      "sha256": "9cc7382ef3d7df463221c6fd11bee5583679d086f7afa29514f044f2c9b3db46"
     },
     {
       "path": "tests/fixtures/capability_mcp.py",
@@ -324,8 +324,8 @@
     },
     {
       "path": "tests/test_elicitation.py",
-      "size": 8747,
-      "sha256": "0034cdb5d4eda58db71e8e1bec1f188a9b28599e9b583b64713f4a0128adecb1"
+      "size": 10376,
+      "sha256": "c19b3916185e1d8aa558f313437d47dc7097a4639d3059a32adca083a3f530ac"
     },
     {
       "path": "tests/test_elicitation_integration.py",
@@ -404,8 +404,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 13934,
-      "sha256": "e7112066a7e9259923c4bdd4b88201e43f477cec89283baddbc703aa717028cf"
+      "size": 14346,
+      "sha256": "ef530d92677b56d26aa58e80214bef47e5da419029b1865811d606a30a6cce3d"
     }
   ]
 }

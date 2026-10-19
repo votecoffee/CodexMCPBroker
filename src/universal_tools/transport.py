@@ -43,7 +43,11 @@ class InitializedSession(ClientSession):
                 with responder:
                     await responder.respond(rejected("task-augmented elicitation is not supported"))
                 return
-            self._task_group.start_soon(super()._received_request, responder)
+            if self.elicitation_router is not None:
+                with self.elicitation_router.capture():
+                    self._task_group.start_soon(super()._received_request, responder)
+            else:
+                self._task_group.start_soon(super()._received_request, responder)
         else:
             await super()._received_request(responder)
 

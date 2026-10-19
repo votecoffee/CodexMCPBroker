@@ -1,12 +1,15 @@
 """Approval routing and rejected paths use synthetic clients, never real app approval."""
 
 import asyncio
+from types import SimpleNamespace
 
 import anyio
 import pytest
+from mcp import ClientSession
 from mcp.types import (
     ClientCapabilities,
     ElicitationCapability,
+    ElicitRequest,
     ElicitRequestFormParams,
     ElicitRequestURLParams,
     ElicitResult,
@@ -14,11 +17,13 @@ from mcp.types import (
     FormElicitationCapability,
     Implementation,
     InitializeRequestParams,
+    ServerRequest,
     UrlElicitationCapability,
 )
 from test_pool import channels as channels
 
 from universal_tools.elicitation import ElicitationRouter, ElicitationTarget
+from universal_tools.transport import InitializedSession
 
 
 def form(**changes):
@@ -191,6 +196,42 @@ async def test_no_ambient_or_late_route_can_answer_a_different_operation():
         result = await router.callback(None, form())
         assert result.action == "accept" and client.calls[-1][2] == 2
     assert replacement.closed.is_set()
+
+
+@pytest.mark.parametrize("active_at_receipt", [False, True])
+async def test_queued_sdk_form_cannot_adopt_a_route_bound_after_its_receipt(
+    monkeypatch, active_at_receipt
+):
+    client = Client()
+    session = InitializedSession(None, None, relay=True)
+    gate, tasks = asyncio.Event(), []
+
+    class QueuedGroup:
+        def start_soon(self, handler, responder):
+            async def delayed():
+                await gate.wait()
+                return await handler(responder)
+
+            tasks.append(asyncio.create_task(delayed()))
+
+    async def sdk_callback(self, responder):
+        return await self._elicitation_callback(None, responder.request.root.params)
+
+    monkeypatch.setattr(ClientSession, "_received_request", sdk_callback)
+    session._task_group = QueuedGroup()
+    responder = SimpleNamespace(request=ServerRequest(ElicitRequest(params=form())))
+    router = session.elicitation_router
+    first = ElicitationTarget(client, 1)
+    async with router.bind(first if active_at_receipt else None):
+        await session._received_request(responder)
+    replacement = ElicitationTarget(client, 2)
+    async with router.bind(replacement):
+        gate.set()
+        assert isinstance(await asyncio.wait_for(tasks[0], 1), ErrorData)
+        assert not client.calls
+        # A fresh form actually received during this call remains usable.
+        assert (await router.callback(None, form())).action == "accept"
+        assert client.calls[-1][2] == 2
 
 
 async def test_each_confirmation_is_fresh_and_prompt_count_is_bounded():
