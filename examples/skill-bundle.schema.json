@@ -1,0 +1,114 @@
+{
+  "$defs": {
+    "BundleFile": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "size": {
+          "maximum": 4194304,
+          "minimum": 0,
+          "title": "Size",
+          "type": "integer"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "executable": {
+          "default": false,
+          "title": "Executable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "size",
+        "sha256"
+      ],
+      "title": "BundleFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "id": {
+      "pattern": "^[a-z][a-z0-9-]{0,62}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "version": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    },
+    "route": {
+      "const": "universal-tools",
+      "title": "Route",
+      "type": "string"
+    },
+    "min_broker_version": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Min Broker Version",
+      "type": "string"
+    },
+    "license": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "License",
+      "type": "string"
+    },
+    "service_ids": {
+      "items": {
+        "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Service Ids",
+      "type": "array"
+    },
+    "skills": {
+      "items": {
+        "pattern": "^[a-z][a-z0-9-]{0,62}$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Skills",
+      "type": "array"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/BundleFile"
+      },
+      "maxItems": 256,
+      "minItems": 2,
+      "title": "Files",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "version",
+    "route",
+    "min_broker_version",
+    "license",
+    "service_ids",
+    "skills",
+    "files"
+  ],
+  "title": "SkillBundle",
+  "type": "object"
+}

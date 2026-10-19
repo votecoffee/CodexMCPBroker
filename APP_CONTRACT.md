@@ -6,6 +6,8 @@ Apps retain their standalone MCP endpoint and Codex plugin after broker adoption
 
 The broker-mode target is Universal Tools alone, with the app plugins absent. Apps can publish versioned [workflow contributions](docs/workflow-contributions.md) through the existing normalized capability/read-tool path. The reference profile supplies lazy guidance and read references without new broker methods; it does not hot-load native Codex skills, install helper code or establish host parity. Standalone packaging remains an independent app option.
 
+Apps can separately distribute [native skill bundles](docs/native-skill-bundles.md). An explicit local synchronizer validates/snapshots selected packages and composes their native skills and resources into one Universal Tools package for installation and Codex reload. This does not add an MCP method, change service policy or certify per-app skill behavior. Service registration, package acceptance, host activation and native migration remain separate gates.
+
 For a development sequence and copyable isolated example, use the [server developer guide](docs/server-development/README.md). This contract defines broker-specific behavior; MCP protocol conformance and app/host/native acceptance require their own evidence.
 
 ## HTTP registration

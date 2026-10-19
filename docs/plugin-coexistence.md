@@ -30,7 +30,9 @@ The two installation goals are:
 - **Universal Tools mode:** one plugin supplies discovery/routing and loads the selected app's versioned workflow guidance on demand. Native app skill packages are not required to be installed alongside it.
 - **Standalone mode:** the app's own plugin supplies its direct MCP connection and native skills. Universal Tools is not required.
 
-Do not treat a tool refresh as native skill installation. OpenAI documents [MCP skill import](https://developers.openai.com/plugins/build/skills#import-a-skill-from-mcp) as a package snapshot. Runtime workflow guides are task-scoped app data, not hot-loaded native skills. A future reviewed native-skill packaging synchronizer would be separate installation work. The current reference contribution profile does not implement that synchronizer, arbitrary scripts or binary asset installation.
+Apps can also publish [native skill bundles](native-skill-bundles.md). The local synchronizer aggregates selected broker variants and resources into one Universal Tools plugin for explicit installation and Codex reload. Standalone packages remain independent; no direct MCP dependency is silently rewritten. This supports native skill packaging without requiring both plugin sets, while host activation and per-app parity still need acceptance.
+
+Do not treat a tool refresh as native skill installation. OpenAI documents [MCP skill import](https://developers.openai.com/plugins/build/skills#import-a-skill-from-mcp) as a package snapshot. Runtime workflow guides are task-scoped app data, not hot-loaded native skills. The native bundle synchronizer is a separate local administrative installation path; runtime catalogs cannot invoke it.
 
 Required app instructions, explicit targets, preview/review/apply steps and confirmation policy must work through the chosen route. A missing required contribution blocks migration; it is not a reason to require both plugin sets permanently or silently change routes. Existing direct installations remain intact during assessment until an accepted migration is explicitly selected.
 

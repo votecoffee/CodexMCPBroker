@@ -6,7 +6,7 @@ Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.11.1**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.12.0**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
 
@@ -32,7 +32,7 @@ Building a new server? Start with the [MCP server developer guide](docs/server-d
 
 Apps own their tools, native processes, data and authorization. CodexMCPBroker provides a common discovery and routing layer so each new app can register with the existing plugin.
 
-Each app continues to distribute its standalone Codex plugin for independent use. **Broker-mode users should install Universal Tools instead of multiple app plugins.** App-owned [workflow contributions](docs/workflow-contributions.md) provide a reference path for loading versioned guidance through existing discovery/read tools; native skill hot-loading and complete host/app parity are not established. Future app installers may skip the standalone plugin after that app's broker route and guidance pass acceptance. See [installation choices](docs/plugin-coexistence.md). Automatic selection is not implemented by this broker, and current app installations remain unchanged.
+Each app continues to distribute its standalone Codex plugin for independent use. **Broker-mode users should install Universal Tools instead of multiple app plugins.** The [native skill synchronizer](docs/native-skill-bundles.md) composes explicitly selected app skill packages into one Universal Tools package for installation and Codex reload. App-owned [workflow contributions](docs/workflow-contributions.md) also provide versioned guidance through existing discovery/read tools between package updates. Complete host/app parity remains unestablished. Future app installers may skip the standalone plugin after that app's broker route and guidance pass acceptance. See [installation choices](docs/plugin-coexistence.md). Automatic app selection is not implemented by this broker, and current app installations remain unchanged.
 
 The broker exposes fourteen fixed tools. App tools are namespaced catalog entries selected through search and description. Opt-in app catalog providers also make inner capabilities searchable behind those outer tools. Neither becomes an individual native Codex tool definition. Separate chats share the broker, while each chat connects through its own stdio frontend. Integrations can opt into an exclusively owned context or a retained shared adapter for an app-owned service.
 
@@ -77,6 +77,16 @@ Run these commands from the repository root:
 ```
 
 A plugin frontend also starts the broker when needed. Closing a chat leaves the shared broker available to other chats. Normal startup connects to registered apps; each HTTP app manages its own process lifecycle.
+
+### Aggregate native app skills
+
+An app can publish a broker-compatible native skill bundle, including references, scripts, templates and assets. After setup and explicit bundle selection:
+
+```powershell
+.\scripts\Sync-Skills.ps1 -BundleManifest 'C:\Apps\Example\broker-skills\skill-bundle.json' -Install
+```
+
+This builds and installs a single Universal Tools package. Restart Codex and test its native skills in a fresh chat. Omit `-Install` to compose without changing the installed plugin. The [bundle guide](docs/native-skill-bundles.md) covers inspection, pinned snapshots, multiple apps, update/removal, rollback and the remaining host acceptance boundary. The synchronizer does not migrate an app, install its standalone plugin or execute contributed scripts.
 
 ### Try the example services
 

@@ -28,6 +28,8 @@ from .models import (
     load_settings,
 )
 from .ownership import OwnershipJournal
+from .skill_bundles import add_parser as skill_parser
+from .skill_bundles import execute as skill_command
 from .surface import RemoteBackend, create_surface
 from .transport import http_session
 
@@ -300,6 +302,7 @@ def main(argv: list[str] | None = None):
     parser.add_argument("--state", type=Path, default=Path.cwd() / ".local")
     parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
+    skill_parser(commands)
     initialize_parser = commands.add_parser("init", help="create private local broker settings")
     initialize_parser.add_argument("--port", type=int, default=8768)
     request_limit = commands.add_parser(
@@ -340,6 +343,8 @@ def main(argv: list[str] | None = None):
     state = args.state.resolve()
     try:
         match args.command:
+            case "skills":
+                result = skill_command(state, args)
             case "init":
                 settings = initialize(state, args.port)
                 result = {"state": str(state), "url": settings.url, "version": __version__}
@@ -401,7 +406,7 @@ def main(argv: list[str] | None = None):
                 )
                 result = {"configured_plugin": str(plugin)}
         print(json.dumps(result, indent=2))
-    except (BrokerError, ValueError, OSError) as error:
+    except (BrokerError, ValueError, OSError, KeyError, TypeError, RecursionError) as error:
         # Validation messages from third-party libraries may quote inputs; keep them local/generic.
         message = str(error) if isinstance(error, BrokerError) else type(error).__name__
         print(f"universal-tools: {message}", file=sys.stderr)

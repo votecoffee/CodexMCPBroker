@@ -31,10 +31,10 @@ def closure(initial):
 
 
 for filename, packages in [
-    ("requirements-lock.txt", ["mcp", "jsonschema"]),
+    ("requirements-lock.txt", ["mcp", "jsonschema", "anyio", "PyYAML"]),
     (
         "requirements-dev-lock.txt",
-        ["mcp", "jsonschema", "pytest", "pytest-asyncio", "ruff", "build"],
+        ["mcp", "jsonschema", "anyio", "PyYAML", "pytest", "pytest-asyncio", "ruff", "build"],
     ),
 ]:
     versions = closure(packages)

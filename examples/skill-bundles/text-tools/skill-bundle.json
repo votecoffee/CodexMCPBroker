@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "id": "text-tools",
+  "version": "1.0.0",
+  "route": "universal-tools",
+  "min_broker_version": "0.12.0",
+  "license": "MIT",
+  "service_ids": [
+    "workflow-example"
+  ],
+  "skills": [
+    "text-tools-inspect-text"
+  ],
+  "files": [
+    {
+      "path": "LICENSE",
+      "size": 1067,
+      "sha256": "9fdbc8c41abf794f69c3488f463798e06338bf90ebefbe2daee329d217c83d44",
+      "executable": false
+    },
+    {
+      "path": "skills/text-tools-inspect-text/agents/openai.yaml",
+      "size": 142,
+      "sha256": "5da363026eadc91affd389fc490f4e944fa5f4123774345019512379c0b2688e",
+      "executable": false
+    },
+    {
+      "path": "skills/text-tools-inspect-text/assets/sample.txt",
+      "size": 13,
+      "sha256": "0cc9e2e5ce331f36ddfa92fa0f2f50c036b2cd950355b1370e60fe2022ec0020",
+      "executable": false
+    },
+    {
+      "path": "skills/text-tools-inspect-text/references/limits.md",
+      "size": 270,
+      "sha256": "6fd2877383411a4f1e52cc99e7c08b13bdf1cee631ab50222b0d66f607a2c995",
+      "executable": false
+    },
+    {
+      "path": "skills/text-tools-inspect-text/scripts/text_digest.py",
+      "size": 336,
+      "sha256": "7319d7a12f8881f4cfaf1c281484fbae85aba74e3c487446a0a68928db1ac327",
+      "executable": true
+    },
+    {
+      "path": "skills/text-tools-inspect-text/SKILL.md",
+      "size": 1220,
+      "sha256": "f43215ee4e69de90cc17165986fbe45bfe039615fb37a7bacd9b83f434b50378",
+      "executable": false
+    }
+  ]
+}

@@ -31,6 +31,7 @@ pytest-asyncio==1.4.0
 python-dotenv==1.2.4
 python-multipart==0.0.32
 pywin32==312; sys_platform == "win32"
+PyYAML==6.0.3
 referencing==0.37.0
 rpds-py==2026.9.1
 ruff==0.17.1

@@ -10,6 +10,7 @@ The next finish line is a reviewable beta for selected app workflows. It is sepa
 - [x] App initialization guidance, scoped inner catalog hints, request-bound forms and progress.
 - [x] Bounded larger arguments and an independently configurable HTTP body limit, with existing defaults preserved.
 - [x] Source packaging, manifests, reusable assessment instructions and local-only app evidence.
+- [x] Explicit native skill bundle selection, snapshot composition, marketplace packaging and rollback; host skill activation and real app adoption remain acceptance work.
 
 These features need ongoing regression checks. Passing their synthetic tests does not establish native application behavior.
 

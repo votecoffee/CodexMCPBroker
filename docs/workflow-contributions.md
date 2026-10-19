@@ -4,7 +4,7 @@ The intended broker-mode installation uses **Universal Tools alone** for the par
 
 ## Native skills and runtime guidance
 
-The current broker indexes tools and optional inner catalogs; it does not install or hot-load native app `SKILL.md` packages. OpenAI's [MCP skill import](https://developers.openai.com/plugins/build/skills#import-a-skill-from-mcp) produces a package snapshot rather than fetching imported skills at runtime. A tool-catalog refresh must not be described as native skill installation.
+The running broker indexes tools and optional inner catalogs; it does not hot-load native app `SKILL.md` packages. The separate [native skill synchronizer](native-skill-bundles.md) composes selected app bundles into one plugin package for explicit installation and Codex reload. OpenAI's [MCP skill import](https://developers.openai.com/plugins/build/skills#import-a-skill-from-mcp) produces a package snapshot rather than fetching imported skills at runtime. A tool-catalog refresh must not be described as native skill installation.
 
 The runtime contribution path uses one packaged Universal Tools skill as the entrypoint. It searches app workflow hints, reads the selected app's versioned instructions and referenced material through read-only MCP tools, then uses the app's ordinary tools. The app's plugin can remain uninstalled. These are app-provided workflow guides, not additional native Codex skills or higher-priority instructions.
 
@@ -19,7 +19,7 @@ The [reference server](../examples/workflow_mcp.py), [workflow response schema](
 | Workflow instructions | This reference profile plus the generic Universal Tools skill; app readers/adoption and host parity remain to assess. |
 | Supporting reference material | Named, revision/hash-bound read tools; bounded UTF-8 reference demonstrated. |
 | Workers and native engines | Remain app-owned processes behind its tools; no app code loaded into the broker. |
-| Native Codex skills, executable packages, other host features | Separate packaging/host or generic protocol work if a selected workflow requires it; no runtime import implemented here. |
+| Native Codex skills and bundled resources | Explicit local [bundle synchronization](native-skill-bundles.md), installation and Codex reload; real app adoption/activation still needs acceptance. Other host features need separate work. |
 
 This is a small app-contribution framework built on existing discovery and routing. Extend versioned contracts for a demonstrated reusable need instead of adding a broker plugin loader for each vendor. Do not assume every legacy plugin feature fits a text workflow guide.
 
@@ -57,7 +57,7 @@ An explicit cross-service tool dependency needs its own live definition, policy 
 
 Apps can author reusable workflow content once and provide a broker-facing reader and standalone skill packaging around it. Maintain explicit invocation bindings for the two routes. Standalone skills may directly name their app's MCP tools; broker guides reference real tool names through discovery and use broker contexts/request fields. Keep both faithful to the same app service and review contract.
 
-A future local packaging synchronizer could assemble approved app native skills into one installed Universal Tools package. It would need reviewed provenance, namespacing, dependency/resource manifests, content hashes, atomic update/removal, rollback and real host reload tests. That is a separate installation feature; runtime metadata cannot silently rewrite trusted plugin files. The contribution profile does not require that synchronizer for instruction/reference workflows.
+The [local packaging synchronizer](native-skill-bundles.md) assembles explicitly selected, namespaced app skill bundles with their inventories, resources, dependencies and license notices. It supports immutable snapshots, atomic marketplace selection, update/removal and rollback. Installation/cache behavior and real host skill activation are separate acceptance gates. Runtime metadata cannot silently rewrite trusted plugin files. The runtime contribution profile does not require that synchronizer for instruction/reference workflows.
 
 ## Acceptance and remaining limits
 

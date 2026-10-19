@@ -1,0 +1,5 @@
+dependencies:
+  tools:
+    - type: mcp
+      value: universal-tools
+      description: Discover and call the registered example text service.

@@ -84,6 +84,8 @@ Publish broker-facing [workflow guides](../workflow-contributions.md) from the a
 
 Package installation, plugin enablement, direct-server enablement, app registration and required skill availability are separate checks. Validate the selected combination in a fresh Codex chat; the read-only quickstart intentionally does not configure any installed plugin.
 
+For native discovery and packaged resources, publish a [broker skill bundle](../native-skill-bundles.md) with explicit route bindings, namespaced skills, file hashes and required service IDs. Its local registry and compose/install/reload step are separate from service registration and MCP refresh. The app installer may call that path after broker integration is selected and accepted; publishing workflow metadata does not authorize installation.
+
 ## Make installation and failures observable
 
 Keep app installation, standalone Codex plugin packaging and optional broker registration separate. Follow the [coexistence policy](../plugin-coexistence.md): preserve explicit route choices, required app skills and an independent standalone option. Automatic installer selection is proposed behavior, not a current broker service.

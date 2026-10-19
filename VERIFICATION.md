@@ -66,6 +66,12 @@ The workflow contribution reference checks run the example app through the uncha
 
 Provider deadline cases cover both stdio and a prestarted HTTP fixture. They record entry into the delayed provider before checking that its timeout evicts owned search hints and retains the recovery barrier. The stdio case allows cold process initialization; the HTTP case keeps a short operation budget after server startup. Thus an initialization failure cannot substitute for the intended in-flight provider timeout.
 
+## Native skill bundle profile
+
+Native skill packaging checks (`tests/test_skill_bundles.py` and `tests/test_skill_scripts.py`) use isolated state and a never-connected service descriptor. Verify complete references/assets/scripts and invocation-policy bytes, multiple bundles, pinned input snapshots, explicit updates/removal, rollback, namespace/dependency/path/size rejection, tampering, competing OS locks and interrupted publication. The PowerShell profile exercises both supported shells with a fake Codex command and verifies that integrity failure prevents installation instead of selecting the base package. Validate the example native skill with Skill Creator. No contributed helper runs during composition.
+
+For actual cache behavior, use a disposable child-process `CODEX_HOME` and private state. Add the generated local marketplace, install `universal-tools@universal-tools-local`, compare every installed file with its release inventory, then repeat after an explicit bundle update and rollback. Keep normal Codex configuration and installed plugins outside that profile. A successful CLI/cache comparison is not Codex skill activation: restart/reload and representative fresh-chat selection, dependency/resource resolution and app workflow behavior need separate acceptance with the app plugin absent. See [native skill bundles](docs/native-skill-bundles.md).
+
 ## Cross-SDK profile
 
 The optional `interop/` profile uses the broker's locked MCP 1.30 client and a separate MCP 2.3 server environment. It is outside the default `tests/` collection so ordinary development does not install a second SDK or silently skip matrix checks. Invoke it explicitly from the repository root:
