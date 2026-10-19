@@ -41,6 +41,8 @@ Exclusive mode protects calls to one retained session. It does not transfer the 
 7. Lose a reply after the fake provider records a write. Check the uncertain receipt, recovery barrier and absence of replay. Inspect the fake operation count independently. Only a stopped fixture broker may acknowledge its own reservation during cleanup.
 8. Include the app's actual payload boundary, filename/type restrictions and encoding overhead. Check a valid large request and an app-rejected request separately. A broker argument budget cannot override the app's validation.
 
+Include local side effects in the policy assessment. An export/read tool may explicitly declare `readOnlyHint: false`; it then requires the write channel and a unique request ID. Inspect `describe_tool.invocation` rather than inferring a channel from the tool's name. Validate the advertised channel and blockers through the fake-backed workflow without changing the app's annotation or broadening normal registration policy.
+
 When comparing efficiency, separate cold startup, warm calls and native work. Use the same frozen adapter and payloads, state sample counts, and preserve raw measurements. Measure competing frontends separately from serialized service work. A faster shared worker is only useful if its state and authorization contract also passes review.
 
 ## Record the decision

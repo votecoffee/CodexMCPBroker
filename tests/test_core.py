@@ -140,6 +140,88 @@ def test_conservative_classification(hint, overrides, expected):
     assert entry.read_only is expected
 
 
+@pytest.mark.parametrize(
+    "hint,legacy,policy,channel,reason,blocker",
+    [
+        (True, [], {}, "call_read_tool", "app_read_only_hint", None),
+        (False, [], {}, "call_write_tool", "app_not_read_only_hint", "writes_disabled"),
+        (None, [], {}, "call_write_tool", "read_only_not_declared", "writes_disabled"),
+        (None, ["echo"], {}, "call_read_tool", "legacy_read_only_tool", None),
+        (False, ["echo"], {}, "call_write_tool", "app_not_read_only_hint", "writes_disabled"),
+        (False, [], {"allow_writes": True}, "call_write_tool", "app_not_read_only_hint", None),
+        (
+            False,
+            [],
+            {"allow_writes": True, "allowed_write_tools": []},
+            "call_write_tool",
+            "app_not_read_only_hint",
+            "write_tool_not_allowed",
+        ),
+        (
+            False,
+            [],
+            {"allow_writes": True, "allowed_write_tools": ["Echo"]},
+            "call_write_tool",
+            "app_not_read_only_hint",
+            "write_tool_not_allowed",
+        ),
+        (
+            False,
+            [],
+            {"allow_writes": True, "allowed_write_tools": ["echo"]},
+            "call_write_tool",
+            "app_not_read_only_hint",
+            None,
+        ),
+        (
+            False,
+            [],
+            {"allowed_write_tools": ["echo"]},
+            "call_write_tool",
+            "app_not_read_only_hint",
+            "writes_disabled",
+        ),
+        (
+            True,
+            [],
+            {"allowed_write_tools": []},
+            "call_read_tool",
+            "app_read_only_hint",
+            None,
+        ),
+    ],
+)
+def test_description_explains_channel_and_registration_policy(
+    hint, legacy, policy, channel, reason, blocker
+):
+    entry = CatalogTool(manifest(read_only_tools=legacy, **policy), tool(hint))
+    description = entry.describe()
+    assert description["invocation"] == {
+        "channel": channel,
+        "request_id_required": channel == "call_write_tool",
+        "classification_reason": reason,
+        "registration_blocker": blocker,
+    }
+    assert description["callable"] is (blocker is None)
+    assert description["definition"] == entry.tool.model_dump(mode="json", exclude_none=True)
+
+
+@pytest.mark.parametrize("explicit_null", [False, True])
+def test_missing_or_null_hint_is_not_described_as_an_explicit_false(explicit_null):
+    native = tool()
+    native.annotations = (
+        ToolAnnotations(readOnlyHint=None)
+        if explicit_null
+        else ToolAnnotations(destructiveHint=False)
+    )
+    description = CatalogTool(manifest(), native).describe()
+    assert description["invocation"]["classification_reason"] == "read_only_not_declared"
+    assert description["invocation"]["channel"] == "call_write_tool"
+    legacy = CatalogTool(manifest(read_only_tools=["echo"]), native).describe()
+    assert legacy["invocation"]["classification_reason"] == "legacy_read_only_tool"
+    assert legacy["invocation"]["channel"] == "call_read_tool"
+
+
 def test_journal_survives_restart_and_never_reissues_claim(tmp_path):
     path = tmp_path / "journal.sqlite3"
     WriteJournal(path).claim("request-0001", "fingerprint", "app/echo")

@@ -47,6 +47,23 @@ Schemas are validated locally. Network schema references are rejected. The catal
 
 Explicit `readOnlyHint: true` is required for the read channel, except exact names reviewed in the local legacy override. Unknown or explicit false annotations are write-capable. `allow_writes` is the service-wide master flag; an optional `allowed_write_tools` list narrows its scope as described below. Invocation tools use conservative broker annotations; the described definition retains the app annotations for the model to inspect.
 
+### Invocation guidance
+
+`describe_tool` includes an `invocation` object. `channel` is `call_read_tool` or `call_write_tool`; `request_id_required` is true for the write channel, including tools that only create local artifacts. Tool names do not determine classification. Preserve an app's explicit false annotation even when its operation is described as a read.
+
+`classification_reason` explains the broker's existing classification:
+
+| Value | Meaning |
+| --- | --- |
+| `app_read_only_hint` | The app declares `readOnlyHint: true`. |
+| `legacy_read_only_tool` | No effective read-only hint is supplied; the exact name is reviewed in local `read_only_tools`. |
+| `app_not_read_only_hint` | The app explicitly declares `readOnlyHint: false`; a legacy override cannot replace it. |
+| `read_only_not_declared` | No read-only classification is established. |
+
+`registration_blocker` is `null` when registration policy permits that channel, `writes_disabled` when the service master write flag is off, or `write_tool_not_allowed` when an enabled service's exact write allowlist excludes the name. The master flag takes precedence. Read tools remain callable when writes are disabled or the write allowlist is empty.
+
+This is observational guidance, alongside `classification` and `callable`. It does not grant permission, acquire a context, contact the app, check native state or waive target/review/confirmation requirements. A `null` blocker does not guarantee a later call can execute. Registration and live definitions are still checked before dispatch; current context ownership and recovery barriers remain authoritative.
+
 The app is authoritative for:
 
 - Resource identification: explicit document, project, robot, device, or workspace IDs.

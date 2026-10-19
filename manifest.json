@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -24,8 +24,8 @@
     },
     {
       "path": "APP_CONTRACT.md",
-      "size": 35073,
-      "sha256": "98b7504391617bfe9b0ac86e08da6c943ddbf8a8bb7107ce545ffe5c32b13b41"
+      "size": 36700,
+      "sha256": "879b4c06d3a6a858272017aaecfe4b6fe1df8fee804810f6b9850df6d968f49a"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -34,8 +34,8 @@
     },
     {
       "path": "docs/adapter-assessment.md",
-      "size": 7510,
-      "sha256": "f6ea86ab81839e4434c75752aa5201332c246becad42a20a06fece8d6e8d9e15"
+      "size": 7937,
+      "sha256": "86fedf52be600d66d51572954ea5e2b8502e0133738e1a6132f17e16d1819931"
     },
     {
       "path": "docs/capability-catalog.md",
@@ -175,7 +175,7 @@
     {
       "path": "plugins/universal-tools/plugin.json",
       "size": 567,
-      "sha256": "19d9f891770bd2ff2e8c494ed8cf22a16a186fd5758c286cb95202afc8d24181"
+      "sha256": "d7f897ad9c6332cfbf5ec76184f8a43e15946f351c1a6a7cdb572f153a2ddd00"
     },
     {
       "path": "plugins/universal-tools/server/launch.py",
@@ -190,12 +190,12 @@
     {
       "path": "pyproject.toml",
       "size": 954,
-      "sha256": "6b876ea3de8541be3c811f1cdc3a0c97325df0508e978dce451249c6ed35d4db"
+      "sha256": "b7a59dbef7f9877c64929524ce5ca0d64aec3dd47596356534702a6babd04ea1"
     },
     {
       "path": "README.md",
-      "size": 26208,
-      "sha256": "af2544a40982fdb0fdcceba22539aec9effed32e79052039864b35a3d01c494a"
+      "size": 26729,
+      "sha256": "3d4d9bc4c5fef893257c468201efd1b9ec6f1624f917bed98b25f06641e9933b"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -260,7 +260,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 99,
-      "sha256": "4c8b774148c8b441579081a3d3e5351ed83d00e1a33830def9bd2fd384d95b37"
+      "sha256": "b5cff697ad685e4210a918bc5327e35b447b3e59006a4dc805158005678e5add"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -269,8 +269,8 @@
     },
     {
       "path": "src/universal_tools/broker.py",
-      "size": 42392,
-      "sha256": "6fa90ccb519090e0ab7cfec96d357d63d7a9995b1aeeedafe9844a5200b14698"
+      "size": 43500,
+      "sha256": "8e70aca88aa49aaa44c89c8ec884f0eb526ac6aa75b4039567c5f5e381dbaaa3"
     },
     {
       "path": "src/universal_tools/capabilities.py",
@@ -384,8 +384,8 @@
     },
     {
       "path": "tests/test_core.py",
-      "size": 12257,
-      "sha256": "5a0e59b01f4e2f92061d7b4ef5c1dd3c826c8c3fedd0e4cdb926a29f2c9ab47f"
+      "size": 15281,
+      "sha256": "5a31ca8a18ec94bf7cd3c9d71bc382d0f766e1f800a8fb835f40349def41ed9f"
     },
     {
       "path": "tests/test_elicitation.py",
@@ -469,8 +469,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 16236,
-      "sha256": "ccc6d1fd189db69727b4e4a11476c2399475f1b92369f24c3faa6c4cf1e3b2e9"
+      "size": 16677,
+      "sha256": "9287b3cd0f076c398460e68a7762c2b4a5f3f0a5a8a86441045eb0b45bf3edcc"
     }
   ]
 }

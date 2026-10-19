@@ -70,12 +70,37 @@ class CatalogTool:
         return tool_revision(self.manifest, self.tool)
 
     def describe(self) -> dict:
+        hint = self.tool.annotations.readOnlyHint if self.tool.annotations else None
+        if self.read_only:
+            classification_reason = (
+                "app_read_only_hint" if hint is True else "legacy_read_only_tool"
+            )
+        elif (
+            hint is False
+            and self.tool.annotations
+            and "readOnlyHint" in self.tool.annotations.model_fields_set
+        ):
+            classification_reason = "app_not_read_only_hint"
+        else:
+            classification_reason = "read_only_not_declared"
+        blocker = None
+        if not self.read_only:
+            if not self.manifest.allow_writes:
+                blocker = "writes_disabled"
+            elif not self.manifest.permits_write(self.tool.name):
+                blocker = "write_tool_not_allowed"
         return {
             "tool_id": self.id,
             "catalog_revision": self.revision,
             "service_id": self.manifest.id,
             "classification": "read" if self.read_only else "write_or_unknown",
             "callable": self.callable,
+            "invocation": {
+                "channel": "call_read_tool" if self.read_only else "call_write_tool",
+                "request_id_required": not self.read_only,
+                "classification_reason": classification_reason,
+                "registration_blocker": blocker,
+            },
             "max_argument_bytes": self.manifest.max_argument_bytes,
             "session_mode": self.manifest.session_mode,
             "context_required": self.manifest.session_mode == "exclusive",
