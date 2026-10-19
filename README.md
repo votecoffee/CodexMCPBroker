@@ -4,7 +4,7 @@ Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.9.1**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.9.2**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
 
@@ -134,6 +134,8 @@ Changing either setting changes catalog revisions and can retire an exclusive co
 For a service registered with `session_mode: "exclusive"`, call `acquire_service` and retain its `context_id`. Include that handle in every read/write call. The broker keeps one downstream session/process alive for that frontend across calls and catalog refresh. A competing frontend cannot acquire, call or release the context, even if it knows the handle.
 
 Calling `acquire_service` again from the same frontend renews its active lease. App calls renew it after success. `service_session_status` inspects ownership/health without renewing it. Save or reconcile app state before `release_service`: release, idle expiry, registration changes and broker shutdown close the downstream connection and can discard process-owned documents or review plans.
+
+An app's independent service can retain background jobs after adapter release. Keep its job IDs and poll for actual outcomes; a completed broker start receipt only acknowledges the returned handle. Cancellation requests and native completion remain app-owned. New contexts may see existing shared jobs according to app policy. See the [background job contract](APP_CONTRACT.md#app-owned-background-jobs).
 
 The default idle lease is 900 seconds, configurable from 5 to 86,400 seconds. In-flight operations retain their lock until completion or bounded cleanup. A timeout, transport failure or abandoned in-flight call leaves the context lost; it is not automatically recreated. Durable reservations keep lost contexts blocked across restart and beyond their previous idle deadline. Restart does not restore native state or prove earlier work stopped.
 

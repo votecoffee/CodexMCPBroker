@@ -157,6 +157,16 @@ Each channel uses a dedicated task for SDK entry, serialized operations and tear
 
 An operation that fails, times out or is cancelled after dispatch is never automatically replayed. Its channel is retired after bounded cleanup. A later explicit request can create a replacement channel with the same frontend identity; it does not acquire a new native context or reissue the earlier operation. Inspect the write journal and actual app state after a lost response. An app error returned as a normal MCP result preserves the reusable connection. A new frontend process still receives a new identity.
 
+## App-owned background jobs
+
+An app can expose ordinary start, status/list and cancellation tools for work owned by its separate service. This uses normal tool routing; it does not enable MCP task APIs or retain a progress route after the start call returns. Start and cancellation tools remain write/unknown unless their exact outer definition explicitly meets the read-only contract. Starting a read-only background operation can still create job state and require a write route.
+
+Retain the app's exact job ID, target and source/generation/revision bindings. A broker write receipt with `status: "completed"` acknowledges that the start tool returned successfully; the returned job may still be queued or running. Poll the app's status tool for its outcome. A cancellation acknowledgement can mean only that cancellation was requested; completed external actions may remain and the eventual outcome can be indeterminate. The broker does not translate job statuses into write receipts or automatically repeat a start/cancel request.
+
+The exclusive context protects access through that broker while owned. It does not assign a frontend identity to an app job, enforce per-job visibility or prevent direct service/GUI access. Clean release, idle expiry or adapter exit can leave independently owned jobs running. A replacement context may be able to list the same jobs according to app policy. Inspect existing jobs and explicit targets before starting new work; apps own job authorization, retention and cross-client coordination.
+
+If a start reply is lost after dispatch, retain its original request ID and inspect the uncertain receipt and recovery barrier. The service may already have created a job. Reconcile through the app's independent status/audit interface before administrative acknowledgement; do not issue another start to discover the outcome. Recovery acknowledgement neither cancels the job nor changes the uncertain receipt. After recovery, acquire a fresh context and select/reconcile the existing job through its app-owned handle.
+
 ## Request-bound form elicitation
 
 Broker 0.6 relays ordinary MCP `elicitation/create` form requests during a routed read or write tool call. It uses the [MCP elicitation contract](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation). Bridge clients advertise form support only. A calling host without form support, a URL-mode request or a task-augmented request receives a protocol error. The broker does not provide fallback approval tools or weaken app confirmation policy.
