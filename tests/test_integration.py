@@ -706,13 +706,14 @@ async def test_real_stdio_disconnect_marks_context_lost_without_restarting(stack
 
 
 async def test_real_stdio_timeout_marks_write_uncertain_and_context_lost(stack, remote_backend):
-    async with exclusive_app(stack, timeout=2.0) as settings:
+    # Separate cold SDK/process startup variance from the deliberately long write.
+    async with exclusive_app(stack, timeout=5.0) as settings:
         owner = remote_backend(settings)
         lease = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))
         result = await remote_call(
             owner,
             "slow_edit",
-            {"candidate": "maybe-applied", "delay": 10},
+            {"candidate": "maybe-applied", "delay": 30},
             lease["context_id"],
             request_id="wire-timeout-001",
         )

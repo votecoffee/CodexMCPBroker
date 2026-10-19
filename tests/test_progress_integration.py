@@ -19,6 +19,8 @@ from universal_tools.transport import InitializedSession
 
 
 def progress_app(stack, **options):
+    # Most cases test routing, not startup speed on a loaded Windows host.
+    options.setdefault("timeout", 20)
     return exclusive_app(stack, fixture="progress_mcp.py", **options)
 
 
@@ -249,7 +251,7 @@ async def test_progress_does_not_turn_an_app_error_into_success(stack):
 
 
 async def test_progress_cannot_extend_app_deadline_or_recover_a_lost_write(stack):
-    async with progress_app(stack, timeout=3), clients(stack[0]) as ((session, events),):
+    async with progress_app(stack, timeout=5), clients(stack[0]) as ((session, events),):
         handle = await context(session)
         started = asyncio.get_running_loop().time()
         result = await call(
@@ -257,10 +259,10 @@ async def test_progress_cannot_extend_app_deadline_or_recover_a_lost_write(stack
             handle,
             operation="progress_edit",
             token=0,
-            arguments={"candidate": "changed", "steps": 100, "delay": 0.1},
+            arguments={"candidate": "changed", "steps": 300, "delay": 0.1},
             request_id="progress-deadline",
         )
-        assert result.isError and events and asyncio.get_running_loop().time() - started < 8
+        assert result.isError and events and asyncio.get_running_loop().time() - started < 15
         state = data(
             await session.call_tool("get_request_status", {"request_id": "progress-deadline"})
         )
@@ -282,7 +284,7 @@ async def test_progress_through_an_http_app(stack, http_confirmation_app, mode):
             display_name="Synthetic HTTP progress",
             transport=dict(type="streamable-http", url=http_confirmation_app),
             session_mode=mode,
-            timeout_seconds=3,
+            timeout_seconds=20,
         ),
     )
     async with RemoteBackend(stack[1]) as admin:

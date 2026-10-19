@@ -295,12 +295,12 @@
     {
       "path": "tests/test_elicitation_integration.py",
       "size": 16596,
-      "sha256": "fc296cd568cbc7f63e12b3da2f81f27c06084792cbbb7c39dc0f02c9453dfcd0"
+      "sha256": "099cd993601228778f585bda11f3705fb97e6f77864d24d1227d939cc9908b9d"
     },
     {
       "path": "tests/test_integration.py",
-      "size": 34812,
-      "sha256": "3f7540bcdb77b9381a7450b2586c6abc68b4554ae6f1207df739c7019697ede5"
+      "size": 34895,
+      "sha256": "84dda52e63e130e30edaae687d61198128e5a812d8f74c8b6fea3fb75b71f3b4"
     },
     {
       "path": "tests/test_metadata.py",
@@ -339,8 +339,8 @@
     },
     {
       "path": "tests/test_progress_integration.py",
-      "size": 11973,
-      "sha256": "af8571f9c9396b586b56e51de5444041d54df40bd0d452b9902a3974a335aabb"
+      "size": 12088,
+      "sha256": "c558aa549b4589ab274c6e4c891ed704ff23a627fecf0de778e2647bea4fe4e6"
     },
     {
       "path": "tests/test_sessions.py",

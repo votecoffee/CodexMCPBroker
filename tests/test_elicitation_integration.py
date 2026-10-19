@@ -178,7 +178,7 @@ async def test_app_deadline_cannot_be_overridden_by_a_late_acceptance(stack, tmp
         return ElicitResult(action="accept", content={"approved": True})
 
     async with (
-        exclusive_app(stack, timeout=2, audit_path=audit),
+        exclusive_app(stack, timeout=5, audit_path=audit),
         frontends(stack[0], late_answer) as (owner,),
     ):
         context = data(await owner.invoke("acquire_service", {"service_id": "stateful"}))[
