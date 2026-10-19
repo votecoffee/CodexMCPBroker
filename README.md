@@ -4,7 +4,7 @@ Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.9.0**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.9.1**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
 
@@ -225,6 +225,8 @@ See [APP_CONTRACT.md](APP_CONTRACT.md) for downstream service contracts, [MIGRAT
 ## Contributing
 
 Questions and bug reports belong in [GitHub issues](https://github.com/votecoffee/CodexMCPBroker/issues). Pull requests are welcome. Follow [CONTRIBUTING.md](CONTRIBUTING.md) for development checks, public documentation rules and release packaging.
+
+An optional [cross-SDK profile](VERIFICATION.md#cross-sdk-profile) checks the MCP 1.30 broker against a synthetic MCP 2.3 server in a separate environment. It compares the negotiated `2025-11-25` path, full results, media, ownership and uncertain writes. It does not upgrade the broker runtime or establish native app compatibility or support for newer protocol features.
 
 ## License
 

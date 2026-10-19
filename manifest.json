@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -73,14 +73,39 @@
       "sha256": "72b29decf7adbda56456d5ceb561eee31f8fedb0b3758bec01bdc2bc91436265"
     },
     {
+      "path": "interop/conftest.py",
+      "size": 1371,
+      "sha256": "63cd3a3fac5130e96e848eb95a2add38eff68ea6fc94381e7bf95c1ecc8fffc6"
+    },
+    {
+      "path": "interop/interop_payloads.py",
+      "size": 480,
+      "sha256": "369b4d984775e9e04a736b63c61e5f59d7045b624180903485e62146ac382f75"
+    },
+    {
+      "path": "interop/requirements-mcp2-lock.txt",
+      "size": 765,
+      "sha256": "3a7564f8d8269ea8727f51832069d4b9ae7a23d9d84add7b6e34eeab14aa7776"
+    },
+    {
+      "path": "interop/sdk2_app.py",
+      "size": 3752,
+      "sha256": "d72e12cd857cc40099b38872d9d7747d9f5f35192528fc51f3b0d31d3e13e652"
+    },
+    {
+      "path": "interop/test_sdk2.py",
+      "size": 9379,
+      "sha256": "848d3915ed896ae45cb39b0850065f29831d8dceef6db153216befc82216518c"
+    },
+    {
       "path": "LICENSE",
       "size": 1067,
       "sha256": "9fdbc8c41abf794f69c3488f463798e06338bf90ebefbe2daee329d217c83d44"
     },
     {
       "path": "MIGRATION.md",
-      "size": 6495,
-      "sha256": "9e04f43ac972e9ebb6ca41ac9f1f4a426ddd7b454b307b0a6c862fd420dd795a"
+      "size": 6977,
+      "sha256": "07c034947a955242219b2951bc60d514ad027d10e7a053167f6c77e1e4b2c0b5"
     },
     {
       "path": "plugins/universal-tools/mcp.json",
@@ -90,7 +115,7 @@
     {
       "path": "plugins/universal-tools/plugin.json",
       "size": 477,
-      "sha256": "b07982519b95ed89c3a40a265039c7e541a031ac15ffcf4976849aa255bbf0ee"
+      "sha256": "c474a3bd992c042badd6c22c9bd54f670a938d914743a67f0a8017a88464adb2"
     },
     {
       "path": "plugins/universal-tools/server/launch.py",
@@ -105,12 +130,12 @@
     {
       "path": "pyproject.toml",
       "size": 953,
-      "sha256": "42670af5df1f2adc7cc764989f017bd1abc1c591efc08d22de1120956b52ada2"
+      "sha256": "41193de6de855a93a252e7974577e96ca1ce7320d4a3f26d955a6ee74e35c3a8"
     },
     {
       "path": "README.md",
-      "size": 21048,
-      "sha256": "ad7910a85eefbea16279fad777c0e504d53c4c5cfaaae0137670fd0a595bd2f5"
+      "size": 21421,
+      "sha256": "7f682bd0ba77fc368effabd8b627fdf25f60e87f20d8fef9cbaa277e730f7869"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -165,7 +190,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 98,
-      "sha256": "093bc921934c61d62a9fdcf83a448a8d4c62333d207693d92511c8add4b39840"
+      "sha256": "61d332acf1d26eaca79f18e8a56caae5f26722395bf73eebd5491b2642773480"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -349,8 +374,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 8254,
-      "sha256": "de91121f98c72484be996120ea9a260dc768b8e8b43f3875c8a44f36dfa16266"
+      "size": 10567,
+      "sha256": "8e0632f0a13ba48c758111119c1c9de14d5f062255bc623bc8e33002a956409b"
     }
   ]
 }

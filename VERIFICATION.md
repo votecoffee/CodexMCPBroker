@@ -38,6 +38,22 @@ Use [MIGRATION.md](MIGRATION.md) to select a non-migrating compatibility review 
 
 Inner catalog checks use opt-in synthetic providers with versioned, bounded metadata. They cover explicit read-only declarations, schema/reference checks, malformed/duplicate catalogs, detached snapshots, stale revisions, registration revocation, changed discovery definitions and private owner visibility through expiry and transport loss. Real stdio frontends and stdio/HTTP apps verify install/refresh without frontend definition changes, inner feature additions without changing outer tool revisions, native rejection of stale app revisions, global refresh without owner probing, invalid metadata without native context loss, and zero host prompts or fixture commits from metadata confirmation attempts. They do not establish that an existing app's native catalog implements the new normalized format.
 
+## Cross-SDK profile
+
+The optional `interop/` profile uses the broker's locked MCP 1.30 client and a separate MCP 2.3 server environment. It is outside the default `tests/` collection so ordinary development does not install a second SDK or silently skip matrix checks. Invoke it explicitly from the repository root:
+
+```powershell
+py -3.13 -m venv .local/interop-sdk2
+.\.local\interop-sdk2\Scripts\python.exe -m pip install -r interop/requirements-mcp2-lock.txt
+.\.venv\Scripts\python.exe -m pytest -q interop --sdk2-python .local/interop-sdk2/Scripts/python.exe
+```
+
+Use the broker development interpreter for pytest; `--sdk2-python` must identify a separate interpreter with `mcp==2.3.0`. The profile rejects missing or incorrect SDK versions. Its dependency snapshot targets Windows/Python 3.13. Do not install it over the broker's runtime lock. No normal registrations, installed plugins, native apps, projects or devices participate.
+
+The synthetic SDK 2.3 client supplies a same-SDK reference using its legacy handshake. The broker/frontends must preserve initialization, tool definitions and complete received result fields, including text, structured content, image bytes/MIME/metadata, Unicode and 64-bit integers with a one-MiB binary/base64 payload. Snapshots exclude unset SDK model fields: newer client defaults are not assumed to have arrived on the wire. Application errors, revision guards, competing owners, refresh continuity, clean release, validation before write claims, and synchronous timeout with an uncertain receipt and durable recovery barrier are also checked. Only the disposable fixture's stopped broker can acknowledge its own lost reservation during cleanup.
+
+This profile checks the negotiated `2025-11-25` path described by the [MCP lifecycle contract](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle). It does not enable the newer SDK's default protocol, its discovery/cache APIs, result envelopes, extensions or other unsupported features. An app can use a newer SDK while retaining an older wire contract; its actual adapter still needs separate metadata, workflow, host and native acceptance. Capture that adapter's exact source/dependencies and compare both direct and broker paths with a fake native backend, keeping app-specific captures local.
+
 ## Source package
 
 Refresh the source manifest after changing distributed files:

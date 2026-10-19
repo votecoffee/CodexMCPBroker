@@ -16,6 +16,8 @@ Keep an app's direct integration installed while assessing it. Use a separate br
 
 Each stage should state what was actually exercised and retain a direct-versus-broker baseline. Record source hashes and transport/SDK versions; reassess when those change. Protocol compatibility does not follow from matching package version numbers.
 
+Use the optional [cross-SDK profile](VERIFICATION.md#cross-sdk-profile) for a reproducible synthetic MCP 1.30-to-2.3 baseline. Record the negotiated protocol separately from SDK versions. Compare fields actually received on that protocol; client-model defaults and newer-protocol metadata are distinct from a broker forwarding loss. A successful older-protocol fixture does not certify features available only through a newer native client or replace an actual app adapter review.
+
 ## Check the workflow contract
 
 - Confirm whether state belongs to the MCP host, its workers or an independently running app. Process-owned documents, selections, Undo, receipts and review plans need an exclusive context or an app-owned gateway that retains them.
