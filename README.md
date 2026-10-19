@@ -1,10 +1,12 @@
 # CodexMCPBroker
 
+![CodexMCPBroker icon](plugins/universal-tools/assets/icon-128.png)
+
 Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.10.1**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.10.2**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
 
@@ -47,6 +49,8 @@ You can also double-click `InstallAndRun.cmd` in the project root. It installs t
 An already running broker blocks reinstallation. Finish active app work and use `scripts\Broker.ps1 stop` before rerunning the launcher. This avoids closing retained app sessions during installation. To start an existing installation without reinstalling, use `scripts\Broker.ps1 start`. The individual `Setup.ps1` and `Install-Plugin.ps1` scripts remain available for manual installation.
 
 Setup installs locked runtime dependencies into `.local/runtime`, initializes private broker state under `.local`, and writes an ignored plugin runtime pointer. Installation registers the local marketplace and adds `universal-tools@universal-tools-local`. Start a new Codex chat to load the plugin. No OpenAI API key is required by the broker.
+
+Setup also creates `.local/InstallAndRun.lnk` with the project icon. You can create that branded Windows shortcut without installing or starting anything by running `.\scripts\Create-LauncherShortcut.ps1`. Its target and icon paths belong to the local checkout; the generated shortcut stays ignored. The plugin uses the [OpenAI presentation fields](https://developers.openai.com/plugins/build/plugins) `composerIcon` and `logo` with the bundled PNG assets. The Windows ICO contains all eight original sizes from 16 to 256 pixels.
 
 To select another installed Python version, pass `-PythonVersion` to `Setup.ps1`. After broker code changes, stop the broker and rerun setup. After plugin package changes, rerun installation. Adding an app registration requires a catalog refresh.
 

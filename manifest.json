@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -9,8 +9,8 @@
     },
     {
       "path": ".gitattributes",
-      "size": 19,
-      "sha256": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c"
+      "size": 45,
+      "sha256": "67c8553872a8e7d08366c8ec66767ef13938ea04f749c3bcdbe050c664d340af"
     },
     {
       "path": ".gitignore",
@@ -118,14 +118,59 @@
       "sha256": "71c83d2879a41208f9e3cceabef0157f4e4ccea70af2cf1b0c8e04189bb2d4d1"
     },
     {
+      "path": "plugins/universal-tools/assets/icon-128.png",
+      "size": 14652,
+      "sha256": "8e70dda8dee730f317dd7e6f5b060d6d85d8f5080a8ce3f6ba84674099d71826"
+    },
+    {
+      "path": "plugins/universal-tools/assets/icon-16.png",
+      "size": 802,
+      "sha256": "1b2ca4eeb54351ff839efff3e7544a5a7d9f205a49ebb12687c90cccd8a16cc5"
+    },
+    {
+      "path": "plugins/universal-tools/assets/icon-20.png",
+      "size": 1081,
+      "sha256": "5a6e52c1141c5884f7049f10a07f4c15507ee9ea2aacb9f5f13c19d9c69d3d5b"
+    },
+    {
+      "path": "plugins/universal-tools/assets/icon-24.png",
+      "size": 1468,
+      "sha256": "f19b6c9fabca3298c9c54128ca7021fa88730eb7abf2e3b1c53f9eeeb764347a"
+    },
+    {
+      "path": "plugins/universal-tools/assets/icon-256.png",
+      "size": 57077,
+      "sha256": "aa2275dbccc893d53d7bc63f597e7f56a62f3fc7b4a4233f33db718c267e0865"
+    },
+    {
+      "path": "plugins/universal-tools/assets/icon-32.png",
+      "size": 2183,
+      "sha256": "9ce46bd329d76f5e2eff4b3e610d70553ae9981d1e521e5164694ea4d4b15d2c"
+    },
+    {
+      "path": "plugins/universal-tools/assets/icon-48.png",
+      "size": 3701,
+      "sha256": "0c5c90fb831ce2ac6584a1a95fcc44bd06e0b936b6c8def69afd3f1808b82d29"
+    },
+    {
+      "path": "plugins/universal-tools/assets/icon-64.png",
+      "size": 5456,
+      "sha256": "375f5c130b103ccbe377f9e8a63e64d540f5db651c4ef59db9c6ee3a73d58514"
+    },
+    {
+      "path": "plugins/universal-tools/assets/icon.ico",
+      "size": 86554,
+      "sha256": "58d04913cb3096ac5ff221b3633455144ee12a98e7762f8ebb3f6f2286a1984e"
+    },
+    {
       "path": "plugins/universal-tools/mcp.json",
       "size": 262,
       "sha256": "c942832aa53892d133c9bb59a0a82fd3da42c413e28b6787fbf9326200e423ff"
     },
     {
       "path": "plugins/universal-tools/plugin.json",
-      "size": 478,
-      "sha256": "cc7f8f46e19b2103351643360e9a948b911ee9de5af766cc0e0f4324c39ef09c"
+      "size": 567,
+      "sha256": "19d9f891770bd2ff2e8c494ed8cf22a16a186fd5758c286cb95202afc8d24181"
     },
     {
       "path": "plugins/universal-tools/server/launch.py",
@@ -140,12 +185,12 @@
     {
       "path": "pyproject.toml",
       "size": 954,
-      "sha256": "549e99e1fc438d6b02e012e125bf2a02dc98ca50171a307a139b2c90273f8a7a"
+      "sha256": "6b876ea3de8541be3c811f1cdc3a0c97325df0508e978dce451249c6ed35d4db"
     },
     {
       "path": "README.md",
-      "size": 25227,
-      "sha256": "cb67dc97550b714cb1f59f8091ad334317acfbb4ffe70b8006cc47c403f3e3c2"
+      "size": 25827,
+      "sha256": "9735166f2991c62571491208787f6343f1e4e4b40ced61d570c46d1710ada01c"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -161,6 +206,11 @@
       "path": "scripts/Broker.ps1",
       "size": 623,
       "sha256": "42645a45dc339827ed05a9068105339b8666c3a111459b9770133581664a22a7"
+    },
+    {
+      "path": "scripts/Create-LauncherShortcut.ps1",
+      "size": 930,
+      "sha256": "e23ec1fdf9b247812153e38ae57548b5174ad4f49fcba6707ad22db677edb37a"
     },
     {
       "path": "scripts/Install-Plugin.ps1",
@@ -189,8 +239,8 @@
     },
     {
       "path": "scripts/Setup.ps1",
-      "size": 1398,
-      "sha256": "836e78ad96240240611e279ab09389a87ae6c49b3e0f6b953361616edc415c9e"
+      "size": 1456,
+      "sha256": "596079b805b8191673555a596183dd5da1202b831c635b93952d1eced66ccebf"
     },
     {
       "path": "scripts/smoke_installed.py",
@@ -205,7 +255,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 99,
-      "sha256": "2d55cadca703b2c1facbff7aa8bdf4aa6eb924af9a629f0676ea0619b3a9d4b3"
+      "sha256": "4c8b774148c8b441579081a3d3e5351ed83d00e1a33830def9bd2fd384d95b37"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -414,8 +464,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 15013,
-      "sha256": "8a49e9bf00d804e6c327d4b0ef60d38923b311e24194453f770f77f510b4415e"
+      "size": 15627,
+      "sha256": "aa25c7d9a9cbaab34ec64b08d506df59ee772379e2777697022cb62260241844"
     }
   ]
 }
