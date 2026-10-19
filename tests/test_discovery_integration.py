@@ -14,13 +14,16 @@ from universal_tools.surface import RemoteBackend
 async def test_initialize_timeout_reaches_frontends_without_retry_or_tool_dispatch(stack):
     entered, release = threading.Event(), threading.Event()
     methods = []
+    # The budget includes HTTP client/certificate setup. Keep the server stalled
+    # well past it so scheduling/setup cannot substitute for an in-flight initialize.
+    timeout_seconds = 3.0
 
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self):
             request = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
             methods.append(request["method"])
             entered.set()
-            release.wait(10)
+            release.wait(30)
             try:
                 self.send_response(503)
                 self.send_header("Content-Length", "0")
@@ -44,19 +47,19 @@ async def test_initialize_timeout_reaches_frontends_without_retry_or_tool_dispat
                 "type": "streamable-http",
                 "url": f"http://127.0.0.1:{server.server_port}/mcp",
             },
-            "timeout_seconds": 0.5,
+            "timeout_seconds": timeout_seconds,
         },
     )
     try:
         async with RemoteBackend(stack[1]) as admin, RemoteBackend(stack[1]) as other:
             result = data(await admin.invoke("refresh_services", {}))
             status = next(row for row in result["services"] if row["service_id"] == "slow-start")
-            assert entered.is_set(), "fixture must receive initialize before its deadline expires"
+            assert entered.is_set(), ("initialize must arrive before the deadline", status)
             assert status["status"] == "unavailable"
             assert status["failure"] == {
                 "phase": "connect_initialize",
                 "kind": "timeout",
-                "timeout_seconds": 0.5,
+                "timeout_seconds": timeout_seconds,
             }
             observed = data(await other.invoke("list_services", {}))
             assert (

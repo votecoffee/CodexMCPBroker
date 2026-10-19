@@ -549,8 +549,8 @@
     },
     {
       "path": "tests/test_discovery_integration.py",
-      "size": 2934,
-      "sha256": "6acd94a3d91179f91c24b7bbd86d51d3669836fb86acc222534a3de3bab9aa0f"
+      "size": 3144,
+      "sha256": "8a4274426e54e3a19ce1dadc7de5b60acbe106bbfd28d47a190532e14e76f58d"
     },
     {
       "path": "tests/test_elicitation.py",
@@ -669,8 +669,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 23628,
-      "sha256": "caafe3dd68972cd311d3a755074cd70ec3c393b2708fef99855b4038d0ec5041"
+      "size": 23799,
+      "sha256": "c6d66d33286b3487585ed7180193d6cc84447f75e2d73a4e700aa1be0e73add9"
     }
   ]
 }
