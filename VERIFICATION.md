@@ -82,6 +82,8 @@ For release verification, extract the ZIP to a fresh directory, run its manifest
 
 ## Installed plugin checks
 
+The root `InstallAndRun.cmd` delegates to `scripts/InstallAndRun.ps1`, which sequences setup, plugin installation, broker start and status. Check its PowerShell syntax without running the normal installation. For launcher smoke checks, use a temporary copy with stub scripts and fake CLI commands: verify a path with spaces, invocation from another current directory, option forwarding and existing-port preservation, failure propagation, and rejection of a running broker before setup. Check both PowerShell 7 and Windows PowerShell when available. These checks must not install plugins or start an ordinary registered app stack. Use `-NoPause` in scripted checks.
+
 `scripts/smoke_installed.py` is an optional example-stack integration check. Run its `--help` output for required arguments. It opens two installed-plugin frontends, routes example reads and temporarily registers an example service before removing it. Use a disposable example state or an explicitly selected development stack. Do not run it against an unrelated user's configuration.
 
 Model-driven selection in a fresh Codex chat is a separate manual acceptance check. App integration also needs app-owned tests for context lifetime, revisions, permissions, human confirmations, large arguments/results and failure recovery. Preserve app-specific evidence locally and report the boundary of any native validation explicitly.

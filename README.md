@@ -4,7 +4,7 @@ Local MCP service discovery and routing for one reusable Codex plugin
 
 Connect multiple Codex chats to independently installed app services through a shared local broker. An app supplies its MCP endpoint and a service registration; refreshing the catalog makes its tools discoverable without changing the Codex plugin.
 
-The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.10.0**.
+The plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. The current version is **0.10.1**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** It is an optional broker experiment, and is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Full app workflow parity and migration readiness have not been established; retain the direct integrations while broker compatibility work continues.
 
@@ -39,9 +39,12 @@ From PowerShell:
 ```powershell
 git clone https://github.com/votecoffee/CodexMCPBroker.git
 Set-Location CodexMCPBroker
-.\scripts\Setup.ps1
-.\scripts\Install-Plugin.ps1
+.\InstallAndRun.cmd
 ```
+
+You can also double-click `InstallAndRun.cmd` in the project root. It installs the locked runtime and Codex plugin, starts the broker, displays its status and waits for Enter before closing. Run `.\InstallAndRun.cmd -NoPause` to skip the closing prompt. Optional `-PythonVersion 3.13` and `-Port 8768` arguments configure setup; an omitted port preserves existing settings or uses 8768 on a new installation. The launcher works from another current directory and prefers PowerShell 7 when available, with Windows PowerShell as a fallback.
+
+An already running broker blocks reinstallation. Finish active app work and use `scripts\Broker.ps1 stop` before rerunning the launcher. This avoids closing retained app sessions during installation. To start an existing installation without reinstalling, use `scripts\Broker.ps1 start`. The individual `Setup.ps1` and `Install-Plugin.ps1` scripts remain available for manual installation.
 
 Setup installs locked runtime dependencies into `.local/runtime`, initializes private broker state under `.local`, and writes an ignored plugin runtime pointer. Installation registers the local marketplace and adds `universal-tools@universal-tools-local`. Start a new Codex chat to load the plugin. No OpenAI API key is required by the broker.
 

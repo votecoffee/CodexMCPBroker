@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "universal-tools",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Discover and use independently installed app services through a shared local MCP broker.",
   "extensions": {
     "com.openai": {

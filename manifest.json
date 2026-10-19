@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -78,6 +78,11 @@
       "sha256": "34471e7cb9bf2b25fa844a8be6e08f84de81ac344355384648a5c2d969345c77"
     },
     {
+      "path": "InstallAndRun.cmd",
+      "size": 305,
+      "sha256": "2c1b671915e2737d567af407b4aacc3ffbf1f045fef48966c0342bc5af277385"
+    },
+    {
       "path": "interop/conftest.py",
       "size": 1371,
       "sha256": "63cd3a3fac5130e96e848eb95a2add38eff68ea6fc94381e7bf95c1ecc8fffc6"
@@ -120,7 +125,7 @@
     {
       "path": "plugins/universal-tools/plugin.json",
       "size": 478,
-      "sha256": "a2fa82864daf9d26072d5c8835052da32a01ad504bf0c137029de5612418d8ad"
+      "sha256": "cc7f8f46e19b2103351643360e9a948b911ee9de5af766cc0e0f4324c39ef09c"
     },
     {
       "path": "plugins/universal-tools/server/launch.py",
@@ -135,12 +140,12 @@
     {
       "path": "pyproject.toml",
       "size": 954,
-      "sha256": "effc57319b9eb7b322315ba87a46720e78f77871d5cbfc31bc450c23a1197dfe"
+      "sha256": "549e99e1fc438d6b02e012e125bf2a02dc98ca50171a307a139b2c90273f8a7a"
     },
     {
       "path": "README.md",
-      "size": 24325,
-      "sha256": "94bb8d002edc795b1964ea838427f8779415f9b4bf7c4514b4d3b07565b4c24e"
+      "size": 25227,
+      "sha256": "cb67dc97550b714cb1f59f8091ad334317acfbb4ffe70b8006cc47c403f3e3c2"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -161,6 +166,11 @@
       "path": "scripts/Install-Plugin.ps1",
       "size": 592,
       "sha256": "07160d13b60780865cc80d0632c1a16be2a9f240ce682464aee26676d1fc0cdb"
+    },
+    {
+      "path": "scripts/InstallAndRun.ps1",
+      "size": 2455,
+      "sha256": "23fc734e29f616661e2bd41f055f03ddf323e9ded4f0b704332bba2975640147"
     },
     {
       "path": "scripts/lock_dependencies.py",
@@ -195,7 +205,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 99,
-      "sha256": "f4bdc96e3cafbab895f0a192b614bc30b3a1003dccb1892e7c9f41d9d58caa08"
+      "sha256": "2d55cadca703b2c1facbff7aa8bdf4aa6eb924af9a629f0676ea0619b3a9d4b3"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -404,8 +414,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 14346,
-      "sha256": "ef530d92677b56d26aa58e80214bef47e5da419029b1865811d606a30a6cce3d"
+      "size": 15013,
+      "sha256": "8a49e9bf00d804e6c327d4b0ef60d38923b311e24194453f770f77f510b4415e"
     }
   ]
 }
