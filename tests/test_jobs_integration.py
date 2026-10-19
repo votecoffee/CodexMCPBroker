@@ -103,7 +103,7 @@ def job_backend():
 
 
 @asynccontextmanager
-async def job_app(stack, url, *, timeout=20):
+async def job_app(stack, url, *, timeout=20, session_mode="exclusive"):
     path = stack[0] / "services/jobs.json"
     atomic_json(
         path,
@@ -115,7 +115,7 @@ async def job_app(stack, url, *, timeout=20):
                 command=sys.executable,
                 args=[str(Path(__file__).parent / "fixtures/job_mcp.py"), "--backend", url],
             ),
-            session_mode="exclusive",
+            session_mode=session_mode,
             allow_writes=True,
             allowed_write_tools=["start_job", "cancel_job"],
             timeout_seconds=timeout,
@@ -281,6 +281,7 @@ async def test_lost_start_reply_requires_reconciliation_of_the_existing_backend_
                 ]
                 == "uncertain"
             )
+
             status = data(await owner.invoke("service_session_status", {"service_id": "jobs"}))
             assert status["state"] == "lost" and status["recovery_required"]
             assert (await other.invoke("acquire_service", {"service_id": "jobs"})).isError
@@ -304,3 +305,74 @@ async def test_lost_start_reply_requires_reconciliation_of_the_existing_backend_
                 ]
                 == "uncertain"
             )
+
+
+async def test_transient_frontends_share_backend_jobs_with_separate_adapter_processes(
+    stack, job_backend
+):
+    backend, url = job_backend
+    async with (
+        job_app(stack, url, session_mode="transient"),
+        frontends(stack[0], None, None) as (first, second),
+    ):
+        pid = data(await call(first, None, "adapter_info"))["pid"]
+        assert data(await call(first, None, "adapter_info"))["pid"] != pid
+        assert (await first.invoke("acquire_service", {"service_id": "jobs"})).isError
+        job = data(
+            await call(
+                first,
+                None,
+                "start_job",
+                {"target": "fixture-target", "expected_revision": 0},
+                request_id="shared-backend-start",
+            )
+        )
+        results = await asyncio.gather(
+            call(first, None, "get_job", {"job_id": job["job_id"]}),
+            call(second, None, "get_job", {"job_id": job["job_id"]}),
+        )
+        assert [data(result) for result in results] == [job, job]
+        # This fake app intentionally has shared job visibility. The broker
+        # does not add per-job ownership or forward a frontend principal.
+        cancelled = data(
+            await call(
+                second,
+                None,
+                "cancel_job",
+                {"job_id": job["job_id"]},
+                request_id="shared-backend-cancel",
+            )
+        )
+        assert cancelled["status"] == "cancel_requested"
+        assert data(await call(first, None, "list_jobs"))["jobs"] == [cancelled]
+        assert len(backend.jobs) == 1
+        assert OwnershipJournal(stack[0] / "ownership.sqlite3").get("jobs") is None
+
+
+async def test_transient_lost_reply_retains_claim_without_creating_an_exclusive_barrier(
+    stack, job_backend
+):
+    backend, url = job_backend
+    async with (
+        job_app(stack, url, session_mode="transient", timeout=10),
+        frontends(stack[0], None, None) as (first, second),
+    ):
+        args = {"target": "fixture-target", "expected_revision": 0, "delay_reply": 30}
+        assert (
+            await call(first, None, "start_job", args, request_id="transient-lost-start")
+        ).isError
+        assert (
+            data(await second.invoke("get_request_status", {"request_id": "transient-lost-start"}))[
+                "status"
+            ]
+            == "uncertain"
+        )
+        assert OwnershipJournal(stack[0] / "ownership.sqlite3").get("jobs") is None
+        # Only read the existing fake job after the lost reply. Do not issue
+        # another start or infer native cancellation from adapter teardown.
+        assert data(await call(second, None, "list_jobs"))["jobs"] == list(backend.jobs.values())
+        assert (
+            await call(second, None, "start_job", args, request_id="transient-lost-start")
+        ).isError
+        assert len(backend.jobs) == 1
+        assert sum(method == "POST" and path == "/jobs" for method, path, _ in backend.calls) == 1

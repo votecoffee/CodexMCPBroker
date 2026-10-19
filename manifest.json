@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -24,8 +24,8 @@
     },
     {
       "path": "APP_CONTRACT.md",
-      "size": 29809,
-      "sha256": "f9da5a769ec1325ce249354a6b52552ceb6015f6f5247d0d59c2bdcbbd10e274"
+      "size": 30832,
+      "sha256": "c4c561e677a6a69cb662f25deb221be631df29b8ce9b160061e4d32459e06913"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -104,8 +104,8 @@
     },
     {
       "path": "MIGRATION.md",
-      "size": 7494,
-      "sha256": "38a8bfc37d7173ba05cc61a9bbf78c75d2038b78c47682511faf2548fe168416"
+      "size": 8174,
+      "sha256": "78b29f92c05910a6db994381f5790ccfaafcb7b3f6dc895a991dd0487de01309"
     },
     {
       "path": "plugins/universal-tools/mcp.json",
@@ -115,7 +115,7 @@
     {
       "path": "plugins/universal-tools/plugin.json",
       "size": 477,
-      "sha256": "2dc1bf42795cffffc9e279e3b126bb676241a994f11f2243e32ebaffd576f784"
+      "sha256": "e60d2dce1c5dad031a8950a28735b1b6d415191a9446f00374ba040cc71fa57f"
     },
     {
       "path": "plugins/universal-tools/server/launch.py",
@@ -130,12 +130,12 @@
     {
       "path": "pyproject.toml",
       "size": 953,
-      "sha256": "254fae9f3fd3f9430a87fe1bac5ab408f04a6dd6ed7301637007221c24a6a6d5"
+      "sha256": "6fab52b05589659afb1eb6fc1bd65e00a43079502c3015329c1af131e39f580c"
     },
     {
       "path": "README.md",
-      "size": 21827,
-      "sha256": "a6e0d412e65cf4d4b84bc33a1947cad220f23ed3878cad8f6750a810ba894d36"
+      "size": 22187,
+      "sha256": "923442000b1a13fa43e57e54ba5276fb8b17aba8d700f7e90c2c7cd1aac60c9b"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -190,7 +190,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 98,
-      "sha256": "30edbe5d0d374d4578ad862269fdf37b1ce18d3b17f4aeff0736b17fe2a85053"
+      "sha256": "c0011e5e4e8932b73c8e06c126453266602cc0aa2e5cc471aeddb649e90a33d1"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -249,8 +249,8 @@
     },
     {
       "path": "src/universal_tools/ownership.py",
-      "size": 5583,
-      "sha256": "fb3c11db67efe8fd8bd048826820ef7ef2bc812954e72f19247ccc5199710826"
+      "size": 6496,
+      "sha256": "a83c9b05caab78261cd59dca191cc385016a4019707a7a4b4882373b78e93a8c"
     },
     {
       "path": "src/universal_tools/progress.py",
@@ -334,8 +334,8 @@
     },
     {
       "path": "tests/test_jobs_integration.py",
-      "size": 12907,
-      "sha256": "ea4435787ce75cccc7b00579c0c2384ef3d5dbf844a77e625d16575d7043d93f"
+      "size": 15925,
+      "sha256": "7bc2b70b55a3aaba0d889ebf7ebe75ccd385d27482d6f6aaadd1d21a13e7e575"
     },
     {
       "path": "tests/test_metadata.py",
@@ -378,14 +378,19 @@
       "sha256": "c558aa549b4589ab274c6e4c891ed704ff23a627fecf0de778e2647bea4fe4e6"
     },
     {
+      "path": "tests/test_renewal.py",
+      "size": 5612,
+      "sha256": "4c30f0756830449141ff28d1349a37dc4f10d9489e9c34c702affd7889bea411"
+    },
+    {
       "path": "tests/test_sessions.py",
       "size": 16274,
       "sha256": "6507f7c5480c1334e705bd60308999fab773400f7f347a7147f91d534415a722"
     },
     {
       "path": "VERIFICATION.md",
-      "size": 11291,
-      "sha256": "f195e0ed7d5d006ce30fa08e85c1e2c5e2d28a88f2a50df7c4e406b90873f0b1"
+      "size": 12488,
+      "sha256": "ecd65fc1bb63492b2170be03a538908f0af4cb058a31bfa595f3a7610a23e65e"
     }
   ]
 }

@@ -9,6 +9,8 @@ from pathlib import Path
 from .journal import SqliteJournal
 from .models import BrokerError, ServiceManifest, canonical_digest
 
+MAX_RENEWAL_SNAPSHOT_SECONDS = 5.0
+
 
 def owner_digest(owner: str) -> str:
     return canonical_digest({"frontend": owner})
@@ -54,13 +56,27 @@ class OwnershipJournal(SqliteJournal):
 
     def activate(self, context_id: str, lease_seconds: float):
         with self.connect() as db:
-            updated = db.execute(
-                "UPDATE contexts SET state='active', expires_at=?, updated_at=? "
-                "WHERE context_id=? AND state IN ('opening','active')",
-                (time.time() + lease_seconds, time.time(), context_id),
-            ).rowcount
-            if updated != 1:
+            # Serialize the state check with retirement/recovery even when no
+            # timestamp update is needed. Initial activation always commits.
+            db.execute("BEGIN IMMEDIATE")
+            record = db.execute(
+                "SELECT state, expires_at, updated_at FROM contexts WHERE context_id=?",
+                (context_id,),
+            ).fetchone()
+            if record is None or record[0] not in {"opening", "active"}:
                 raise BrokerError("ownership reservation changed; operator recovery is required")
+            stamp = time.time()
+            interval = min(MAX_RENEWAL_SNAPSHOT_SECONDS, lease_seconds / 4)
+            same_duration = abs((record[1] - record[2]) - lease_seconds) <= 1e-6
+            if record[0] == "active" and same_duration and 0 <= stamp - record[2] < interval:
+                # The broker renews its exact monotonic idle deadline on every
+                # success. Journal expiry is an observational snapshot; orphaned
+                # reservations remain blocked regardless of that timestamp.
+                return
+            db.execute(
+                "UPDATE contexts SET state='active', expires_at=?, updated_at=? WHERE context_id=?",
+                (stamp + lease_seconds, stamp, context_id),
+            )
 
     def retiring(self, context_id: str):
         with self.connect() as db:

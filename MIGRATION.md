@@ -20,6 +20,8 @@ Use the optional [cross-SDK profile](VERIFICATION.md#cross-sdk-profile) for a re
 
 ## Check the workflow contract
 
+Choose the session mode from the adapter's state contract. A transient adapter may fit an independent service whose tools always carry explicit targets, revisions and durable job handles. It creates a downstream session for each call, so include cold initialization/cleanup in its performance assessment. An exclusive context retains a process-owned workflow and grants one frontend access at a time; another frontend cannot share that context. Neither mode supplies app-level job ownership or authorization. Calls to the same registration remain serialized in both modes; returning a background job handle allows later status calls while the app continues its independent work.
+
 - Confirm whether state belongs to the MCP host, its workers or an independently running app. Process-owned documents, selections, Undo, receipts and review plans need an exclusive context or an app-owned gateway that retains them.
 - Prove a review/prepare/apply sequence survives calls and refresh in the same context. Check another frontend cannot adopt the context, and that native project/operation revisions still reject stale work. A broker lease does not fence GUI edits, direct clients, another broker or undeclared aliases.
 - Exercise clean release, lease expiry, app crash, broker restart and lost replies. Preserve the recovery barrier and inspect actual native state before operator acknowledgement. Closing a proxy is not rollback, native cancellation or state restoration.
