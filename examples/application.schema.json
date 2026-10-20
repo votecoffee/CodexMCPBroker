@@ -187,6 +187,20 @@
           "title": "Max Argument Bytes",
           "type": "integer"
         },
+        "max_argument_depth": {
+          "default": 64,
+          "maximum": 128,
+          "minimum": 1,
+          "title": "Max Argument Depth",
+          "type": "integer"
+        },
+        "max_argument_nodes": {
+          "default": 100000,
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Max Argument Nodes",
+          "type": "integer"
+        },
         "timeout_seconds": {
           "default": 20.0,
           "maximum": 300.0,

@@ -440,7 +440,7 @@ class ApplicationHost:
                     }
                     raise
 
-    def create_server(self, *, port=8768, frontend_identity=None, skills=None):
+    def create_server(self, *, port=8768, frontend_identity=None, skills=None, extensions=()):
         server = create_surface(
             self.backend,
             port=port,
@@ -448,6 +448,7 @@ class ApplicationHost:
             instructions=self.definition.instructions,
             frontend_identity=frontend_identity,
             skills=skills,
+            extensions=extensions,
         )
         self.backend.native_connections = True
         return server

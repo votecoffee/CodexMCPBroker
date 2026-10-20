@@ -120,6 +120,31 @@ async def test_allowlist_revocation_blocks_old_revisions_without_refresh(fake):
     assert not broker.describe("app/echo")["callable"]
 
 
+@pytest.mark.parametrize(
+    "budget,arguments",
+    [
+        ({"max_argument_depth": 1}, {"value": [["deep"]]}),
+        ({"max_argument_nodes": 3}, {"value": [1, 2, 3]}),
+    ],
+)
+async def test_shape_limits_reject_before_schema_write_claim_or_native_dispatch(
+    fake, budget, arguments
+):
+    broker, session = fake
+    session.tools = [tool(False)]
+    registration = manifest(allow_writes=True, **budget)
+    atomic_json(broker.registry / "app.json", registration.model_dump(mode="json", by_alias=True))
+    await broker.refresh()
+    revision = broker.describe("app/echo")["catalog_revision"]
+    with pytest.raises(BrokerError, match="budget"):
+        await broker.call(
+            "app/echo", revision, arguments, write=True, request_id="shape-budget-001"
+        )
+    with pytest.raises(BrokerError, match="unknown request_id"):
+        broker.request_status("shape-budget-001")
+    assert session.calls == 0
+
+
 @pytest.mark.parametrize("change", [{"allowed_write_tools": []}, {"max_argument_bytes": 2}])
 async def test_queued_write_rechecks_policy_and_budget_changes_before_claiming(fake, change):
     broker, session = fake

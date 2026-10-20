@@ -20,6 +20,7 @@ from mcp.types import (
     TextContent,
 )
 
+from .budgets import DEFAULT_JSON_BUDGET
 from .diagnostics import measured
 from .progress import ProgressRelay
 
@@ -31,6 +32,7 @@ def rejected(message: str) -> ErrorData:
 
 
 def form_validator(params: ElicitRequestFormParams) -> Draft202012Validator:
+    DEFAULT_JSON_BUDGET.check(params.requested_schema)
     if len(params.model_dump_json().encode("utf-8")) > 32 * 1024:
         raise ValueError("form exceeds relay budget")
     schema = params.requested_schema

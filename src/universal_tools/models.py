@@ -55,6 +55,9 @@ class CatalogRequest(StrictModel):
     @field_validator("arguments")
     @classmethod
     def bounded_json(cls, value: dict) -> dict:
+        from .budgets import DEFAULT_JSON_BUDGET
+
+        DEFAULT_JSON_BUDGET.check(value)
         try:
             raw = json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
             if len(raw.encode("utf-8")) > 16 * 1024:
@@ -141,6 +144,8 @@ class ServiceManifest(StrictModel):
     # For legacy servers, only app-owner reviewed names can be classified as reads.
     read_only_tools: list[str] = Field(default_factory=list)
     max_argument_bytes: int = Field(default=DEFAULT_ARGUMENT_BYTES, ge=1, le=MAX_ARGUMENT_BYTES)
+    max_argument_depth: int = Field(default=64, ge=1, le=128)
+    max_argument_nodes: int = Field(default=100_000, ge=1, le=1_000_000)
     timeout_seconds: float = Field(default=20.0, ge=0.2, le=300.0)
     session_mode: Literal["transient", "exclusive", "shared"] = "transient"
     lease_seconds: float = Field(default=900.0, ge=5.0, le=86400.0)

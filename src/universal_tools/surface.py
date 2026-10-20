@@ -18,6 +18,7 @@ from .broker import Broker
 from .continuations import Continuations, active_route
 from .diagnostics import snapshot
 from .elicitation import ElicitationTarget, routed_call
+from .extensions import ExtensionServer
 from .identity import CLIENT_PATTERN, client_identity, frontend_connection
 from .models import BrokerError, Settings
 from .sessions import SessionPool
@@ -171,7 +172,7 @@ class RemoteBackend:
                 relay.close()
 
 
-class SurfaceServer(MCPServer):
+class SurfaceServer(ExtensionServer):
     """Keep app transport limits when SDK 2 builds or runs the stable surface."""
 
     def __init__(self, *args, port, http_options, frontend_identity=None, **kwargs):
@@ -181,7 +182,7 @@ class SurfaceServer(MCPServer):
             )
         self.continuations = Continuations()
         self.frontend_identity = frontend_identity
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, frontend_identity=frontend_identity, **kwargs)
         self.port = port
         self.http_options = dict(http_options)
 
@@ -214,6 +215,7 @@ def create_surface(
     instructions: str = "",
     frontend_identity: str | None = None,
     skills=None,
+    extensions=(),
 ) -> MCPServer:
     if frontend_identity is None and isinstance(backend, RemoteBackend):
         frontend_identity = backend.client_id
@@ -256,7 +258,8 @@ def create_surface(
         log_level="WARNING",
         lifespan=frontend_lifespan,
         frontend_identity=frontend_identity,
-        extensions=[skills] if skills is not None else None,
+        extensions=[*extensions, *([skills] if skills is not None else [])],
+        resource_providers=[skills] if skills is not None else (),
         port=port,
         http_options=dict(
             host="127.0.0.1",

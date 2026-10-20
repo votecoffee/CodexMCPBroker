@@ -303,6 +303,12 @@ def demo_stack(state: Path):
 
 
 def main(argv: list[str] | None = None):
+    def skill_options(command):
+        command.add_argument("--skill-package", type=Path, action="append", default=[])
+        command.add_argument("--skill-profile", choices=["mcp", "openai-import"], default="mcp")
+        command.add_argument("--skill-page-size", type=int, choices=range(1, 65), default=32)
+        command.add_argument("--skill-directory-read", action="store_true")
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state", type=Path, default=Path.cwd() / ".local")
     parser.add_argument("--version", action="version", version=__version__)
@@ -310,7 +316,7 @@ def main(argv: list[str] | None = None):
     skill_parser(commands)
     application = commands.add_parser("app-serve", help="run the shared framework for one app")
     application.add_argument("--publication", type=Path, required=True)
-    application.add_argument("--skill-package", type=Path, action="append", default=[])
+    skill_options(application)
     initialize_parser = commands.add_parser("init", help="create private local broker settings")
     initialize_parser.add_argument("--port", type=int, default=8768)
     request_limit = commands.add_parser(
@@ -331,7 +337,7 @@ def main(argv: list[str] | None = None):
     ]:
         command = commands.add_parser(name)
         if name in {"serve", "proxy"}:
-            command.add_argument("--skill-package", type=Path, action="append", default=[])
+            skill_options(command)
     registration = commands.add_parser("register", help="trust an app's local service manifest")
     registration.add_argument("manifest", type=Path)
     registration.add_argument("--replace", action="store_true")
@@ -355,8 +361,16 @@ def main(argv: list[str] | None = None):
         skills = None
         if getattr(args, "skill_package", None):
             from .skill_catalog import SkillCatalog
+            from .skill_manifest import MCP_PROFILE, OPENAI_IMPORT_PROFILE
 
-            skills = SkillCatalog(args.skill_package)
+            skills = SkillCatalog(
+                args.skill_package,
+                profile=OPENAI_IMPORT_PROFILE
+                if args.skill_profile == "openai-import"
+                else MCP_PROFILE,
+                page_size=args.skill_page_size,
+                directory_read=args.skill_directory_read,
+            )
         match args.command:
             case "app-serve":
                 from .framework import serve_application

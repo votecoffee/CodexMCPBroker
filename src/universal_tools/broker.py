@@ -132,6 +132,8 @@ class CatalogTool:
                 "registration_blocker": blocker,
             },
             "max_argument_bytes": self.manifest.max_argument_bytes,
+            "max_argument_depth": self.manifest.max_argument_depth,
+            "max_argument_nodes": self.manifest.max_argument_nodes,
             "session_mode": self.manifest.session_mode,
             "context_required": self.manifest.session_mode == "exclusive",
             "definition": self.tool.model_dump(mode="json", by_alias=True, exclude_none=True),
@@ -916,6 +918,11 @@ class Broker:
             raise BrokerError("tool is not enabled by this app's allowed_write_tools policy")
         if write and request_id is None:
             raise BrokerError("write calls require a unique request_id")
+        from .budgets import JsonBudget
+
+        JsonBudget(entry.manifest.max_argument_depth, entry.manifest.max_argument_nodes).check(
+            arguments
+        )
         try:
             size = len(
                 json.dumps(

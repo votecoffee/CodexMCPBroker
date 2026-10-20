@@ -101,3 +101,5 @@ Use SDK 2 snake_case Python attributes and `model_dump(by_alias=True, mode="json
 ## SDK 2 runtime features
 
 See [SDK 2 features](sdk2-features.md) for modern ownership, continuations, notification-driven discovery, bounded response transport, diagnostics and opt-in skill resource snapshots. These additions leave native application migrations under app control.
+
+Framework 0.16 adds optional [extension APIs](extension-development.md) for durable app-owned Tasks, verified downstream Skills and live skill publication. `create_server(extensions=[...], skills=catalog)` composes explicitly selected local extensions; extension lifecycle hooks and live resource publication do not hot-load arbitrary code. The app remains responsible for authorization, job reconciliation and host acceptance.

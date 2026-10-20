@@ -11,6 +11,7 @@ CodexMCPBroker is experimental. **MCP protocol conformance, broker compatibility
 | [Quickstart](quickstart.md) | Build a harmless read-only server and compare direct and broker calls in an isolated state. |
 | [Architecture](architecture.md) | Put shared application services behind the GUI, standalone plugin and broker route. |
 | [Shared app framework](../app-framework.md) | Reuse the packaged host/session/policy engine and update backends while keeping the native MCP front door stable. |
+| [Optional extensions](../extension-development.md) | Integrate durable app-owned Tasks, verified Skills consumption, live publication and host profiles without automatic app migration. |
 | [Tool and workflow design](tools-and-workflows.md) | Design schemas, side-effect annotations, revisions, reviewed writes, jobs and results. |
 | [Sessions and recovery](sessions-and-recovery.md) | Choose transient, exclusive or shared mode and define resource ownership and loss behavior. |
 | [Registration and discovery](registration-and-discovery.md) | Register transports, manage dependencies and publish optional inner catalogs. |

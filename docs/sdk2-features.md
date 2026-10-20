@@ -1,6 +1,6 @@
 # SDK 2 features
 
-Framework 0.15 keeps MCP Python SDK 2.3.0 pinned and supports SDK 2.2 and newer app backends through explicit integration profiles. SDK versions and wire revisions are independent. No existing registration, installation, plugin or native project is migrated by upgrading the package.
+Framework 0.16 keeps MCP Python SDK 2.3.0 pinned and supports SDK 2.2 and newer app backends through explicit integration profiles. SDK versions and wire revisions are independent. No existing registration, installation, plugin or native project is migrated by upgrading the package.
 
 ## Modern connections and ownership
 
@@ -51,27 +51,16 @@ Framework spans use the `universal_tools` OpenTelemetry tracer for discovery and
 
 `broker_status.runtime` reports process-local aggregate call counts and elapsed seconds. It is diagnostic, not an operation receipt or a completion claim. Restarting the process resets it. Timings include any application or approval wait within that stage and are not isolated CPU measurements.
 
-## Skill resource snapshots
+## Skills and Tasks extensions
 
-The pinned SDK does not ship the newer upstream Skills helper. The framework supplies an opt-in `SkillCatalog` adapter using the SDK 2.2/2.3 extension API and the SEP-2640 `skills/list` and `skills/get` shapes:
+The framework provides opt-in `SkillCatalog`, `SkillRegistry`, `TaskExtension` and `TaskClient` components through the SDK's extension hooks. Skill catalogs now support explicit live replacement, downstream verification/aggregation, pagination and optional directory reads. Tasks adapt app-owned durable jobs with ownership, polling, ordinary form inputs and cooperative cancellation. These features do not automatically convert generic broker calls into tasks or grant skill execution permissions.
 
-```python
-from universal_tools.skill_catalog import SkillCatalog
-
-skills = SkillCatalog([reviewed_skill_directory])
-server = host.create_server(skills=skills)
-```
-
-Each explicitly selected directory must contain `SKILL.md` with valid name/description frontmatter. The provider snapshots every accepted file in memory, advertises its exact byte size and SHA-256, and serves it through an ordinary `skill://` resource. It rejects links, hidden files, caches, duplicate skill names and oversized packages. Limits are 64 packages, 128 files per package, 4 MiB per file, 64 KiB of skill Markdown and 32 MiB total. It never runs contributed scripts or reads resources outside the selected packages. Later disk edits cannot alter a snapshot.
-
-CLI hosts also accept repeatable `--skill-package` arguments on `serve`, `app-serve` and `proxy`. These are explicit local administrator choices. They are not persisted, discovered from app descriptions, or added to normal plugin configuration automatically. Replace the host snapshot deliberately when updating packages. Directory-read capability is not advertised.
-
-The client must verify membership, size, digest, origin and frontmatter before loading content. Permission-bearing frontmatter remains untrusted data and grants no tool access. Protocol delivery does not install native Codex skills or establish that a host activates this extension. Existing native skill bundle composition remains available for package installation and reload. Full upstream extension conformance and real host activation require separate acceptance.
+See the [extension developer guide](extension-development.md) for APIs, lifecycle hooks, host publication profiles, structural limits and app authorization/recovery requirements. CLI skill options remain explicit local-admin choices. Native skill bundle composition and host reload remain available independently.
 
 ## Validation boundaries
 
 Synthetic tests cover both protocol generations, real HTTP envelopes and seals, cross-frontend denial, consumed/expired token rejection, uncertain-write cleanup, automatic discovery refresh, scoped cache copies, bounded responses, skill snapshots and tracing confidentiality. The optional cross-SDK profile adds a real SDK 2.2 modern backend. Use the [verification guide](../VERIFICATION.md) for commands and package checks.
 
-This profile does not enable general native resource/prompt forwarding, tasks, URL authentication flows, cross-user federation, native application acceptance or automatic migration. App-owned jobs remain app-owned. The framework remains experimental.
+This profile does not enable general native resource/prompt forwarding, automatic downstream task relay, URL authentication flows, cross-user federation, native application acceptance or automatic migration. App-owned jobs remain app-owned. The framework remains experimental.
 
 Upstream references: [protocol generations](https://py.sdk.modelcontextprotocol.io/whats-new/), [subscriptions](https://py.sdk.modelcontextprotocol.io/handlers/subscriptions/), [caching](https://py.sdk.modelcontextprotocol.io/client/caching/), [input rounds](https://py.sdk.modelcontextprotocol.io/handlers/multi-round-trip/), [Skills convention](https://py.sdk.modelcontextprotocol.io/advanced/skills/).

@@ -9,6 +9,7 @@ The primary finish line is a reusable app framework that standardizes backend co
 - [x] Dedicated app state, native MCP session affinity and explicit local app-admin reconciliation/healthy shared-adapter retirement.
 - [x] Synthetic protocol checks retaining native MCP sessions while a new backend tool becomes searchable.
 - [x] Opt-in modern protocol ownership and approval continuations, catalog notifications, scoped discovery caching, SSE budgets, framework tracing and skill resource snapshots; real host activation remains separate.
+- [x] Durable, owner-bound MCP Tasks adapters; lazy verified downstream Skills; explicit namespaced federation, live publication, pagination/directory reads, host profiles, extension lifespans and structural budgets. These are optional app integrations with synthetic HTTP/restart/SDK tests.
 - [ ] Publish verified package versions through an app-consumable feed; pin dependencies in each adopting app.
 - [ ] Implement/test native .NET bindings if required; share versioned contracts without duplicating domain services.
 - [ ] Complete real Codex standalone-plugin selection, resource/dependency behavior, reconnect/reload and native app acceptance.
@@ -42,4 +43,4 @@ Large-message ceilings are opt-in limits, not full app/host parity. Check encode
 
 After beta acceptance, a proposed migration still needs a separately authorized native pilot: explicit disposable targets, fresh app preflight, exact review/approval, native readback and failure reconciliation. Keep a usable direct integration and record the operator's migration decision. Engineering compilation, runtime, commissioning and safety acceptance remain app-specific.
 
-General native resource/prompt forwarding, sampling, roots, URL elicitation, task APIs and arbitrary notifications are outside the current broker contract. The public catalog resource and opt-in skill snapshots have the narrower contracts in [SDK 2 features](docs/sdk2-features.md). Add one only when a selected workflow demonstrates a need. Do not treat an ever-growing feature list as the beta finish line.
+General native resource/prompt forwarding, sampling, roots, URL elicitation, automatic downstream task relay and arbitrary notifications remain outside the generic broker contract. Explicit framework Tasks and Skills adapters have the narrower contracts in the [extension guide](docs/extension-development.md). Task push notifications are optional and are not part of the polling profile. Native host and app acceptance remain the beta finish line.

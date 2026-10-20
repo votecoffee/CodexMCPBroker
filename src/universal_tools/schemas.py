@@ -4,10 +4,12 @@ import json
 
 from jsonschema.validators import validator_for
 
+from .budgets import DEFAULT_JSON_BUDGET
 from .models import BrokerError
 
 
 def check_schema(schema: dict) -> None:
+    DEFAULT_JSON_BUDGET.check(schema)
     if len(json.dumps(schema).encode("utf-8")) > 128 * 1024:
         raise BrokerError("tool schema exceeds 128 KiB")
 
