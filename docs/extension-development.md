@@ -139,7 +139,7 @@ Publication builds and validates a complete candidate, then atomically replaces 
 
 ## Host publication profiles
 
-The general `MCP_PROFILE` accepts up to 64 skills, 512 files and 16 MiB per skill, with a 256 KiB instruction limit. Local snapshots additionally cap combined file bytes at 64 MiB. Equal names from different origins are legal under this profile; identity is origin plus URI.
+The general `MCP_PROFILE` accepts up to 64 skills, 512 files and 16 MiB per skill, including a single instruction file filling that budget. Parsed YAML frontmatter is independently limited to 256 KiB. Local snapshots additionally cap combined file bytes at 64 MiB. Equal names from different origins are legal under this profile; identity is origin plus URI.
 
 `OPENAI_IMPORT_PROFILE` selects the narrower documented importer limits: five uniquely named skills, ten catalog pages, 100 files per skill, 256 KiB of instruction Markdown, 1 MiB per supporting file and 5 MiB per skill. Publication also enforces a conservative 8 MiB combined archive estimate including ZIP overhead. This metadata estimate may reject highly compressible packages that an importer could accept. The actual host importer remains authoritative. Select a subset explicitly rather than silently omitting or renaming skills.
 

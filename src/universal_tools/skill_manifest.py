@@ -22,7 +22,7 @@ class SkillProfile:
     max_files: int = 512
     max_file_bytes: int = 16 * 1024 * 1024
     max_skill_bytes: int = 16 * 1024 * 1024
-    max_instruction_bytes: int = 256 * 1024
+    max_instruction_bytes: int = 16 * 1024 * 1024
     max_pages: int = 64
     unique_names: bool = False
     max_archive_bytes: int | None = None
@@ -35,6 +35,7 @@ OPENAI_IMPORT_PROFILE = SkillProfile(
     max_files=100,
     max_file_bytes=1024 * 1024,
     max_skill_bytes=5 * 1024 * 1024,
+    max_instruction_bytes=256 * 1024,
     max_pages=10,
     unique_names=True,
     max_archive_bytes=8 * 1024 * 1024,
@@ -58,16 +59,19 @@ def _mapping(loader, node):
 UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _mapping)
 
 
-def frontmatter(raw: bytes, *, limit=256 * 1024):
+def frontmatter(raw: bytes, *, limit=16 * 1024 * 1024):
     try:
         if len(raw) > limit:
             raise ValueError()
         text = raw.decode("utf-8").replace("\r\n", "\n")
-        lines = text.splitlines()
-        if not lines or lines[0] != "---":
+        if not text.startswith("---\n"):
             raise ValueError()
-        end = lines.index("---", 1)
-        header = "\n".join(lines[1:end])
+        closing = re.search(r"(?m)^---(?:\n|$)", text[4:])
+        if closing is None:
+            raise ValueError()
+        header = text[4 : 4 + closing.start()]
+        if len(header.encode("utf-8")) > 256 * 1024:
+            raise ValueError()
         if any(
             isinstance(token, (yaml.tokens.AliasToken, yaml.tokens.AnchorToken))
             for token in yaml.scan(header)

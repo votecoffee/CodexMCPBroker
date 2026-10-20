@@ -49,8 +49,8 @@
     },
     {
       "path": "docs/extension-development.md",
-      "size": 17793,
-      "sha256": "4641e1bd77f98f974693cdb451ccaff26469b975700972feb81e1dfa853edccf"
+      "size": 17877,
+      "sha256": "9c758a4eb98f6fe322ba03919023d0c262e131ea2f727546b9053c15b4c0a7ab"
     },
     {
       "path": "docs/native-skill-bundles.md",
@@ -544,8 +544,8 @@
     },
     {
       "path": "src/universal_tools/skill_manifest.py",
-      "size": 8753,
-      "sha256": "4f46bd221ebc65b379b8a8d407b2309cc3348684fb8b9447c2fd091f18a82dd4"
+      "size": 8939,
+      "sha256": "26a5717e718a8ec8c88fb2775e193975c930df75e6ba4219d1023ded0f11f973"
     },
     {
       "path": "src/universal_tools/surface.py",
@@ -554,8 +554,8 @@
     },
     {
       "path": "src/universal_tools/tasks.py",
-      "size": 24653,
-      "sha256": "703dc3ae76ad7d38a071891962bbf80af418ed71ff7224232d74132c01f6f4db"
+      "size": 24928,
+      "sha256": "cb4214f1a698a9b1abbcb23634a00d1b0002b9af496ef5b32d37e3ef7a80e357"
     },
     {
       "path": "src/universal_tools/transport.py",
@@ -779,13 +779,13 @@
     },
     {
       "path": "tests/test_skills_extension.py",
-      "size": 13583,
-      "sha256": "3dea42181a2400f353e9dc93649651f41007999a4595f8186ba1310544fb3808"
+      "size": 14376,
+      "sha256": "f61e728d96854d2e861ceefe35399cac4fba3859878b607aedb9c64e6c502e29"
     },
     {
       "path": "tests/test_tasks_extension.py",
-      "size": 15114,
-      "sha256": "c9d867e90920437baa8dfb64c53669c38cf7667d862e2845df74dd11d4aba50d"
+      "size": 16848,
+      "sha256": "0042c4c44b49b14a6c1d17a64f30c235ab645917f9f212bf059d193d0ab1e226"
     },
     {
       "path": "tests/test_workflow_integration.py",

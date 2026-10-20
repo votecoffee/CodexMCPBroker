@@ -259,6 +259,25 @@ def test_host_budgets_and_standard_512_file_capacity(tmp_path):
         SkillCatalog([root])
 
 
+def test_standard_skill_instruction_can_fill_16_mib_with_bounded_frontmatter(tmp_path):
+    from universal_tools.skill_manifest import verify_file
+
+    root = tmp_path / "large-instruction"
+    root.mkdir()
+    header = b"---\nname: large-instruction\ndescription: Synthetic boundary\n---\n"
+    raw = header + b"a" * (16 * 1024 * 1024 - len(header))
+    (root / "SKILL.md").write_bytes(raw)
+    catalog = SkillCatalog([root])
+    entry = next(iter(catalog._entries.values()))
+    verify_file(entry, entry["uri"], raw)
+    assert entry["resources"][0]["size"] == 16 * 1024 * 1024
+    with pytest.raises(BrokerError):
+        SkillCatalog([root], profile=OPENAI_IMPORT_PROFILE)
+    (root / "SKILL.md").write_bytes(raw + b"a")
+    with pytest.raises(BrokerError):
+        SkillCatalog([root])
+
+
 def test_shape_budget_is_iterative_and_preserves_full_width_integers():
     JsonBudget().check({"integer": 2**63 - 1, "negative": -(2**63)})
     with pytest.raises(BrokerError, match="budget"):

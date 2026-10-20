@@ -284,9 +284,10 @@ class TaskExtension(Extension):
         if ctx.protocol_version != "2026-07-28":
             raise MCPError(INVALID_PARAMS, "this tool requires the modern Tasks protocol")
         principal, owner = self._principal(ctx)
-        arguments = deepcopy(params.arguments or {})
+        arguments = params.arguments or {}
         try:
             _json(arguments)
+            arguments = deepcopy(arguments)
             route.validate(arguments)
             await self._call(route.adapter.authorize, TaskContext("", principal), None)
             key = self.request_key(ctx, params)
@@ -353,7 +354,12 @@ class TaskExtension(Extension):
             for key, request in requests.items():
                 if not isinstance(key, str) or not 1 <= len(key) <= 128:
                     raise BrokerError("invalid task input key")
-                if key in data["answered"] or request.get("method") != "elicitation/create":
+                pending_answers = (data["pending"] or {}).get("responses", {})
+                if (
+                    key in data["answered"]
+                    or (observation.reconciled and key in pending_answers)
+                    or request.get("method") != "elicitation/create"
+                ):
                     raise BrokerError("task input key reused or unsupported input method")
                 form = ElicitRequestFormParams.model_validate(request.get("params"))
                 if form.task is not None:
@@ -456,7 +462,7 @@ class TaskExtension(Extension):
                     _json(params.input_responses)
                     outstanding = data["wire"].get("inputRequests", {})
                     for key, response in params.input_responses.items():
-                        if key not in outstanding:
+                        if key not in outstanding or key in data["answered"]:
                             continue
                         try:
                             form = ElicitRequestFormParams.model_validate(

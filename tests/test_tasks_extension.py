@@ -26,6 +26,7 @@ from universal_tools.tasks import (
     TaskParams,
     TaskRoute,
     TaskStore,
+    TaskUpdateParams,
 )
 
 FORM = {
@@ -373,6 +374,49 @@ async def test_start_deadline_preserves_intent_for_reconciliation_and_byte_quota
             None,
         )
     assert jobs.starts == 1
+
+
+async def test_reconciled_update_cannot_reissue_a_consumed_form_or_redispatch(tmp_path):
+    jobs = Jobs()
+    jobs.lost_update = True
+    ext = extension(tmp_path, jobs, identity=lambda ctx: ctx.owner)
+    created = await ext.intercept_tool_call(
+        CallToolRequestParams(name="export", arguments={"request_id": "lost-input-review-001"}),
+        context(),
+        None,
+    )
+    task_id = created["taskId"]
+    await ext.get_task(context(), TaskParams(taskId=task_id))
+    response = TaskUpdateParams(
+        taskId=task_id,
+        inputResponses={"review": {"action": "accept", "content": {"approved": True}}},
+    )
+    with pytest.raises(MCPError, match="outcome unknown"):
+        await ext.update_task(context(), response)
+    # Contradictory app reconciliation must not revive a delivered input key.
+    jobs.jobs[task_id] = TaskObservation("input_required", input_requests={"review": FORM})
+    with pytest.raises(MCPError, match="reused"):
+        await ext.get_task(context(), TaskParams(taskId=task_id))
+    with pytest.raises(MCPError, match="reconciliation"):
+        await ext.update_task(context(), response)
+    assert len(jobs.updates) == 1
+
+
+async def test_task_shape_rejected_before_recursive_copy_claim_or_dispatch(tmp_path):
+    jobs = Jobs()
+    ext = extension(tmp_path, jobs, identity=lambda ctx: ctx.owner)
+    deep = []
+    for _ in range(10_000):
+        deep = [deep]
+    with pytest.raises(MCPError, match="budget"):
+        await ext.intercept_tool_call(
+            CallToolRequestParams(
+                name="export", arguments={"request_id": "too-deep-001", "data": deep}
+            ),
+            context(),
+            None,
+        )
+    assert jobs.starts == 0
 
 
 async def test_extension_lifecycle_cleanup_and_failure(tmp_path):
