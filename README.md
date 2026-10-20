@@ -12,7 +12,7 @@ The optional plugin is named **Universal Tools**. The Python distribution and CL
 
 The [SDK 2 feature guide](docs/sdk2-features.md) describes opt-in modern connections, ownership-bound approval continuations, catalog notifications, scoped discovery caches, SSE response budgets, tracing and skill resource snapshots. These features do not migrate existing integrations.
 
-The [extension developer guide](docs/extension-development.md) covers durable MCP Tasks for app-owned jobs, verified downstream Skills, explicit aggregation, live skill publication, host import profiles and extension lifecycle hooks. These optional framework APIs keep app authorization and uncertain outcomes intact. Live MCP skill delivery remains separate from native host skill activation; OpenAI's documented plugin import uses versioned submission-time snapshots.
+The [extension developer guide](docs/extension-development.md) covers durable MCP Tasks with authorized push notifications and form/URL inputs for app-owned jobs, verified downstream Skills, explicit aggregation, live skill publication, host import profiles and extension lifecycle hooks. These optional framework APIs keep app authorization and uncertain outcomes intact. Live MCP skill delivery remains separate from native host skill activation; OpenAI's documented plugin import uses versioned submission-time snapshots.
 
 The [beta completion plan](ROADMAP.md) separates the implemented broker foundation from remaining adapter/host acceptance and later native migration pilots. Parallel private contexts and full app/host payload parity are not currently promised.
 

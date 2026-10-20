@@ -13,6 +13,7 @@ from mcp.types import (
     INVALID_REQUEST,
     ElicitRequest,
     ElicitRequestFormParams,
+    ElicitRequestURLParams,
     ElicitResult,
     InputRequiredResult,
 )
@@ -55,6 +56,17 @@ class Pending:
         await self.queue.put(
             ElicitRequest(
                 params=ElicitRequestFormParams(message=message, requested_schema=requested_schema)
+            )
+        )
+        return await self.answer
+
+    async def elicit_url(self, message, url, elicitation_id, **_):
+        self.answer = asyncio.get_running_loop().create_future()
+        await self.queue.put(
+            ElicitRequest(
+                params=ElicitRequestURLParams(
+                    message=message, url=url, elicitation_id=elicitation_id
+                )
             )
         )
         return await self.answer

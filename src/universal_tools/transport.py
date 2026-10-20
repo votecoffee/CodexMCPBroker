@@ -27,6 +27,7 @@ from mcp.types import (
     InputRequiredResult,
     PaginatedRequestParams,
     Tool,
+    UrlElicitationCapability,
 )
 
 from .diagnostics import measured
@@ -62,7 +63,9 @@ class InitializedSession(ClientSession):
     def _build_capabilities(self, version):
         capabilities = super()._build_capabilities(version)
         if self.elicitation_router is not None:
-            capabilities.elicitation = ElicitationCapability(form=FormElicitationCapability())
+            capabilities.elicitation = ElicitationCapability(
+                form=FormElicitationCapability(), url=UrlElicitationCapability()
+            )
             capabilities.tasks = None
         return capabilities
 

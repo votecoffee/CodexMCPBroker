@@ -84,6 +84,19 @@ class ExtensionServer(MCPServer):
     ):
         selected = tuple(extensions or ())
         self.resource_providers = tuple(resource_providers)
+        middleware = list(kwargs.pop("middleware", ()) or ())
+        for extension in selected:
+            if handler := (
+                getattr(extension, "request_middleware", None)
+                or getattr(extension, "subscription_middleware", None)
+            ):
+                bound = BoundExtension(extension, frontend_identity)
+
+                async def subscription(ctx, call_next, handler=handler, bound=bound):
+                    with bound.scope():
+                        return await handler(ctx, call_next)
+
+                middleware.append(subscription)
 
         @asynccontextmanager
         async def combined_lifespan(server):
@@ -107,8 +120,12 @@ class ExtensionServer(MCPServer):
             *args,
             extensions=[BoundExtension(e, frontend_identity) for e in selected],
             lifespan=combined_lifespan,
+            middleware=middleware,
             **kwargs,
         )
+        for extension in selected:
+            if install := getattr(extension, "install", None):
+                install(self)
         if self.resource_providers:
 
             @self.resource("broker://skills", mime_type="application/json")

@@ -13,6 +13,7 @@ import secrets
 import sqlite3
 import time
 from collections.abc import Callable
+from contextlib import asynccontextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -27,7 +28,7 @@ from mcp.types import (
     INVALID_PARAMS,
     CallToolResult,
     ElicitRequestFormParams,
-    ElicitResult,
+    ElicitRequestURLParams,
     Request,
     RequestParams,
     Result,
@@ -35,10 +36,11 @@ from mcp.types import (
 from pydantic import ConfigDict, Field
 
 from .budgets import DEFAULT_JSON_BUDGET
-from .elicitation import form_validator
+from .elicitation import input_validator, validate_answer
 from .identity import client_identity
 from .journal import SqliteJournal
 from .models import BrokerError, canonical_digest
+from .task_notifications import TaskNotificationClient, TaskNotifications
 
 TASKS = "io.modelcontextprotocol/tasks"
 TERMINAL = {"completed", "failed", "cancelled"}
@@ -246,6 +248,19 @@ class TaskExtension(Extension):
         self.operation_timeout = operation_timeout
         # Bounded stripes avoid a lock leak from guessed task IDs.
         self._locks = [asyncio.Lock() for _ in range(64)]
+        self.subscription_middleware = TaskNotifications(self)
+
+    @asynccontextmanager
+    async def lifespan(self, server):
+        self.subscription_middleware.bus = server._subscriptions
+        try:
+            yield
+        finally:
+            self.subscription_middleware.bus = None
+
+    async def changed(self, task_id):
+        """App job workers may signal a change; the subscriber still reauthorizes/readbacks."""
+        await self.subscription_middleware.changed(task_id)
 
     def methods(self):
         modern = frozenset({"2026-07-28"})
@@ -328,6 +343,7 @@ class TaskExtension(Extension):
         if data["wire"]["status"] in TERMINAL:
             return
         wire = data["wire"]
+        before = deepcopy({k: v for k, v in wire.items() if k != "lastUpdatedAt"})
         status = observation.status
         if status not in {"working", "input_required", *TERMINAL}:
             raise BrokerError("invalid app task status")
@@ -361,10 +377,12 @@ class TaskExtension(Extension):
                     or request.get("method") != "elicitation/create"
                 ):
                     raise BrokerError("task input key reused or unsupported input method")
-                form = ElicitRequestFormParams.model_validate(request.get("params"))
-                if form.task is not None:
-                    raise BrokerError("nested task elicitation is unsupported")
-                form_validator(form)
+                model = (
+                    ElicitRequestURLParams
+                    if request.get("params", {}).get("mode") == "url"
+                    else ElicitRequestFormParams
+                )
+                input_validator(model.model_validate(request.get("params")))
                 digest = canonical_digest(request)
                 if key in data["seen"] and data["seen"][key] != digest:
                     raise BrokerError("task input key changed its request")
@@ -378,7 +396,9 @@ class TaskExtension(Extension):
                 data["answered"].append(key)
         for key in ("result", "error", "inputRequests"):
             wire.pop(key, None)
-        wire.update(status=status, lastUpdatedAt=_timestamp(), **extras)
+        wire.update(status=status, **extras)
+        if before != {k: v for k, v in wire.items() if k != "lastUpdatedAt"}:
+            wire["lastUpdatedAt"] = _timestamp()
         if observation.handle is not None:
             if not isinstance(observation.handle, str) or not 1 <= len(observation.handle) <= 4096:
                 raise BrokerError("invalid reconciled job handle")
@@ -414,14 +434,28 @@ class TaskExtension(Extension):
                 await self._poll(record, route, principal)
                 if record["data"]["wire"]["status"] == "input_required":
                     capability = ctx.session.client_capabilities.elicitation
-                    if capability is None or (
-                        capability.form is None and capability.url is not None
-                    ):
+                    required = {
+                        r["params"].get("mode", "form")
+                        for r in record["data"]["wire"]["inputRequests"].values()
+                    }
+                    missing = {
+                        mode
+                        for mode in required
+                        if capability is None
+                        or (
+                            capability.url is None
+                            if mode == "url"
+                            else capability.form is None and capability.url is not None
+                        )
+                    }
+                    if missing:
                         raise MCPError(
                             -32021,
                             "task requires a form-capable client",
                             data={
-                                "requiredCapabilities": {"elicitation": {"form": {}}},
+                                "requiredCapabilities": {
+                                    "elicitation": {mode: {} for mode in missing}
+                                },
                             },
                         )
                 return {"resultType": "complete", **deepcopy(record["data"]["wire"])}
@@ -465,12 +499,13 @@ class TaskExtension(Extension):
                         if key not in outstanding or key in data["answered"]:
                             continue
                         try:
-                            form = ElicitRequestFormParams.model_validate(
-                                outstanding[key]["params"]
+                            model = (
+                                ElicitRequestURLParams
+                                if outstanding[key]["params"].get("mode") == "url"
+                                else ElicitRequestFormParams
                             )
-                            answer = ElicitResult.model_validate(response)
-                            if answer.action == "accept":
-                                form_validator(form).validate(answer.content or {})
+                            question = model.model_validate(outstanding[key]["params"])
+                            answer = validate_answer(question, response)
                         except Exception:
                             raise BrokerError(
                                 "task response does not match its outstanding form"
@@ -519,7 +554,7 @@ class TaskRequest(Request[dict, str]):
     name_param = "taskId"
 
 
-class TaskClient(ClientExtension):
+class TaskClient(TaskNotificationClient, ClientExtension):
     """Explicit handle API. No implicit polling, tool retry or input acceptance.
 
     Pass this instance in Client(extensions=[...]); use these methods with

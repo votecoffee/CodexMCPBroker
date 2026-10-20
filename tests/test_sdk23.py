@@ -16,11 +16,11 @@ from universal_tools.elicitation import ElicitationRouter, routed_call
 from universal_tools.transport import InitializedSession, list_all_tools
 
 
-def test_bridge_advertises_forms_without_url_or_task_support():
+def test_bridge_advertises_forms_and_url_without_implicit_task_support():
     session = InitializedSession(None, None, relay=True)
     capabilities = session._build_capabilities("2025-11-25")
     assert capabilities.elicitation.form is not None
-    assert capabilities.elicitation.url is None
+    assert capabilities.elicitation.url is not None
     assert capabilities.tasks is None
 
 

@@ -7,6 +7,7 @@ import json
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from copy import deepcopy
+from urllib.parse import urlsplit
 
 import anyio
 from jsonschema import Draft202012Validator
@@ -15,6 +16,7 @@ from mcp.types import (
     INVALID_REQUEST,
     CallToolResult,
     ElicitRequestFormParams,
+    ElicitRequestURLParams,
     ElicitResult,
     ErrorData,
     TextContent,
@@ -74,6 +76,47 @@ def form_validator(params: ElicitRequestFormParams) -> Draft202012Validator:
     return Draft202012Validator(schema)
 
 
+def input_validator(params):
+    """Validate an ordinary form or URL without fetching or opening the URL."""
+    if not isinstance(params, ElicitRequestFormParams | ElicitRequestURLParams) or params.task:
+        raise ValueError("only ordinary form or URL elicitation is supported")
+    if isinstance(params, ElicitRequestFormParams):
+        return form_validator(params)
+    parts = urlsplit(params.url)
+    if (
+        len(params.model_dump_json().encode("utf-8")) > 32 * 1024
+        or not parts.hostname
+        or parts.username is not None
+        or parts.password is not None
+        or any(ord(c) < 33 for c in params.url)
+        or (
+            parts.scheme != "https"
+            and not (parts.scheme == "http" and parts.hostname in {"127.0.0.1", "::1"})
+        )
+        or not params.elicitation_id
+        or len(params.elicitation_id) > 128
+    ):
+        raise ValueError("URL elicitation requires HTTPS or literal loopback and a bounded ID")
+    return None
+
+
+def validate_answer(params, answer):
+    """URL acceptance acknowledges navigation, never credential or job completion."""
+    validator = input_validator(params)
+    answer = ElicitResult.model_validate(answer)
+    if len(answer.model_dump_json().encode("utf-8")) > 16 * 1024:
+        raise ValueError("elicitation response exceeds relay budget")
+    if answer.action != "accept":
+        return ElicitResult(action=answer.action)
+    if validator is None:
+        if answer.content:
+            raise ValueError("URL answers cannot carry form content or credentials")
+        return ElicitResult(action="accept")
+    json.dumps(answer.content, allow_nan=False)
+    validator.validate(answer.content if answer.content is not None else {})
+    return ElicitResult(action="accept", content=deepcopy(answer.content))
+
+
 class ElicitationTarget:
     def __init__(
         self,
@@ -115,28 +158,43 @@ class ElicitationTarget:
             capability.form is not None or capability.url is None  # Legacy {} means form.
         )
 
+    def supports_url(self) -> bool:
+        client = self.session.client_params
+        capabilities = client.capabilities if client else None
+        return (
+            capabilities is not None
+            and capabilities.elicitation is not None
+            and (capabilities.elicitation.url is not None)
+        )
+
     async def forward(self, params):
         if self.closed.is_set() or self.pending:
             return rejected("no active confirmation route, or a form is already pending")
-        if not isinstance(params, ElicitRequestFormParams) or params.task is not None:
-            return rejected("only ordinary form elicitation is supported")
-        if not self.supports_form():
-            return rejected("the calling client does not support form elicitation")
+        is_url = isinstance(params, ElicitRequestURLParams)
+        if not (self.supports_url() if is_url else self.supports_form()):
+            return rejected("the calling client does not support this elicitation mode")
         self.requests += 1
         if self.requests > 8:
             return rejected("confirmation count exceeds this tool call's relay budget")
         try:
-            validator = form_validator(params)
+            input_validator(params)
         except Exception:
             return rejected("unsupported or oversized elicitation form")
         self.pending = True
-        request = asyncio.create_task(
-            self.session.elicit_form(
+        if is_url:
+            operation = self.session.elicit_url(
+                self.label + params.message,
+                params.url,
+                params.elicitation_id,
+                related_request_id=self.request_id,
+            )
+        else:
+            operation = self.session.elicit_form(
                 self.label + params.message,
                 deepcopy(params.requested_schema),
                 related_request_id=self.request_id,
             )
-        )
+        request = asyncio.create_task(operation)
         invalidated = asyncio.create_task(self.closed.wait())
         try:
             done, _ = await asyncio.wait(
@@ -146,16 +204,7 @@ class ElicitationTarget:
             )
             if self.closed.is_set() or request not in done:
                 return rejected("confirmation expired or its originating call ended")
-            result = request.result()
-            if len(result.model_dump_json().encode("utf-8")) > 16 * 1024:
-                return rejected("elicitation response exceeds relay budget")
-            if result.action == "accept":
-                content = result.content if result.content is not None else {}
-                json.dumps(content, allow_nan=False)
-                validator.validate(content)
-                return ElicitResult(action="accept", content=deepcopy(result.content))
-            # Do not turn a decline/cancel into approval through leftover content.
-            return ElicitResult(action=result.action)
+            return validate_answer(params, request.result())
         except asyncio.CancelledError:
             self.close()
             raise
