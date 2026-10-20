@@ -43,7 +43,7 @@ Calls to one registration are serialized. A long synchronous call can block stat
 
 ## Forms, progress and payloads
 
-Use negotiated request-bound form elicitation only when the selected host supports the required policy. Validate accepted fields in the app; negative values, decline, cancel, malformed content, unsupported clients and late replies must not authorize the change. Never replace required human approval with a fabricated argument. URL forms and task-based interactions are outside the current broker contract.
+Use negotiated request-bound form/URL elicitation only when the selected host supports the required policy. Validate accepted fields in the app; negative values, decline, cancel, malformed content, unsupported clients and late replies must not authorize the change. Never replace required human approval with a fabricated argument. URL acceptance acknowledges navigation without carrying credentials or proving external completion. Explicit app-owned Tasks support polling, authorized push and form/URL input; generic routing does not adopt downstream Tasks automatically. See the [extension guide](../extension-development.md).
 
 Progress is optional telemetry for an active request. It can be coalesced or dropped and cannot prove completion, cancellation or approval. It does not extend the broker operation deadline. Required outcomes belong in app results and status methods.
 

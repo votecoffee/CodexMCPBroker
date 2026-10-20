@@ -2,6 +2,8 @@
 
 Framework 0.17 extends opt-in MCP Tasks, verified downstream Skills, live skill publication and extension lifecycle hooks. The runtime remains pinned to MCP Python SDK 2.3.0; an isolated profile exercises the adapters on SDK 2.2.0. These are framework components for app authors. They do not migrate installed apps, discover arbitrary plugins, grant permissions or establish native host acceptance.
 
+Use the [SDK support matrix](sdk-feature-support.md) to distinguish these explicit adapters from inherited native SDK APIs and unsupported downstream relay paths.
+
 ## Choose a supported profile
 
 | Component | Supported behavior | Deliberate boundary |
@@ -74,7 +76,7 @@ Return `TaskObservation("completed", result=call_tool_result_dict)` for successf
 
 The store defaults to 10,000 records and 64 MiB of bounded record data including per-record overhead. Individual task data is limited to 4 MiB, and a task has at most 128 lifetime form keys. Default TTL is one day, configurable between one second and thirty days. Expiry denies further access and dispatch; it does not cancel a native job. Deduplication tombstones are retained, so archival is an explicit app-operator operation that must preserve its operation-key ledger. SQLite's page/free-list overhead is outside the logical data quota. Store form answers and results in private, access-controlled app state with appropriate retention.
 
-App adapter methods have a default 30-second operation deadline, configurable up to 300 seconds. The durable job can run longer; polling reads its state. A timeout during mutation preserves the intent for reconciliation. The store uses transactional claims and optimistic updates to prevent concurrent claims from dispatching twice. This is a local SQLite deployment profile, not a replicated distributed queue.
+App adapter methods have a default 30-second operation deadline, configurable up to 300 seconds. The durable job can run longer; polling reads its state. A timeout during mutation preserves the intent for reconciliation. The default SQLite store uses transactional claims and optimistic updates to prevent concurrent claims from dispatching twice. For the optional Redis store, use the separate [shared deployment profile](deployment.md); a local SQLite database is not a replicated distributed queue.
 
 Task routes require the client extension declaration on **every request**. Missing support is rejected before dispatch; there is no synchronous fallback. Legacy clients must use a separately selected app workflow. This profile supports `tasks/get` polling and optional `notifications/tasks` streams. Use `async with tasks.listen(client.session, [task_id]) as changes` for complete state updates. `await extension.changed(task_id)` wakes subscribers after an app job changes; a bounded periodic readback also detects changes. Every delivery rechecks ownership, expiry and app authorization. Streams coalesce changes and have no replay; reconnect explicitly and refetch after disconnection. They emit no task progress/log notifications.
 

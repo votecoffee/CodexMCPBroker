@@ -39,8 +39,8 @@
     },
     {
       "path": "docs/app-framework.md",
-      "size": 15468,
-      "sha256": "37efe129aa88a703844028cc1b65b0b5c48cf51cfd92664670517278d7eb7169"
+      "size": 16059,
+      "sha256": "f0b5c497e066f15a13ebb6856b49ac7d71a5ef447eb811ad9ca72275f8481b8e"
     },
     {
       "path": "docs/capability-catalog.md",
@@ -54,8 +54,8 @@
     },
     {
       "path": "docs/extension-development.md",
-      "size": 20614,
-      "sha256": "731be05799873645a21539dea2a14da4e7d6cad9dbebeb591bb2b9a280ccf72e"
+      "size": 20868,
+      "sha256": "4712247280f72a20e6e248b9188e68c0de6a5a00ac3a4d1ebd51e8526112a363"
     },
     {
       "path": "docs/native-skill-bundles.md",
@@ -68,14 +68,19 @@
       "sha256": "b8730561f0cad9f55f40f058e0bbd1b906c422e725da31a3aaee8ea58b230ebe"
     },
     {
+      "path": "docs/sdk-feature-support.md",
+      "size": 9008,
+      "sha256": "93e7099a3f806b6ca9ecca3b0529d1feab1d6210fa4af9a8ed0a2b200b4ce82b"
+    },
+    {
       "path": "docs/sdk2-features.md",
-      "size": 9042,
-      "sha256": "c9622168638e42599a70bb9952c8ccbd0eddff441ef7f7b819c8126c4b317b76"
+      "size": 9252,
+      "sha256": "21d822c868921eeaf5ef126e3631dac7ff3194b03a42121b8d9c87f2ac0cff88"
     },
     {
       "path": "docs/server-development/acceptance.md",
-      "size": 5962,
-      "sha256": "b2b7535825e1fd803c0a93e28a9a7f61a2b750a58c83fb8aed667038fcff1ca5"
+      "size": 6080,
+      "sha256": "64c8b3e461e4885c8fcae3d98e302eb6c307c6a471a6bc5eb961894aab36bb87"
     },
     {
       "path": "docs/server-development/architecture.md",
@@ -89,13 +94,13 @@
     },
     {
       "path": "docs/server-development/README.md",
-      "size": 6467,
-      "sha256": "ef29428c8922bb6d87da1742e18ff68a6b54a58553b57144f65b7b0481c89719"
+      "size": 7264,
+      "sha256": "72af2fc98ba8d4220c79ec63d87481938c8488e25d867b136342993a9578a549"
     },
     {
       "path": "docs/server-development/registration-and-discovery.md",
-      "size": 8174,
-      "sha256": "454a679cafcb6128a9541531a41549ca72eef4b672f9d047888d1411e70379dd"
+      "size": 8473,
+      "sha256": "9e0e22053d8a6db9052389014f3da3fd263ab0b52db84a2ec7c31df9f1456b9c"
     },
     {
       "path": "docs/server-development/sessions-and-recovery.md",
@@ -104,8 +109,8 @@
     },
     {
       "path": "docs/server-development/tools-and-workflows.md",
-      "size": 6004,
-      "sha256": "868bc0d6fd46c8a43ef2d6b51674fb6f2add3a7cd5121e49b9c8c1b48aed18e2"
+      "size": 6226,
+      "sha256": "f62b82f5242cd3c2f4487944b57118de7424b5a9ca9f3e0e6dabc6256f048396"
     },
     {
       "path": "docs/workflow-contributions.md",
@@ -359,8 +364,8 @@
     },
     {
       "path": "README.md",
-      "size": 33850,
-      "sha256": "4aae1370121f95314d0d0871427c426d3e6bba76bb074e1e05b50bcb69591ba3"
+      "size": 34409,
+      "sha256": "075fe33280695b1f349a38bbc3f5942aff749d9ad1f3e61494381c6872056bfd"
     },
     {
       "path": "requirements-dev-lock.txt",

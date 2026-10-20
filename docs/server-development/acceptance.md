@@ -13,7 +13,7 @@ Record unsupported requirements as blockers. Mark a feature that is outside the 
 | Gate | Required evidence and negative checks |
 | --- | --- |
 | Reproducible source | Exact committed source or an explicit captured diff, dependency locks, build inputs and output hashes. Observe later drift; do not claim acceptance of newer code. |
-| Metadata | Real initialization/version negotiation, complete paginated definitions and required capabilities. Check that metadata does not attach/operate native targets, prompt or expose private state. |
+| Metadata | Real discovery/version negotiation for the selected profile, complete paginated definitions and required capabilities. Legacy connections use initialization; modern connections carry version/capabilities per request. Check that metadata does not attach/operate native targets, prompt or expose private state. |
 | Actual adapter with fake providers | Keep original handlers, policy/review code and required pure workers; replace native providers below them. Compare direct/broker definitions and complete selected results. |
 | Session and resource behavior | Two frontends, owner denial, target/revision guards, refresh continuity, release/reacquisition, intentional shared visibility and alias handling. Exercise unsuitable modes when useful. |
 | Required writes/forms | Independent effect counts, exact candidate binding, consumed/stale plans, wrong hash, policy denial and approval accept/negative/decline/cancel/invalid/unsupported/late responses. Rejected paths make zero fixture effects. |

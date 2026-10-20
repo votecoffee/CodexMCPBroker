@@ -4,7 +4,7 @@
 
 ## Provide one supported MCP interface
 
-Implement negotiated MCP initialization, complete tool listing and tool calls using a suitable SDK. Pin the app's dependency/runtime versions and record the negotiated protocol in tests. The app does not have to use Python or share the broker's SDK environment.
+Implement complete tool listing and tool calls using a suitable SDK and the selected wire profile. Legacy connections use initialization; modern `2026-07-28` connections use discovery and per-request capability metadata. Registrations default to `protocol_mode: "legacy"`; explicitly select `"auto"` or `"2026-07-28"` for the modern profile. Pin the app's dependency/runtime versions and record the negotiated protocol in tests. The app does not have to use Python or share the broker's SDK environment. See the [SDK support matrix](../sdk-feature-support.md).
 
 Record app release identity separately from SDK and protocol versions. Inspect actual `serverInfo` output: an SDK default version may describe the library rather than the app release. Do not base installer compatibility on that default alone; use an explicit app version when supported and retain source/package/profile identity in acceptance evidence.
 

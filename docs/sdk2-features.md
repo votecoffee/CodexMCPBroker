@@ -1,6 +1,6 @@
 # SDK 2 features
 
-Framework 0.16 keeps MCP Python SDK 2.3.0 pinned and supports SDK 2.2 and newer app backends through explicit integration profiles. SDK versions and wire revisions are independent. No existing registration, installation, plugin or native project is migrated by upgrading the package.
+Framework 0.17.0 keeps MCP Python SDK 2.3.0 pinned and exercises SDK 2.2 app backends through explicit integration profiles. Other SDK versions need their own assessment. SDK versions and wire revisions are independent. No existing registration, installation, plugin or native project is migrated by upgrading the package. The [SDK support matrix](sdk-feature-support.md) distinguishes framework support, inherited SDK APIs, relay gaps and deployment acceptance.
 
 ## Modern connections and ownership
 
@@ -53,7 +53,7 @@ Framework spans use the `universal_tools` OpenTelemetry tracer for discovery and
 
 ## Skills and Tasks extensions
 
-The framework provides opt-in `SkillCatalog`, `SkillRegistry`, `TaskExtension` and `TaskClient` components through the SDK's extension hooks. Skill catalogs now support explicit live replacement, downstream verification/aggregation, pagination and optional directory reads. Tasks adapt app-owned durable jobs with ownership, polling, ordinary form inputs and cooperative cancellation. These features do not automatically convert generic broker calls into tasks or grant skill execution permissions.
+The framework provides opt-in `SkillCatalog`, `SkillRegistry`, `TaskExtension` and `TaskClient` components through the SDK's extension hooks. Skill catalogs support explicit live replacement, downstream verification/aggregation, pagination and optional directory reads. Tasks adapt app-owned durable jobs with ownership, polling, authorized push notifications, ordinary form/URL inputs and cooperative cancellation. These features do not automatically convert generic broker calls into tasks or grant skill execution permissions.
 
 See the [extension developer guide](extension-development.md) for APIs, lifecycle hooks, host publication profiles, structural limits and app authorization/recovery requirements. CLI skill options remain explicit local-admin choices. Native skill bundle composition and host reload remain available independently.
 

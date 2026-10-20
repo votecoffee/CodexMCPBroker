@@ -11,7 +11,9 @@ CodexMCPBroker is experimental. **MCP protocol conformance, broker compatibility
 | [Quickstart](quickstart.md) | Build a harmless read-only server and compare direct and broker calls in an isolated state. |
 | [Architecture](architecture.md) | Put shared application services behind the GUI, standalone plugin and broker route. |
 | [Shared app framework](../app-framework.md) | Reuse the packaged host/session/policy engine and update backends while keeping the native MCP front door stable. |
+| [SDK feature support](../sdk-feature-support.md) | Distinguish implemented framework features, inherited SDK APIs, relay gaps and unverified deployment behavior. |
 | [Optional extensions](../extension-development.md) | Integrate durable app-owned Tasks, verified Skills consumption, live publication and host profiles without automatic app migration. |
+| [Deployment profiles](../deployment.md) | Select authenticated remote hosts or shared native SDK deployments with explicit ownership and infrastructure contracts. |
 | [Tool and workflow design](tools-and-workflows.md) | Design schemas, side-effect annotations, revisions, reviewed writes, jobs and results. |
 | [Sessions and recovery](sessions-and-recovery.md) | Choose transient, exclusive or shared mode and define resource ownership and loss behavior. |
 | [Registration and discovery](registration-and-discovery.md) | Register transports, manage dependencies and publish optional inner catalogs. |
@@ -25,7 +27,7 @@ The [app contract](../../APP_CONTRACT.md) and checked-in [service schema](../../
 
 | Profile | Required design and evidence |
 | --- | --- |
-| Read-only tools | Negotiated initialization, complete tool listing, explicit read annotations, bounded schemas/results, deterministic direct/broker comparison. |
+| Read-only tools | Selected protocol discovery/negotiation, complete tool listing, explicit read annotations, bounded schemas/results, deterministic direct/broker comparison. |
 | Reviewed writes | Read-only profile plus app authorization, explicit target/revision binding, one-use plans where required, exact write policy, independent effect counts and uncertain-outcome reconciliation. |
 | Retained state | An assessed exclusive or shared mode, release/loss semantics, resource identity and two-frontend tests. |
 | Inner feature catalogs | An explicitly registered normalized read-only provider and current native discovery references; ordinary outer tools still work without it. |
@@ -43,6 +45,6 @@ Every app distributes its own MCP server and standalone Codex plugin after adopt
 
 ## Standards and implementation choices
 
-Implement the [MCP initialization lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle) and [tools interface](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) for a negotiated version supported by both endpoints. Negotiate capabilities before using them. A newer SDK does not establish wire compatibility by itself.
+Choose the wire profile explicitly. The legacy profile uses the [2025-11-25 initialization lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle). The modern [2026-07-28 protocol](https://modelcontextprotocol.io/specification/2026-07-28) uses `server/discover`, per-request version/capability metadata and stateless requests, without an initialization handshake. Backend registrations default to `protocol_mode: "legacy"`; select `"auto"` or `"2026-07-28"` deliberately. Check capabilities before using them. A newer SDK does not establish wire compatibility by itself.
 
-The framework and broker pin MCP Python SDK 2.3.0. The optional isolated SDK profile tests a separate Python 2.3.0 server on the negotiated `2025-11-25` path; that does not establish support for every newer SDK feature. Apps may use another language/SDK when their actual endpoint passes the selected profile. Pin and record the app's own dependencies instead of forcing them into the broker's environment.
+Framework 0.17.0 and the broker pin MCP Python SDK 2.3.0. The isolated interoperability profile exercises a separate SDK 2.3 server on the legacy path and an SDK 2.2 overlay on the modern path; native extension checks also exercise the SDK 2.2 floor. These checks do not establish every SDK feature or a real app's readiness. Apps may use another language/SDK when their actual endpoint passes the selected profile. Pin and record the app's own dependencies instead of forcing them into the broker's environment. See [verification](../../VERIFICATION.md#cross-sdk-profile) and the [support matrix](../sdk-feature-support.md).
