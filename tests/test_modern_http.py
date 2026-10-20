@@ -71,6 +71,8 @@ async def test_http_modern_forms_keep_owner_and_single_dispatch_across_round_tri
 
             async def answer(ctx, params):
                 calls.append(params.message)
+                if params.mode == "url":
+                    return ElicitResult(action="accept")
                 return ElicitResult(action="accept", content={"approved": True})
 
             async with AsyncExitStack() as stack:
@@ -133,6 +135,21 @@ async def test_http_modern_forms_keep_owner_and_single_dispatch_across_round_tri
                 assert result == {"status": "completed", "revision": 2}
                 assert len(calls) == 1
                 assert (await owner.call_tool("call_write_tool", args)).is_error
+                link_tool = data(await owner.call_tool("describe_tool", {"tool_id": "modern/link"}))
+                linked = data(
+                    await owner.call_tool(
+                        "call_write_tool",
+                        {
+                            "tool_id": "modern/link",
+                            "catalog_revision": link_tool["catalog_revision"],
+                            "arguments": {},
+                            "context_id": context,
+                            "request_id": "http-url-once-001",
+                        },
+                    )
+                )
+                assert linked == {"action": "accept", "navigation_only": True, "links": 1}
+                assert len(calls) == 2
                 await owner.call_tool(
                     "release_service", {"service_id": "modern", "context_id": context}
                 )

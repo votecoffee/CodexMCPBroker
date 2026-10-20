@@ -14,7 +14,7 @@ For a development sequence and copyable isolated example, use the [server develo
 
 ## SDK and wire baseline
 
-Framework/broker 0.15 uses MCP Python SDK 2.3.0. The SDK version does not change registration/publication schema version 1. The default downstream contract uses the negotiated `2025-11-25` handshake; framework 0.15 also provides an opt-in modern discovery, cache and form-continuation profile described in [SDK 2 features](docs/sdk2-features.md). The isolated compatibility profile also exercises an SDK 2.2 backend. See the [upgrade boundaries](docs/app-framework.md#mcp-sdk-23-upgrade).
+Framework/broker 0.17 uses MCP Python SDK 2.3.0. The SDK version does not change registration/publication schema version 1. The default downstream contract uses the negotiated `2025-11-25` handshake; framework 0.15 also provides an opt-in modern discovery, cache and form-continuation profile described in [SDK 2 features](docs/sdk2-features.md). The isolated compatibility profile also exercises an SDK 2.2 backend. See the [upgrade boundaries](docs/app-framework.md#mcp-sdk-23-upgrade).
 
 MCP documents use wire aliases when serialized, while Python SDK attributes use snake_case. Store custom tool/result/media extension data in `_meta`. Unknown top-level SDK model fields are ignored by SDK 2 and are outside the forwarding contract; ordinary supported result fields and `_meta` are preserved.
 
@@ -38,7 +38,7 @@ MCP documents use wire aliases when serialized, while Python SDK attributes use 
 }
 ```
 
-`bearer_token_env` is optional. The daemon inherits environment variables at launch, so restart it after changing credentials. Authentication headers belong to that app and are never inherited from the incoming Codex request. Redirects and environment HTTP proxies are disabled. Version 1 accepts literal loopback HTTP URLs only: no embedded credentials, query strings, fragments, DNS hostnames, or remote endpoints. Each app should independently authenticate requests if its capabilities need protection from other local clients.
+`bearer_token_env` is optional. The daemon inherits environment variables at launch, so restart it after changing credentials. Authentication headers belong to that app and are never inherited from the incoming Codex request. Redirects and environment HTTP proxies are disabled. Version 1 accepts literal loopback HTTP URLs or explicitly opted-in authenticated remote HTTPS. Embedded credentials, URL query strings and fragments remain rejected. Remote registrations require `allow_remote: true` plus their own bearer environment reference or OAuth service profile; see [deployment](docs/deployment.md). Each app should independently authenticate requests if its capabilities need protection from other local clients.
 
 The app installer calls the CLI to validate and atomically copy its manifest to `<broker-state>/services/<id>.json`. Stable IDs use lowercase letters, digits, underscores, and hyphens, start with a letter, and contain at most 64 characters. The broker scans only this directory on `refresh_services`. Uninstalling an app removes its registration using the CLI, then refreshes. It does not delete the app's data.
 
@@ -228,9 +228,9 @@ If a start reply is lost after dispatch, retain its original request ID and insp
 
 ## Request-bound form elicitation
 
-Broker 0.6 relays ordinary MCP `elicitation/create` form requests during a routed read or write tool call. It uses the [MCP elicitation contract](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation). Bridge clients advertise form support only. A calling host without form support, a URL-mode request or a task-augmented request receives a protocol error. The broker does not provide fallback approval tools or weaken app confirmation policy.
+Broker 0.6 relays ordinary MCP `elicitation/create` form requests during a routed read or write tool call. It uses the [MCP elicitation contract](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation). Bridge clients advertise ordinary form and URL support. Each request checks that the originating host supports its actual mode. Unsupported clients and nested task inputs receive a protocol error. The broker does not provide fallback approval tools or weaken app confirmation policy.
 
-The native client UI receives the app's message with an `App <service-id>/<tool-name>` prefix and the original requested schema. Accepted content is validated against that schema before forwarding; decline and cancel remain distinct actions, with no approval content attached. Every form requires a fresh response. This relays a client's response and does not attest that a human saw a particular UI. Apps requiring explicit human approval must retain their own policy and validate the intended Codex host before migration. Form mode must not collect credentials or other secrets; URL-mode and auth linking remain unsupported.
+The native client UI receives the app's message with an `App <service-id>/<tool-name>` prefix and the original requested schema. Accepted content is validated against that schema before forwarding; decline and cancel remain distinct actions, with no approval content attached. Every form requires a fresh response. This relays a client's response and does not attest that a human saw a particular UI. Apps requiring explicit human approval must retain their own policy and validate the intended Codex host before migration. Form mode must not collect credentials or other secrets. URL inputs use bounded HTTPS or literal loopback URLs with a legacy elicitation ID when required by the negotiated wire version. Acceptance acknowledges navigation without carrying credential/form content; apps independently verify authentication or completion.
 
 A route is bound to one active tool invocation and its originating upstream MCP request/session. No confirmations are routed during initialization, acquisition, metadata discovery or after the call ends. Exclusive ownership is checked before native dispatch; another frontend cannot answer or adopt the owner's route. Concurrent app calls on separate pooled channels retain separate routes. The SDK adapter processes confirmation requests concurrently with tool results and cancellation, under the SDK session's own task group. This adapter is tested against the pinned MCP SDK version.
 
@@ -256,7 +256,7 @@ The progress callback never waits for the upstream client in the downstream SDK 
 
 Version 1 allows 128 services, eight parallel discovery probes, 2,000 tools per app, 100 tool-list pages, 128 KiB schemas, argument objects defaulting to 256 KiB with an explicit per-service maximum of 64 MiB, and app timeouts from 0.2 to 300 seconds. Broker HTTP requests default to 10 MiB with an opt-in ceiling of 128 MiB. Calls to one registration are serialized; there is no distributed lock across broker installations.
 
-Potential later versions: native context resumption where apps support it, watched registration directories, supported remote HTTPS/OAuth connections, resource/prompt forwarding, URL elicitation, typed promotion of selected tools, operation-specific policies, and adapters for existing engineering apps. These remain outside the current acceptance scope.
+Potential later versions: native context resumption where apps support it, watched registration directories, typed promotion of selected tools, operation-specific policies, and adapters for existing engineering apps. Optional remote HTTPS/OAuth, explicit resource/prompt/completion federation and URL elicitation are implemented in the current framework profiles. These remain outside the current acceptance scope.
 
 ## Optional framework extensions
 

@@ -23,7 +23,7 @@ from mcp.types import (
     SubscriptionsAcknowledgedNotification,
     SubscriptionsAcknowledgedNotificationParams,
 )
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, model_validator
 
 from .budgets import DEFAULT_JSON_BUDGET
 from .models import BrokerError, canonical_digest
@@ -31,6 +31,26 @@ from .models import BrokerError, canonical_digest
 
 class TaskStatusParams(NotificationParams):
     model_config = ConfigDict(extra="allow")
+    task_id: str = Field(min_length=1, max_length=128, alias="taskId")
+    status: str
+    created_at: str = Field(alias="createdAt")
+    last_updated_at: str = Field(alias="lastUpdatedAt")
+    ttl_ms: int | None = Field(alias="ttlMs", ge=0)
+
+    @model_validator(mode="after")
+    def detailed(self):
+        from mcp.types import CallToolResult, ErrorData
+
+        extra = self.model_extra
+        if self.status not in {"working", "input_required", "completed", "failed", "cancelled"}:
+            raise ValueError("invalid task status")
+        if self.status == "completed":
+            CallToolResult.model_validate(extra.get("result"))
+        elif self.status == "failed":
+            ErrorData.model_validate(extra.get("error"))
+        elif self.status == "input_required" and not isinstance(extra.get("inputRequests"), dict):
+            raise ValueError("task inputs missing")
+        return self
 
 
 class TaskNotifications:
@@ -51,6 +71,11 @@ class TaskNotifications:
     async def __call__(self, ctx, call_next):
         raw = ctx.params or {}
         requested = raw.get("notifications", {}) if isinstance(raw, dict) else {}
+        if ctx.method == "subscriptions/listen" and any(
+            isinstance(uri, str) and uri.startswith("broker-task://")
+            for uri in requested.get("resourceSubscriptions", [])
+        ):
+            raise MCPError(INVALID_PARAMS, "internal Task channels are not resource subscriptions")
         if ctx.method != "subscriptions/listen" or "taskIds" not in requested:
             return await call_next(ctx)
         self.extension._principal(ctx)

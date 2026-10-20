@@ -216,7 +216,15 @@ def create_surface(
     frontend_identity: str | None = None,
     skills=None,
     extensions=(),
+    deployment=None,
 ) -> MCPServer:
+    if deployment is not None and deployment.replicated:
+        raise ValueError(
+            "retained broker workers require one owning process; "
+            "use native stateless hosts for replicas"
+        )
+    if deployment is not None and frontend_identity is not None:
+        raise ValueError("OAuth deployment identity must come from the verified token")
     if frontend_identity is None and isinstance(backend, RemoteBackend):
         frontend_identity = backend.client_id
 
@@ -260,6 +268,7 @@ def create_surface(
         frontend_identity=frontend_identity,
         extensions=[*extensions, *([skills] if skills is not None else [])],
         resource_providers=[skills] if skills is not None else (),
+        **(deployment.server_options() if deployment else {}),
         port=port,
         http_options=dict(
             host="127.0.0.1",
@@ -274,6 +283,8 @@ def create_surface(
             ),
         ),
     )
+    if deployment is not None:
+        server.http_options.update(deployment.http_options())
 
     async def catalog_changed():
         context = Context(mcp_server=server, subscriptions=server._subscriptions)

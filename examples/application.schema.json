@@ -80,6 +80,22 @@
           "default": null,
           "title": "Bearer Token Env"
         },
+        "allow_remote": {
+          "default": false,
+          "title": "Allow Remote",
+          "type": "boolean"
+        },
+        "oauth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OAuthServiceSettings"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "max_sse_event_bytes": {
           "anyOf": [
             {
@@ -100,6 +116,71 @@
         "url"
       ],
       "title": "HttpTransport",
+      "type": "object"
+    },
+    "OAuthServiceSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "token_endpoint": {
+          "title": "Token Endpoint",
+          "type": "string"
+        },
+        "client_id": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Client Id",
+          "type": "string"
+        },
+        "scopes": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Scopes",
+          "type": "array"
+        },
+        "client_secret_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Client Secret Env"
+        },
+        "assertion_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assertion Env"
+        },
+        "dpop_key_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dpop Key Env"
+        }
+      },
+      "required": [
+        "token_endpoint",
+        "client_id"
+      ],
+      "title": "OAuthServiceSettings",
       "type": "object"
     },
     "ServiceManifest": {

@@ -4,19 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-codex-tools"
-version = "0.16.0"
+version = "0.17.0"
 description = "Shared app MCP framework with an optional universal discovery broker"
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.11"
-dependencies = ["mcp==2.3.0", "jsonschema==4.26.0", "anyio==4.15.1", "PyYAML==6.0.3", "httpx==0.28.1", "opentelemetry-api==1.45.1"]
+dependencies = ["mcp==2.3.0", "jsonschema==4.26.0", "anyio==4.15.1", "PyYAML==6.0.3", "httpx==0.28.1", "httpx2==2.13.1", "PyJWT==2.15.1", "cryptography==50.0.2", "opentelemetry-api==1.45.1"]
 
 [project.urls]
 Repository = "https://github.com/votecoffee/CodexMCPBroker"
 Issues = "https://github.com/votecoffee/CodexMCPBroker/issues"
 
 [project.optional-dependencies]
-dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "ruff==0.17.1", "build==1.6.1"]
+dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "ruff==0.17.1", "build==1.6.1", "fakeredis[lua]==2.40.0"]
+redis = ["redis==8.1.0"]
 
 [project.scripts]
 universal-tools = "universal_tools.cli:main"

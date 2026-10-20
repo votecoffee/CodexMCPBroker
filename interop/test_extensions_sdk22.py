@@ -1,5 +1,6 @@
 """The extension adapters execute on the SDK 2.2 floor in a separate process."""
 
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -33,7 +34,9 @@ async def test_sdk22_tasks_and_skills(tmp_path, sdk2_python, sdk22_root):
     ) as client:
         created = await tasks.create(client.session, "export", {"request_id": "sdk22-task-001"})
         task_id = created["taskId"]
-        assert (await tasks.get(client.session, task_id))["status"] == "input_required"
+        async with tasks.listen(client.session, [task_id]) as updates:
+            async with asyncio.timeout(10):
+                assert (await anext(updates))["status"] == "input_required"
         await tasks.update(client.session, task_id, {"review": {"action": "decline"}})
         final = await tasks.get(client.session, task_id)
         assert final["status"] == "completed" and final["result"]["isError"] is True

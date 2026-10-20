@@ -12,7 +12,14 @@ if "--sdk-root" in sys.argv:
 
 from mcp.server import CacheHint, MCPServer  # noqa: E402
 from mcp.server.mcpserver import AcceptedElicitation, Context, Elicit, ElicitationResult, Resolve  # noqa: E402
-from mcp.types import ToolAnnotations  # noqa: E402
+from mcp.types import (  # noqa: E402
+    CallToolResult,
+    ElicitRequest,
+    ElicitRequestURLParams,
+    InputRequiredResult,
+    TextContent,
+    ToolAnnotations,
+)
 from pydantic import BaseModel  # noqa: E402
 
 server = MCPServer(
@@ -22,6 +29,7 @@ server = MCPServer(
 )
 revision = 0
 dispatches = 0
+links = 0
 
 
 class Review(BaseModel):
@@ -49,6 +57,42 @@ async def edit(
         return {"status": "stale", "revision": revision}
     revision += 1
     return {"status": "completed", "revision": revision}
+
+
+@server.tool(annotations=ToolAnnotations(read_only_hint=False))
+async def link(ctx: Context) -> CallToolResult | InputRequiredResult:
+    global links
+    if not ctx.input_responses:
+        return InputRequiredResult(
+            input_requests={
+                "login": ElicitRequest(
+                    params=ElicitRequestURLParams(
+                        message="Open the synthetic login page",
+                        url="https://identity.invalid/login",
+                        elicitation_id="synthetic-login-001",
+                    )
+                )
+            },
+            request_state="synthetic-url-state",
+        )
+    assert ctx.request_state == "synthetic-url-state"
+    links += 1
+    import json
+
+    return CallToolResult(
+        content=[
+            TextContent(
+                type="text",
+                text=json.dumps(
+                    {
+                        "action": ctx.input_responses["login"].action,
+                        "navigation_only": True,
+                        "links": links,
+                    }
+                ),
+            )
+        ]
+    )
 
 
 @server.tool(annotations=ToolAnnotations(read_only_hint=False))

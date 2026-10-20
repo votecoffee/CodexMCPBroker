@@ -78,10 +78,35 @@ class CapabilityProvider(CatalogRequest):
         return value
 
 
+class OAuthServiceSettings(StrictModel):
+    token_endpoint: str
+    client_id: str = Field(min_length=1, max_length=1024)
+    scopes: list[str] = Field(default_factory=list, max_length=64)
+    client_secret_env: str | None = None
+    assertion_env: str | None = None
+    dpop_key_env: str | None = None
+
+    @model_validator(mode="after")
+    def valid(self):
+        from .authorization import https_url
+
+        https_url(self.token_endpoint)
+        if not (self.client_secret_env or self.assertion_env):
+            raise ValueError(
+                "OAuth service grants need a secret or workload assertion environment reference"
+            )
+        for name in (self.client_secret_env, self.assertion_env, self.dpop_key_env):
+            if name is not None and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+                raise ValueError("invalid OAuth credential environment reference")
+        return self
+
+
 class HttpTransport(StrictModel):
     type: Literal["streamable-http"]
     url: str
     bearer_token_env: str | None = None
+    allow_remote: bool = False
+    oauth: OAuthServiceSettings | None = None
     max_sse_event_bytes: int | None = Field(default=None, ge=1024, le=MAX_REQUEST_BODY_BYTES)
 
     @field_validator("url")
@@ -89,8 +114,9 @@ class HttpTransport(StrictModel):
     def local_endpoint(cls, value: str) -> str:
         parts = urlsplit(value)
         if (
-            parts.scheme != "http"
-            or parts.hostname not in {"127.0.0.1", "::1"}
+            parts.scheme not in {"http", "https"}
+            or (parts.scheme == "http" and parts.hostname not in {"127.0.0.1", "::1"})
+            or not parts.hostname
             or parts.username
             or parts.password
             or parts.query
@@ -98,9 +124,25 @@ class HttpTransport(StrictModel):
             or not parts.path
         ):
             raise ValueError("v0.1 requires a literal loopback HTTP endpoint with an MCP path")
-        if not parts.port:
+        if parts.scheme == "http" and not parts.port:
             raise ValueError("an explicit port is required")
         return value
+
+    @model_validator(mode="after")
+    def remote_authorization(self):
+        if urlsplit(self.url).scheme == "https":
+            from .authorization import https_url
+
+            https_url(self.url)
+            if not self.allow_remote or not (self.oauth or self.bearer_token_env):
+                raise ValueError(
+                    "HTTPS registrations require explicit allow_remote and scoped authentication"
+                )
+        elif self.allow_remote or self.oauth:
+            raise ValueError("remote OAuth registrations require HTTPS")
+        if self.oauth and self.bearer_token_env:
+            raise ValueError("select one authentication profile per endpoint")
+        return self
 
     @field_validator("bearer_token_env")
     @classmethod

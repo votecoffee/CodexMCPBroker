@@ -94,7 +94,7 @@ async def test_invalid_accepted_answers_never_reach_the_app_as_approval(content)
     assert isinstance(await ElicitationTarget(client, 1).forward(form()), ErrorData)
 
 
-async def test_url_requests_are_rejected_without_forwarding():
+async def test_url_requests_are_rejected_when_frontend_only_supports_forms():
     client = Client()
     params = ElicitRequestURLParams(
         message="No URL relay", url="https://example.invalid", elicitationId="fixture"

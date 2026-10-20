@@ -73,7 +73,9 @@ async def test_http_process_restart_retains_handle_and_denies_another_chat(tmp_p
         async with connection(
             settings, "a" * 32, extensions=[tasks], elicitation_callback=host_form_ui
         ) as client:
-            pending = await tasks.get(client.session, task_id)
+            async with tasks.listen(client.session, [task_id]) as updates:
+                async with asyncio.timeout(10):
+                    pending = await anext(updates)
             assert pending["status"] == "input_required"
             await tasks.update(
                 client.session,

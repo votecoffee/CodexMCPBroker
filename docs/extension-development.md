@@ -1,13 +1,13 @@
 # Developing optional MCP extensions
 
-Framework 0.16 adds opt-in MCP Tasks, verified downstream Skills, live skill publication and extension lifecycle hooks. The runtime remains pinned to MCP Python SDK 2.3.0; an isolated profile exercises the adapters on SDK 2.2.0. These are framework components for app authors. They do not migrate installed apps, discover arbitrary plugins, grant permissions or establish native host acceptance.
+Framework 0.17 extends opt-in MCP Tasks, verified downstream Skills, live skill publication and extension lifecycle hooks. The runtime remains pinned to MCP Python SDK 2.3.0; an isolated profile exercises the adapters on SDK 2.2.0. These are framework components for app authors. They do not migrate installed apps, discover arbitrary plugins, grant permissions or establish native host acceptance.
 
 ## Choose a supported profile
 
 | Component | Supported behavior | Deliberate boundary |
 | --- | --- | --- |
-| `TaskExtension` | Released `io.modelcontextprotocol/tasks`, durable handles, polling, form input, cooperative cancellation | Explicit app-owned adapters; no automatic conversion of broker calls or native execution recovery |
-| `TaskClient` | Explicit create/get/update/cancel on an SDK session, including HTTP task routing headers | Caller persists handles, polls and presents its approval UI |
+| `TaskExtension` | Released `io.modelcontextprotocol/tasks`, durable handles, polling/push updates, form/URL input, cooperative cancellation | Explicit app-owned adapters; no automatic conversion of broker calls or native execution recovery |
+| `TaskClient` | Explicit create/get/update/cancel/listen on an SDK session, including HTTP task routing headers | Caller persists handles, polls and presents its approval UI |
 | `SkillRegistry` | Origin-bound discovery/get, verified lazy reads, content-bound approval and bounded memory cache | One trusted host principal per registry; no script execution or plugin installation |
 | `SkillCatalog` | Local byte snapshots, explicit approved federation, pagination, optional directory reads, atomic publication | Published skill content remains untrusted; native host loading is independent |
 | `ExtensionServer` | Explicit SDK extension composition, lifecycle cleanup, live resource namespaces | Extension identifiers and contribution kinds stay fixed until a server lifecycle change |
@@ -70,7 +70,7 @@ An opaque `request_id` of 8–128 characters is required in tool arguments by de
 
 `inspect` receives a persisted pending intent after an ambiguous operation. `TaskObservation(reconciled=True, ...)` explicitly confirms that the app reconciled it. Until then, further mutations are blocked. Return `handle=...` to bind a recovered app job. A database handle surviving restart does not prove that a native process, project or queued operation survived. Preserve the app's resource fencing and uncertain-write recovery barriers.
 
-Return `TaskObservation("completed", result=call_tool_result_dict)` for successful **and app-error** results (`isError: true`). Use `failed` only with a JSON-RPC `error` object. Terminal states are immutable. `input_required` carries one to eight outstanding ordinary form requests; every key is unique for the lifetime of that task. Answered or superseded keys cannot be reused. Unknown/consumed response keys are ignored, partial answers are supported, and decline/cancel answers carry no approval content. Ordinary URL elicitation is supported alongside forms; sampling and nested task inputs remain rejected. URL acceptance acknowledges navigation only: the app must independently verify authentication or job completion. Polling form inputs also requires the client to advertise form elicitation support; otherwise it receives a missing-capability error and can reconnect with an appropriate UI. No approval answer is synthesized.
+Return `TaskObservation("completed", result=call_tool_result_dict)` for successful **and app-error** results (`isError: true`). Use `failed` only with a JSON-RPC `error` object. Terminal states are immutable. `input_required` carries one to eight outstanding ordinary form or URL requests; every key is unique for the lifetime of that task. Answered or superseded keys cannot be reused. Unknown/consumed response keys are ignored, partial answers are supported, and decline/cancel answers carry no approval content. Ordinary URL elicitation is supported alongside forms; sampling and nested task inputs remain rejected. URL acceptance acknowledges navigation only: the app must independently verify authentication or job completion. Polling form inputs also requires the client to advertise form elicitation support; otherwise it receives a missing-capability error and can reconnect with an appropriate UI. No approval answer is synthesized.
 
 The store defaults to 10,000 records and 64 MiB of bounded record data including per-record overhead. Individual task data is limited to 4 MiB, and a task has at most 128 lifetime form keys. Default TTL is one day, configurable between one second and thirty days. Expiry denies further access and dispatch; it does not cancel a native job. Deduplication tombstones are retained, so archival is an explicit app-operator operation that must preserve its operation-key ledger. SQLite's page/free-list overhead is outside the logical data quota. Store form answers and results in private, access-controlled app state with appropriate retention.
 
@@ -161,3 +161,12 @@ Run the [extension verification profile](../VERIFICATION.md#extension-profile) b
 Pass the relay in `ExtensionServer(..., extensions=[relay])` or `ApplicationHost.create_server(extensions=[relay])`. Native resource lists, templates, reads, prompts and completions are federated with bounded pagination. Names include the source ID and revision. Private, zero-TTL results prevent cross-principal cache sharing. Cursors bind the owner and complete current inventory; changed inventories require a new list. Unknown sources, revoked access and stale revisions fail closed.
 
 Modern resource and prompt subscriptions are forwarded only to their originating principal. They recheck source authorization before each notification and acknowledge before delivery. A lost upstream stream ends the subscription; reconnect explicitly and refetch. This extension does not proxy tool execution or automatically expose downstream UI tools. Use the app-owned SDK Apps extension for interactive tools.
+
+
+## Interactive MCP Apps
+
+Compose the SDK's `Apps` extension through the same `extensions=[apps]` argument. The [runnable example](../examples/native_features.py) supplies a UI-bound tool, its `ui://` HTML resource, explicit CSP metadata, and meaningful text for clients that cannot render interfaces. Framework wrapping preserves SDK UI negotiation, metadata, resource bytes and extension lifecycle. The protocol tests do not establish actual host iframe rendering or permissions.
+
+## OAuth and replicas
+
+See [deployment profiles](deployment.md) for verified OAuth identity, shared native SDK continuation keys, Redis subscriptions and durable shared Tasks. App-native jobs, authorization, review revisions and resource fencing remain app-owned. Replicated native SDK frontends do not make retained broker sessions or Python coroutine stacks portable.

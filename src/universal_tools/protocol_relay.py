@@ -117,10 +117,14 @@ class ProtocolRelay(Extension):
         raise BrokerError("unknown relay resource")
 
     async def _authorize(self, source, owner, method, target):
-        await source.authorize(owner, method, target)
+        allowed = await source.authorize(owner, method, target)
+        if allowed is not None and allowed is not True:
+            raise BrokerError("source authorization denied")
 
     def _cursor(self, owner, method, digest, offset):
-        raw = json.dumps([owner, method, digest, offset], separators=(",", ":")).encode()
+        raw = json.dumps(
+            [canonical_digest(owner), method, digest, offset], separators=(",", ":")
+        ).encode()
         signature = hmac.digest(self._cursor_key, raw, "sha256")
         return base64.urlsafe_b64encode(signature + raw).decode()
 
@@ -135,7 +139,10 @@ class ProtocolRelay(Extension):
             values = json.loads(payload)
             if not hmac.compare_digest(signature, hmac.digest(self._cursor_key, payload, "sha256")):
                 raise ValueError
-            if values[:3] != [owner, method, digest] or type(values[3]) is not int:
+            if (
+                values[:3] != [canonical_digest(owner), method, digest]
+                or type(values[3]) is not int
+            ):
                 raise ValueError
             return values[3]
         except Exception:
@@ -249,6 +256,14 @@ class ProtocolRelay(Extension):
                 elif ctx.method == "prompts/get":
                     result = await session.get_prompt(original, arguments=params.get("arguments"))
                     result = result.model_dump(mode="json", by_alias=True, exclude_none=True)
+                    for message in result.get("messages", []):
+                        content = message.get("content", {})
+                        if content.get("type") == "resource_link":
+                            content["uri"] = self.uri(source, content["uri"])
+                        elif content.get("type") == "resource":
+                            content["resource"]["uri"] = self.uri(
+                                source, content["resource"]["uri"]
+                            )
                 else:
                     reference = (
                         PromptReference(name=original)

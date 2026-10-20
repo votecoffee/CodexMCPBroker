@@ -1,6 +1,7 @@
 """Native SDK federation without installing any app or selecting native targets."""
 
 import asyncio
+import base64
 from contextlib import asynccontextmanager
 
 import pytest
@@ -10,6 +11,7 @@ from mcp.shared.exceptions import MCPError
 from mcp.types import Completion, PromptReference, ResourceTemplateReference
 
 from universal_tools.extensions import ExtensionServer
+from universal_tools.identity import client_identity
 from universal_tools.protocol_relay import ProtocolRelay, RelaySource
 
 
@@ -51,9 +53,10 @@ def fixture():
     return upstream, relay, server, revoked, accesses
 
 
-async def test_lists_reads_templates_prompts_completions_and_revocation():
+@pytest.mark.parametrize("mode", ["legacy", "2026-07-28"])
+async def test_lists_reads_templates_prompts_completions_and_revocation(mode):
     _, _, server, revoked, accesses = fixture()
-    async with Client(server, mode="2026-07-28", cache=None) as client:
+    async with Client(server, mode=mode, cache=None) as client:
         resources = await client.list_resources()
         uri = str(resources.resources[0].uri)
         assert uri == "relay://example/v1/demo://hello"
@@ -89,3 +92,31 @@ async def test_subscription_preserves_owner_and_resource_namespace():
                 event = await anext(events)
             assert event.uri == uri
     assert any(method == "subscriptions/listen" for _, method, _ in accesses)
+
+
+async def test_pagination_is_inventory_and_owner_bound_without_disclosing_affinity():
+    upstream, _, server, _, _ = fixture()
+
+    @upstream.resource("demo://second")
+    def second():
+        return "two"
+
+    async with Client(server, mode="2026-07-28", cache=None) as client:
+        first = await client.list_resources()
+        cursor = first.next_cursor
+        assert cursor and ("a" * 32).encode() not in base64.urlsafe_b64decode(cursor)
+        next_page = await client.list_resources(cursor=cursor)
+        assert len(next_page.resources) == 1 and next_page.next_cursor is None
+        token = client_identity.set("b" * 32)
+        try:
+            with pytest.raises(MCPError):
+                await client.list_resources(cursor=cursor)
+        finally:
+            client_identity.reset(token)
+
+        @upstream.resource("demo://third")
+        def third():
+            return "three"
+
+        with pytest.raises(MCPError):
+            await client.list_resources(cursor=cursor)

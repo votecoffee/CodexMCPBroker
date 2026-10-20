@@ -11,9 +11,9 @@ Record app release identity separately from SDK and protocol versions. Inspect a
 | Transport | Current registration boundary |
 | --- | --- |
 | `stdio` | An executable plus an argument array; explicit working directory and permitted environment variable names where needed. Keep stdout for MCP and diagnostics on stderr. No shell command string. |
-| `streamable-http` | An MCP endpoint at literal loopback HTTP with an explicit port and path; optional bearer token environment-variable reference. The app owns its HTTP service lifecycle. |
+| `streamable-http` | Literal loopback HTTP with an explicit port/path, or explicitly opted-in authenticated remote HTTPS; credentials use local environment references. The app owns its HTTP service lifecycle. |
 
-An existing REST API is not automatically an MCP endpoint. Remote URLs, DNS hostnames, embedded credentials and inline secrets are outside the current registration contract. Broker credentials are not forwarded to apps; app authentication is independent. See the [transport contract](../../APP_CONTRACT.md#http-registration).
+An existing REST API is not automatically an MCP endpoint. Remote HTTPS requires `allow_remote: true` and explicit scoped authentication; see [deployment profiles](../deployment.md). Plain remote HTTP, embedded URL credentials and inline secrets are rejected. Broker credentials are not forwarded to apps; app authentication is independent. See the [transport contract](../../APP_CONTRACT.md#http-registration).
 
 ## Generate an installation-specific descriptor
 

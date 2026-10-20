@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import secrets
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from copy import deepcopy
@@ -93,8 +94,7 @@ def input_validator(params):
             parts.scheme != "https"
             and not (parts.scheme == "http" and parts.hostname in {"127.0.0.1", "::1"})
         )
-        or not params.elicitation_id
-        or len(params.elicitation_id) > 128
+        or (params.elicitation_id is not None and not 1 <= len(params.elicitation_id) <= 128)
     ):
         raise ValueError("URL elicitation requires HTTPS or literal loopback and a bounded ID")
     return None
@@ -185,7 +185,7 @@ class ElicitationTarget:
             operation = self.session.elicit_url(
                 self.label + params.message,
                 params.url,
-                params.elicitation_id,
+                params.elicitation_id or secrets.token_urlsafe(24),
                 related_request_id=self.request_id,
             )
         else:

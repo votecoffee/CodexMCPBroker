@@ -170,12 +170,19 @@ async def http_session(
     cache_ttl=0,
     watch_catalog=False,
     max_sse_event_bytes=None,
+    auth=None,
 ):
+    if token is not None and auth is not None:
+        raise ValueError("select one authentication profile per connection")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     if client_id is not None:
         headers[CLIENT_HEADER] = client_id
     async with httpx2.AsyncClient(
-        headers=headers, timeout=httpx2.Timeout(timeout), follow_redirects=False, trust_env=False
+        headers=headers,
+        timeout=httpx2.Timeout(timeout),
+        follow_redirects=False,
+        trust_env=False,
+        auth=auth,
     ) as client:
         async with streamable_http_client(
             url, http_client=client, max_sse_event_size=max_sse_event_bytes
@@ -217,6 +224,37 @@ async def service_session(manifest: ServiceManifest):
     transport = manifest.transport
     if isinstance(transport, HttpTransport):
         token = None
+        auth = None
+        if transport.oauth is not None:
+            from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
+            from .authorization import DPoPKey, OAuthServiceAuth
+
+            def credential(name):
+                value = os.environ.get(name) if name else None
+                if name and not value:
+                    raise BrokerError("a configured OAuth credential environment variable is unset")
+                return value
+
+            config = transport.oauth
+
+            async def assertion():
+                return credential(config.assertion_env)
+
+            key = credential(config.dpop_key_env)
+            try:
+                key = DPoPKey(load_pem_private_key(key.encode(), password=None)) if key else None
+            except Exception:
+                raise BrokerError("configured DPoP key is invalid") from None
+            auth = OAuthServiceAuth(
+                resource_url=transport.url,
+                token_endpoint=config.token_endpoint,
+                client_id=config.client_id,
+                scopes=config.scopes,
+                client_secret=credential(config.client_secret_env),
+                assertion_provider=assertion if config.assertion_env else None,
+                dpop_key=key,
+            )
         if transport.bearer_token_env:
             token = os.environ.get(transport.bearer_token_env)
             if not token:
@@ -230,6 +268,7 @@ async def service_session(manifest: ServiceManifest):
             cache_ttl=manifest.discovery_cache_ttl_seconds,
             watch_catalog=manifest.watch_catalog,
             max_sse_event_bytes=transport.max_sse_event_bytes,
+            auth=auth,
         ) as session:
             yield session
     else:

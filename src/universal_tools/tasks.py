@@ -17,6 +17,7 @@ from contextlib import asynccontextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from functools import wraps
 from pathlib import Path
 from typing import Literal, Protocol
 
@@ -45,6 +46,25 @@ from .task_notifications import TaskNotificationClient, TaskNotifications
 TASKS = "io.modelcontextprotocol/tasks"
 TERMINAL = {"completed", "failed", "cancelled"}
 MAX_TASK_BYTES = 4 * 1024 * 1024
+
+
+def repository_guard(method):
+    """A shared repository may serialize observation with in-flight mutations."""
+
+    @wraps(method)
+    async def guarded(self, ctx_or_params, *args, **kwargs):
+        if method.__name__ == "intercept_tool_call" and ctx_or_params.name not in self.routes:
+            return await method(self, ctx_or_params, *args, **kwargs)
+        factory = getattr(self.store, "guard", None)
+        if factory is None:
+            return await method(self, ctx_or_params, *args, **kwargs)
+        try:
+            async with factory(self.operation_timeout):
+                return await method(self, ctx_or_params, *args, **kwargs)
+        except BrokerError as exc:
+            raise MCPError(INVALID_PARAMS, str(exc)) from None
+
+    return guarded
 
 
 def _json(value):
@@ -282,15 +302,27 @@ class TaskExtension(Extension):
 
     async def _call(self, operation, *args):
         async with asyncio.timeout(self.operation_timeout):
+            if fence := getattr(self.store, "check_guard", None):
+                await fence()
             return await operation(*args)
 
-    def _load(self, task_id, owner):
-        record = self.store.load(task_id, owner)
+    async def _storage(self, name, *args):
+        import inspect
+
+        value = getattr(self.store, name)(*args)
+        if inspect.isawaitable(value):
+            async with asyncio.timeout(self.operation_timeout):
+                return await value
+        return value
+
+    async def _load(self, task_id, owner):
+        record = await self._storage("load", task_id, owner)
         route = self.routes.get(record["route"])
         if route is None or route.revision != record["revision"]:
             raise BrokerError("task adapter revision unavailable; app reconciliation required")
         return record, route
 
+    @repository_guard
     async def intercept_tool_call(self, params, ctx, call_next):
         route = self.routes.get(params.name)
         if route is None:
@@ -308,12 +340,12 @@ class TaskExtension(Extension):
             key = self.request_key(ctx, params)
             if not isinstance(key, str) or not 8 <= len(key) <= 128:
                 raise BrokerError("task operation key must contain 8 to 128 characters")
-            task_id, fresh = self.store.create(
-                owner, key, params.name, route.revision, arguments, self.ttl_ms
+            task_id, fresh = await self._storage(
+                "create", owner, key, params.name, route.revision, arguments, self.ttl_ms
             )
             if fresh:
                 async with self._lock(task_id):
-                    record, _ = self._load(task_id, owner)
+                    record, _ = await self._load(task_id, owner)
                     # Persisted before dispatch. A lost response or cancellation
                     # leaves an intent for inspect(), never an automatic retry.
                     handle = await self._call(
@@ -323,8 +355,8 @@ class TaskExtension(Extension):
                         raise BrokerError("app returned an invalid task handle")
                     record["data"]["handle"] = handle
                     record["data"]["pending"] = None
-                    self.store.save(record)
-            record, _ = self._load(task_id, owner)
+                    await self._storage("save", record)
+            record, _ = await self._load(task_id, owner)
             return {"resultType": "task", **deepcopy(record["data"]["wire"])}
         except BrokerError as exc:
             raise MCPError(INVALID_PARAMS, str(exc)) from None
@@ -332,14 +364,15 @@ class TaskExtension(Extension):
             # Preserve a discoverable handle after ambiguous dispatch. App poll
             # reconciles by task_id even if start never returned its job handle.
             if "task_id" in locals():
-                record, _ = self._load(task_id, owner)
+                record, _ = await self._load(task_id, owner)
                 return {"resultType": "task", **deepcopy(record["data"]["wire"])}
             raise MCPError(INVALID_PARAMS, "task creation failed before dispatch") from None
 
-    def _observe(self, record, observation):
+    async def _observe(self, record, observation):
         if not isinstance(observation, TaskObservation):
             raise BrokerError("invalid app task observation")
         data = record["data"]
+        before_data = canonical_digest(data)
         if data["wire"]["status"] in TERMINAL:
             return
         wire = data["wire"]
@@ -409,7 +442,8 @@ class TaskExtension(Extension):
                 if key not in data["answered"]:
                     data["answered"].append(key)
             data["pending"] = None
-        self.store.save(record)
+        if canonical_digest(data) != before_data:
+            await self._storage("save", record)
 
     async def _poll(self, record, route, principal):
         if record["data"]["wire"]["status"] not in TERMINAL:
@@ -419,13 +453,14 @@ class TaskExtension(Extension):
                 record["data"]["handle"],
                 deepcopy(record["data"]["pending"]),
             )
-            self._observe(record, observation)
+            await self._observe(record, observation)
 
+    @repository_guard
     async def get_task(self, ctx, params):
         principal, owner = self._principal(ctx)
         try:
             async with self._lock(params.task_id):
-                record, route = self._load(params.task_id, owner)
+                record, route = await self._load(params.task_id, owner)
                 await self._call(
                     route.adapter.authorize,
                     TaskContext(params.task_id, principal),
@@ -474,11 +509,12 @@ class TaskExtension(Extension):
     async def cancel_task(self, ctx, params):
         return await self._action(ctx, params, "cancel")
 
+    @repository_guard
     async def _action(self, ctx, params, kind):
         principal, owner = self._principal(ctx)
         try:
             async with self._lock(params.task_id):
-                record, route = self._load(params.task_id, owner)
+                record, route = await self._load(params.task_id, owner)
                 await self._call(
                     route.adapter.authorize,
                     TaskContext(params.task_id, principal),
@@ -518,7 +554,7 @@ class TaskExtension(Extension):
                     if not responses:
                         return {"resultType": "complete"}
                 data["pending"] = {"kind": kind, **({"responses": responses} if responses else {})}
-                self.store.save(record)
+                await self._storage("save", record)
                 context = TaskContext(params.task_id, principal)
                 if kind == "cancel":
                     await self._call(route.adapter.cancel, context, data["handle"])
@@ -531,7 +567,7 @@ class TaskExtension(Extension):
                         data["wire"].pop("inputRequests", None)
                         data["wire"]["status"] = "working"
                 data["pending"] = None
-                self.store.save(record)
+                await self._storage("save", record)
                 return {"resultType": "complete"}
         except MCPError:
             raise

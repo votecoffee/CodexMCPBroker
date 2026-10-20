@@ -101,6 +101,8 @@ class ExtensionServer(MCPServer):
         @asynccontextmanager
         async def combined_lifespan(server):
             async with AsyncExitStack() as stack:
+                if factory := getattr(server._subscriptions, "lifespan", None):
+                    await stack.enter_async_context(factory(server))
                 for extension in selected:
                     if factory := getattr(extension, "lifespan", None):
                         await stack.enter_async_context(factory(server))

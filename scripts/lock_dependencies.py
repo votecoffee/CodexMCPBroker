@@ -9,7 +9,7 @@ root = Path(__file__).resolve().parents[1]
 
 
 def closure(initial):
-    queue = [(name, frozenset()) for name in initial]
+    queue = [(Requirement(name).name, frozenset(Requirement(name).extras)) for name in initial]
     visited = set()
     versions = {}
     while queue:
@@ -33,7 +33,17 @@ def closure(initial):
 for filename, packages in [
     (
         "requirements-lock.txt",
-        ["mcp", "jsonschema", "anyio", "PyYAML", "httpx", "opentelemetry-api"],
+        [
+            "mcp",
+            "jsonschema",
+            "anyio",
+            "PyYAML",
+            "httpx",
+            "httpx2",
+            "PyJWT",
+            "cryptography",
+            "opentelemetry-api",
+        ],
     ),
     (
         "requirements-dev-lock.txt",
@@ -44,6 +54,10 @@ for filename, packages in [
             "PyYAML",
             "httpx",
             "opentelemetry-api",
+            "httpx2",
+            "PyJWT",
+            "cryptography",
+            "fakeredis[lua]",
             "pytest",
             "pytest-asyncio",
             "ruff",

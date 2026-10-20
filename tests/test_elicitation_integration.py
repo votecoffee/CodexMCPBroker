@@ -111,7 +111,7 @@ async def test_confirmation_reaches_only_the_calling_frontend_and_preserves_the_
             "commits": int(committed),
             "value": "reviewed" if committed else "",
             "form": True,
-            "url": False,
+            "url": True,
         }
 
 
@@ -134,7 +134,7 @@ async def test_unavailable_confirmation_paths_make_zero_fixture_commits(stack, m
             owner, operation, args, context, request_id=f"confirm-rejected-{mode}"
         )
         assert result.is_error
-        assert len(prompts) == (1 if mode == "invalid" else 0)
+        assert len(prompts) == (0 if mode == "unsupported" else 1), result.model_dump_json()
         assert data(await remote_call(owner, "confirmation_state", {}, context))["commits"] == 0
         status = data(
             await owner.invoke("get_request_status", {"request_id": f"confirm-rejected-{mode}"})
