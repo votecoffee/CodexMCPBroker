@@ -31,7 +31,10 @@ def closure(initial):
 
 
 for filename, packages in [
-    ("requirements-lock.txt", ["mcp", "jsonschema", "anyio", "PyYAML", "httpx"]),
+    (
+        "requirements-lock.txt",
+        ["mcp", "jsonschema", "anyio", "PyYAML", "httpx", "opentelemetry-api"],
+    ),
     (
         "requirements-dev-lock.txt",
         [
@@ -40,6 +43,7 @@ for filename, packages in [
             "anyio",
             "PyYAML",
             "httpx",
+            "opentelemetry-api",
             "pytest",
             "pytest-asyncio",
             "ruff",

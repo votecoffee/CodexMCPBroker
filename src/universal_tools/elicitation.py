@@ -20,6 +20,7 @@ from mcp.types import (
     TextContent,
 )
 
+from .diagnostics import measured
 from .progress import ProgressRelay
 
 FORM_TIMEOUT = 60
@@ -106,7 +107,8 @@ class ElicitationTarget:
 
     def supports_form(self) -> bool:
         client = self.session.client_params
-        capability = client.capabilities.elicitation if client else None
+        capabilities = client.capabilities if client else None
+        capability = capabilities.elicitation if capabilities else None
         return capability is not None and (
             capability.form is not None or capability.url is None  # Legacy {} means form.
         )
@@ -212,6 +214,11 @@ class ElicitationRouter:
 
 
 async def routed_call(session, name, arguments, target: ElicitationTarget | None):
+    with measured("backend_call"):
+        return await _routed_call(session, name, arguments, target)
+
+
+async def _routed_call(session, name, arguments, target):
     router = getattr(session, "elicitation_router", None)
     options = {}
     if target is not None and target.progress is not None:

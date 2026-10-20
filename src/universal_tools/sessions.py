@@ -8,15 +8,18 @@ insufficient. All transport entry, work and teardown happen in this actor task.
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 import anyio
 from mcp import ClientSession
+from opentelemetry import context as trace_context
 
+from .diagnostics import queue_wait
 from .models import BrokerError
 
 
@@ -32,6 +35,8 @@ class SessionConfig(Protocol):
 class Work:
     operation: Callable[[ClientSession], Awaitable[Any]]
     result: asyncio.Future
+    queued_at: float = field(default_factory=time.monotonic)
+    trace: object = field(default_factory=trace_context.get_current)
 
 
 class SessionWorker:
@@ -48,6 +53,7 @@ class SessionWorker:
         self.failed = False
         self.closing = False
         self.initialization: dict | None = None
+        self.catalog_changed = None
         self.task = asyncio.create_task(self._run(), name=f"mcp-session:{manifest.id}")
         self.ready.add_done_callback(self._consume_exception)
 
@@ -66,8 +72,11 @@ class SessionWorker:
                 async with asyncio.timeout(self.initialization_timeout):
                     session = await stack.enter_async_context(self.connect(self.manifest))
                     self.initialization = deepcopy(session.initialization)
+                    self.catalog_changed = getattr(session, "catalog_changed", None)
                 self.ready.set_result(None)
                 while (work := await self.queue.get()) is not None:
+                    queue_wait(time.monotonic() - work.queued_at)
+                    trace_token = trace_context.attach(work.trace)
                     try:
                         async with asyncio.timeout(self.manifest.timeout_seconds):
                             value = await work.operation(session)
@@ -81,6 +90,8 @@ class SessionWorker:
                         break
                     else:
                         work.result.set_result(value)
+                    finally:
+                        trace_context.detach(trace_token)
         except BaseException:
             self.failed = True
         finally:

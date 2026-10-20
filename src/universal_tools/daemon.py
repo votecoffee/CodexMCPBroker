@@ -100,13 +100,13 @@ class ProtectedApp:
         return await response(scope, receive, send)
 
 
-def serve(state: Path) -> None:
+def serve(state: Path, *, skills=None) -> None:
     with InstanceLock(state / "broker.lock"):
         # Read only after taking the same lock used by stopped-broker settings
         # updates, so a concurrent start cannot retain an obsolete limit.
         settings = load_settings(state)
         broker = Broker(state, max_request_body_bytes=settings.max_request_body_bytes)
-        mcp = create_surface(LocalBackend(broker), port=settings.port)
+        mcp = create_surface(LocalBackend(broker), port=settings.port, skills=skills)
         base_app = mcp.streamable_http_app(**mcp.http_options)
 
         @asynccontextmanager

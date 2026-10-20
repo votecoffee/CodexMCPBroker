@@ -6,9 +6,11 @@ Shared app MCP framework with an optional universal discovery broker
 
 Build app-owned MCP hosts from one versioned package. A stable MCP front door discovers versioned backends, preserving common policy, session and recovery behavior while reducing Codex reloads. Apps keep their standalone plugins. The optional universal broker can aggregate independently installed app services; that route remains a separate integration profile.
 
-The optional plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. Apps use the `universal_tools.framework` API. The current version is **0.14.0**, using **MCP Python SDK 2.3.0**.
+The optional plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. Apps use the `universal_tools.framework` API. The current version is **0.15.0**, using **MCP Python SDK 2.3.0**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** The shared framework and optional broker are **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Those projects continue to use their existing direct MCP integrations. Framework adoption, full app workflow parity and migration readiness have not been established; current app installations remain unchanged.
+
+The [SDK 2 feature guide](docs/sdk2-features.md) describes opt-in modern connections, ownership-bound approval continuations, catalog notifications, scoped discovery caches, SSE response budgets, tracing and skill resource snapshots. These features do not migrate existing integrations.
 
 The [beta completion plan](ROADMAP.md) separates the implemented broker foundation from remaining adapter/host acceptance and later native migration pilots. Parallel private contexts and full app/host payload parity are not currently promised.
 

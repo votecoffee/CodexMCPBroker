@@ -18,11 +18,17 @@ BROKER_SUPPORT = {
     "elicitation_url": False,
     "progress": True,
     "notifications": False,
+    "catalog_notifications": True,
+    "input_required_forms": True,
 }
 
 
 def initialization_metadata(result: InitializeResult) -> dict:
-    raw = result.model_dump(mode="json", by_alias=True, exclude_none=True)
+    raw = (
+        result
+        if isinstance(result, dict)
+        else result.model_dump(mode="json", by_alias=True, exclude_none=True)
+    )
     metadata = {
         name: raw[name]
         for name in ("protocolVersion", "serverInfo", "capabilities", "instructions")

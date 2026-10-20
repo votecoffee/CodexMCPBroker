@@ -171,6 +171,7 @@ class Broker:
         self._reaper: asyncio.Task | None = None
         self._closed = False
         self._clock = time.monotonic
+        self.catalog_listeners = set()
 
     async def start(self):
         if self._reaper is None:
@@ -184,6 +185,17 @@ class Broker:
             for service_id in list(self._leases):
                 async with self.lock(service_id):
                     await self._expire(service_id)
+            changed = [
+                lease.worker.catalog_changed
+                for lease in self._leases.values()
+                if lease.manifest.watch_catalog
+                and lease.worker.catalog_changed is not None
+                and lease.worker.catalog_changed.is_set()
+            ]
+            if changed:
+                for event in changed:
+                    event.clear()
+                await self.refresh()
 
     async def _retire(self, service_id: str) -> bool:
         lease = self._leases.get(service_id)
@@ -441,6 +453,12 @@ class Broker:
                 capabilities[service_id] = state
                 statuses[service_id]["capability_catalog"] = state.status("catalog")
             self.generation += 1
+            for listener in tuple(self.catalog_listeners):
+                try:
+                    async with asyncio.timeout(0.5):
+                        await listener()
+                except Exception:
+                    pass  # Notification loss must not roll back an already committed refresh.
             return self.list_services()
 
     def list_services(self) -> dict:
@@ -943,7 +961,9 @@ class Broker:
 
             async def invoke(session):
                 nonlocal claimed
-                live = {tool.name: tool for tool in await list_all_tools(session)}
+                # Cached discovery must never authorize a changed effect, including
+                # a formerly read-only tool that the app has reclassified.
+                live = {tool.name: tool for tool in await list_all_tools(session, fresh=True)}
                 if (
                     entry.tool.name not in live
                     or CatalogTool(entry.manifest, live[entry.tool.name]).revision != entry.revision

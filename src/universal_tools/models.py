@@ -79,6 +79,7 @@ class HttpTransport(StrictModel):
     type: Literal["streamable-http"]
     url: str
     bearer_token_env: str | None = None
+    max_sse_event_bytes: int | None = Field(default=None, ge=1024, le=MAX_REQUEST_BODY_BYTES)
 
     @field_validator("url")
     @classmethod
@@ -145,6 +146,17 @@ class ServiceManifest(StrictModel):
     lease_seconds: float = Field(default=900.0, ge=5.0, le=86400.0)
     resource_id: str | None = Field(default=None, pattern=ID_PATTERN)
     capability_catalog: CapabilityProvider | None = None
+    protocol_mode: Literal["legacy", "auto", "2026-07-28"] = "legacy"
+    discovery_cache_ttl_seconds: float = Field(default=0.0, ge=0, le=60)
+    watch_catalog: bool = False
+
+    @model_validator(mode="after")
+    def retained_watcher(self):
+        if self.watch_catalog and (
+            self.session_mode == "transient" or self.protocol_mode == "legacy"
+        ):
+            raise ValueError("catalog watching requires a retained modern/auto connection")
+        return self
 
     @field_validator("allowed_write_tools")
     @classmethod
@@ -161,7 +173,9 @@ class ServiceManifest(StrictModel):
     @property
     def resource_keys(self) -> set[str]:
         # Credential variable names do not distinguish two routes to one HTTP app.
-        route = self.transport.model_dump(mode="json", exclude={"bearer_token_env"})
+        route = self.transport.model_dump(
+            mode="json", exclude={"bearer_token_env", "max_sse_event_bytes"}
+        )
         keys = {"transport:" + canonical_digest(route)}
         if self.resource_id:
             keys.add("resource:" + self.resource_id)

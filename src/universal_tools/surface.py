@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import re
 import secrets
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -13,8 +15,10 @@ from mcp.types import CallToolResult, TextContent, ToolAnnotations
 
 from . import __version__
 from .broker import Broker
+from .continuations import Continuations, active_route
+from .diagnostics import snapshot
 from .elicitation import ElicitationTarget, routed_call
-from .identity import client_identity, frontend_connection
+from .identity import CLIENT_PATTERN, client_identity, frontend_connection
 from .models import BrokerError, Settings
 from .sessions import SessionPool
 from .transport import http_session
@@ -79,7 +83,11 @@ class LocalBackend:
         try:
             match name:
                 case "broker_status":
-                    result = {"version": __version__, **self.broker.list_services()}
+                    result = {
+                        "version": __version__,
+                        **self.broker.list_services(),
+                        "runtime": snapshot(),
+                    }
                 case "list_services":
                     result = self.broker.list_services()
                 case "refresh_services":
@@ -166,10 +174,28 @@ class RemoteBackend:
 class SurfaceServer(MCPServer):
     """Keep app transport limits when SDK 2 builds or runs the stable surface."""
 
-    def __init__(self, *args, port, http_options, **kwargs):
+    def __init__(self, *args, port, http_options, frontend_identity=None, **kwargs):
+        if frontend_identity is not None and not re.fullmatch(CLIENT_PATTERN, frontend_identity):
+            raise ValueError(
+                "deployment frontend identity must be a stable opaque 32-128 character ID"
+            )
+        self.continuations = Continuations()
+        self.frontend_identity = frontend_identity
         super().__init__(*args, **kwargs)
         self.port = port
         self.http_options = dict(http_options)
+
+    async def _handle_call_tool(self, ctx, params):
+        token = client_identity.set(client_identity.get() or self.frontend_identity)
+        try:
+            if ctx.protocol_version == "2026-07-28" and params.name in {
+                "call_read_tool",
+                "call_write_tool",
+            }:
+                return await self.continuations.run(ctx, params, super()._handle_call_tool)
+            return await super()._handle_call_tool(ctx, params)
+        finally:
+            client_identity.reset(token)
 
     def streamable_http_app(self, **kwargs):
         return super().streamable_http_app(**{**self.http_options, **kwargs})
@@ -186,20 +212,51 @@ def create_surface(
     port: int = 8768,
     name: str = "Universal Tools",
     instructions: str = "",
+    frontend_identity: str | None = None,
+    skills=None,
 ) -> MCPServer:
+    if frontend_identity is None and isinstance(backend, RemoteBackend):
+        frontend_identity = backend.client_id
+
     @asynccontextmanager
     async def frontend_lifespan(_):
+        watcher = None
+        if isinstance(backend, LocalBackend):
+            backend.broker.catalog_listeners.add(catalog_changed)
+        if isinstance(backend, RemoteBackend):
+
+            async def watch_remote():
+                previous = None
+                while True:
+                    result = await backend.invoke("broker_status", {})
+                    generation = (result.structured_content or {}).get("generation")
+                    if generation is not None and generation != previous:
+                        if previous is not None:
+                            await catalog_changed()
+                        previous = generation
+                    await asyncio.sleep(2)
+
+            watcher = asyncio.create_task(watch_remote())
         try:
             yield
         finally:
-            await backend.aclose()
+            if isinstance(backend, LocalBackend):
+                backend.broker.catalog_listeners.discard(catalog_changed)
+            if watcher:
+                watcher.cancel()
+                await asyncio.gather(watcher, return_exceptions=True)
+            await server.continuations.aclose()
+            if isinstance(backend, RemoteBackend):
+                await backend.aclose()
 
     server = SurfaceServer(
         name,
         version=__version__,
         instructions=(instructions + "\n\n" if instructions else "") + INSTRUCTIONS,
         log_level="WARNING",
-        lifespan=frontend_lifespan if isinstance(backend, RemoteBackend) else None,
+        lifespan=frontend_lifespan,
+        frontend_identity=frontend_identity,
+        extensions=[skills] if skills is not None else None,
         port=port,
         http_options=dict(
             host="127.0.0.1",
@@ -214,6 +271,20 @@ def create_surface(
             ),
         ),
     )
+
+    async def catalog_changed():
+        context = Context(mcp_server=server, subscriptions=server._subscriptions)
+        await context.notify_resource_updated("broker://catalog")
+
+    @server.resource("broker://catalog", mime_type="application/json")
+    async def catalog_generation():
+        """Public catalog generation only; refetch discovery after an update."""
+        if isinstance(backend, LocalBackend):
+            generation = backend.broker.generation
+        else:
+            result = await backend.invoke("broker_status", {})
+            generation = (result.structured_content or {}).get("generation")
+        return json.dumps({"generation": generation})
 
     async def invoke(ctx, name, arguments, **options):
         # SDK 2 creates a ServerSession proxy per request. Affinity must bind to
@@ -317,7 +388,7 @@ def create_surface(
         context_id: str | None = None,
     ) -> CallToolResult:
         """Call a classified read-only app operation using its described revision and schema."""
-        route = ElicitationTarget(
+        route = active_route.get() or ElicitationTarget(
             ctx.session,
             ctx.request_id,
             progress_token=ctx.request_context.meta.get("progress_token")
@@ -352,7 +423,7 @@ def create_surface(
 
         Use a new request_id for each intended write. Never blindly retry after a lost response.
         """
-        route = ElicitationTarget(
+        route = active_route.get() or ElicitationTarget(
             ctx.session,
             ctx.request_id,
             progress_token=ctx.request_context.meta.get("progress_token")

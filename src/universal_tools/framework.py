@@ -440,18 +440,20 @@ class ApplicationHost:
                     }
                     raise
 
-    def create_server(self, *, port=8768):
+    def create_server(self, *, port=8768, frontend_identity=None, skills=None):
         server = create_surface(
             self.backend,
             port=port,
             name=self.definition.display_name,
             instructions=self.definition.instructions,
+            frontend_identity=frontend_identity,
+            skills=skills,
         )
         self.backend.native_connections = True
         return server
 
 
-def serve_application(state, publication):
+def serve_application(state, publication, *, skills=None):
     """Authenticated loopback reference host. Apps may embed the same ApplicationHost API."""
     import uvicorn
     from starlette.applications import Starlette
@@ -460,7 +462,7 @@ def serve_application(state, publication):
     host = ApplicationHost(
         state, publication, max_request_body_bytes=settings.max_request_body_bytes
     )
-    server = host.create_server(port=settings.port)
+    server = host.create_server(port=settings.port, skills=skills)
     base = server.streamable_http_app(**server.http_options)
 
     @asynccontextmanager

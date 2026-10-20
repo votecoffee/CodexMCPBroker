@@ -2,22 +2,34 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
+import time
 from contextlib import asynccontextmanager
+from copy import deepcopy
 
 import httpx2
 from mcp import ClientSession, StdioServerParameters
+from mcp.client._probe import negotiate_auto
 from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamable_http_client
+from mcp.client.subscriptions import ToolsListChanged, listen
+from mcp.shared.exceptions import MCPError
 from mcp.shared.jsonrpc_dispatcher import JSONRPCDispatcher
 from mcp.types import (
+    INVALID_REQUEST,
+    DiscoverResult,
     ElicitationCapability,
+    ElicitRequest,
+    ErrorData,
     FormElicitationCapability,
     InitializeResult,
+    InputRequiredResult,
     PaginatedRequestParams,
     Tool,
 )
 
+from .diagnostics import measured
 from .elicitation import ElicitationRouter
 from .identity import CLIENT_HEADER
 from .metadata import initialization_metadata
@@ -59,6 +71,88 @@ class InitializedSession(ClientSession):
         self.initialization = initialization_metadata(result)
         return result
 
+    async def connect(self, mode="legacy", *, cache_ttl=0):
+        self.catalog_changed = asyncio.Event()
+        self.catalog_epoch = 0
+        self.watch_ready = asyncio.Event()
+        self.cache_ttl = cache_ttl
+        self.tool_cache = None
+        if mode == "legacy":
+            await self.initialize()
+        elif mode == "auto":
+            await negotiate_auto(self)
+        else:
+            self.adopt(DiscoverResult.model_validate(await self.send_discover(mode)))
+        if self.protocol_version == "2026-07-28":
+            value = {
+                "protocolVersion": self.protocol_version,
+                "capabilities": self.server_capabilities.model_dump(
+                    mode="json", by_alias=True, exclude_none=True
+                ),
+            }
+            if self.server_info is not None:
+                value["serverInfo"] = self.server_info.model_dump(
+                    mode="json", by_alias=True, exclude_none=True
+                )
+            if self.instructions is not None:
+                value["instructions"] = self.instructions
+            self.initialization = initialization_metadata(value)
+
+    async def call_tool(self, name, arguments=None, **options):
+        if self.protocol_version != "2026-07-28":
+            return await super().call_tool(name, arguments, **options)
+        responses = state = None
+        for _ in range(9):
+            result = await super().call_tool(
+                name,
+                arguments,
+                **options,
+                input_responses=responses,
+                request_state=state,
+                allow_input_required=True,
+            )
+            if not isinstance(result, InputRequiredResult):
+                return result
+            if (
+                len(result.model_dump_json().encode("utf-8")) > 64 * 1024
+                or not 1 <= len(result.input_requests) <= 8
+                or self.elicitation_router is None
+            ):
+                raise MCPError(INVALID_REQUEST, "unsupported or oversized input continuation")
+            responses = {}
+            for key, request in result.input_requests.items():
+                if not isinstance(request, ElicitRequest):
+                    raise MCPError(INVALID_REQUEST, "only form input continuations are supported")
+                answer = await self.elicitation_router.callback(None, request.params)
+                if isinstance(answer, ErrorData):
+                    raise MCPError(answer.code, answer.message)
+                responses[key] = answer
+            state = result.request_state
+        raise MCPError(INVALID_REQUEST, "input continuation round limit exceeded")
+
+    async def watch(self):
+        delay = 1
+        while True:
+            try:
+                async with listen(self, tools_list_changed=True) as subscription:
+                    self.watch_ready.set()
+                    async for event in subscription:
+                        if isinstance(event, ToolsListChanged):
+                            self.tool_cache = None
+                            self.catalog_epoch += 1
+                            self.catalog_changed.set()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                pass
+            # Re-listen after a lost/gracefully closed stream. Refetch, never replay calls.
+            self.tool_cache = None
+            self.catalog_epoch += 1
+            self.catalog_changed.set()
+            self.watch_ready.set()
+            await asyncio.sleep(delay)
+            delay = min(30, delay * 2)
+
 
 @asynccontextmanager
 async def http_session(
@@ -69,6 +163,10 @@ async def http_session(
     client_id: str | None = None,
     relay: bool = False,
     elicitation_callback=None,
+    protocol_mode="legacy",
+    cache_ttl=0,
+    watch_catalog=False,
+    max_sse_event_bytes=None,
 ):
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     if client_id is not None:
@@ -76,7 +174,9 @@ async def http_session(
     async with httpx2.AsyncClient(
         headers=headers, timeout=httpx2.Timeout(timeout), follow_redirects=False, trust_env=False
     ) as client:
-        async with streamable_http_client(url, http_client=client, max_sse_event_size=None) as (
+        async with streamable_http_client(
+            url, http_client=client, max_sse_event_size=max_sse_event_bytes
+        ) as (
             read,
             write,
         ):
@@ -87,8 +187,26 @@ async def http_session(
                 relay=relay,
                 elicitation_callback=elicitation_callback,
             ) as session:
-                await session.initialize()
-                yield session
+                await session.connect(protocol_mode, cache_ttl=cache_ttl)
+                async with watching(session, watch_catalog):
+                    yield session
+
+
+@asynccontextmanager
+async def watching(session, enabled):
+    task = (
+        asyncio.create_task(session.watch())
+        if enabled and session.protocol_version == "2026-07-28"
+        else None
+    )
+    try:
+        if task is not None:
+            await session.watch_ready.wait()
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
 
 
 @asynccontextmanager
@@ -101,7 +219,14 @@ async def service_session(manifest: ServiceManifest):
             if not token:
                 raise BrokerError("the app's configured credential environment variable is unset")
         async with http_session(
-            transport.url, token, manifest.timeout_seconds, relay=True
+            transport.url,
+            token,
+            manifest.timeout_seconds,
+            relay=True,
+            protocol_mode=manifest.protocol_mode,
+            cache_ttl=manifest.discovery_cache_ttl_seconds,
+            watch_catalog=manifest.watch_catalog,
+            max_sse_event_bytes=transport.max_sse_event_bytes,
         ) as session:
             yield session
     else:
@@ -123,22 +248,38 @@ async def service_session(manifest: ServiceManifest):
                     manifest.timeout_seconds,
                     relay=True,
                 ) as session:
-                    await session.initialize()
-                    yield session
+                    await session.connect(
+                        manifest.protocol_mode, cache_ttl=manifest.discovery_cache_ttl_seconds
+                    )
+                    async with watching(session, manifest.watch_catalog):
+                        yield session
 
 
-async def list_all_tools(session: ClientSession) -> list[Tool]:
+async def list_all_tools(session: ClientSession, *, fresh=False) -> list[Tool]:
+    with measured("discovery"):
+        return await _list_all_tools(session, fresh=fresh)
+
+
+async def _list_all_tools(session, *, fresh=False):
+    epoch = getattr(session, "catalog_epoch", 0)
+    cached = getattr(session, "tool_cache", None)
+    if not fresh and cached is not None and cached[0] > time.monotonic():
+        return deepcopy(cached[1])
+    ttl = getattr(session, "cache_ttl", 0)
     tools = []
     cursor = None
     seen = set()
     for _ in range(100):
         result = await session.list_tools(params=PaginatedRequestParams(cursor=cursor))
+        ttl = min(ttl, (getattr(result, "ttl_ms", None) or 0) / 1000)
         tools.extend(result.tools)
         if len(tools) > 2000:
             raise BrokerError("app tool count exceeds the v0.1 limit")
         if not result.next_cursor:
             if len({tool.name for tool in tools}) != len(tools):
                 raise BrokerError("app advertised duplicate tool names")
+            if ttl > 0 and getattr(session, "catalog_epoch", 0) == epoch:
+                session.tool_cache = (time.monotonic() + ttl, deepcopy(tools))
             return tools
         if result.next_cursor in seen:
             raise BrokerError("app returned a repeated pagination cursor")

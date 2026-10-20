@@ -258,7 +258,7 @@ def demo_stack(state: Path):
                 }
                 if manifest_path.exists():
                     current = load_manifest(manifest_path)
-                    if current.transport.model_dump() != {
+                    if current.transport.model_dump(exclude={"max_sse_event_bytes"}) != {
                         **expected["transport"],
                         "bearer_token_env": None,
                     }:
@@ -310,6 +310,7 @@ def main(argv: list[str] | None = None):
     skill_parser(commands)
     application = commands.add_parser("app-serve", help="run the shared framework for one app")
     application.add_argument("--publication", type=Path, required=True)
+    application.add_argument("--skill-package", type=Path, action="append", default=[])
     initialize_parser = commands.add_parser("init", help="create private local broker settings")
     initialize_parser.add_argument("--port", type=int, default=8768)
     request_limit = commands.add_parser(
@@ -328,7 +329,9 @@ def main(argv: list[str] | None = None):
         "demo-stack",
         "contexts",
     ]:
-        commands.add_parser(name)
+        command = commands.add_parser(name)
+        if name in {"serve", "proxy"}:
+            command.add_argument("--skill-package", type=Path, action="append", default=[])
     registration = commands.add_parser("register", help="trust an app's local service manifest")
     registration.add_argument("manifest", type=Path)
     registration.add_argument("--replace", action="store_true")
@@ -349,11 +352,16 @@ def main(argv: list[str] | None = None):
     args = parser.parse_args(argv)
     state = args.state.resolve()
     try:
+        skills = None
+        if getattr(args, "skill_package", None):
+            from .skill_catalog import SkillCatalog
+
+            skills = SkillCatalog(args.skill_package)
         match args.command:
             case "app-serve":
                 from .framework import serve_application
 
-                serve_application(state, args.publication)
+                serve_application(state, args.publication, skills=skills)
                 return
             case "skills":
                 result = skill_command(state, args)
@@ -365,11 +373,13 @@ def main(argv: list[str] | None = None):
             case "start" | "start-demo":
                 result = ensure_running(state, demo=args.command == "start-demo")
             case "serve":
-                serve(state)
+                serve(state, skills=skills)
                 return
             case "proxy":
                 ensure_running(state)
-                create_surface(RemoteBackend(load_settings(state))).run(transport="stdio")
+                create_surface(RemoteBackend(load_settings(state)), skills=skills).run(
+                    transport="stdio"
+                )
                 return
             case "demo-stack":
                 demo_stack(state)

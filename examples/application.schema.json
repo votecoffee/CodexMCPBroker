@@ -79,6 +79,20 @@
           ],
           "default": null,
           "title": "Bearer Token Env"
+        },
+        "max_sse_event_bytes": {
+          "anyOf": [
+            {
+              "maximum": 134217728,
+              "minimum": 1024,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Sse Event Bytes"
         }
       },
       "required": [
@@ -220,6 +234,28 @@
             }
           ],
           "default": null
+        },
+        "protocol_mode": {
+          "default": "legacy",
+          "enum": [
+            "legacy",
+            "auto",
+            "2026-07-28"
+          ],
+          "title": "Protocol Mode",
+          "type": "string"
+        },
+        "discovery_cache_ttl_seconds": {
+          "default": 0.0,
+          "maximum": 60,
+          "minimum": 0,
+          "title": "Discovery Cache Ttl Seconds",
+          "type": "number"
+        },
+        "watch_catalog": {
+          "default": false,
+          "title": "Watch Catalog",
+          "type": "boolean"
         }
       },
       "required": [
