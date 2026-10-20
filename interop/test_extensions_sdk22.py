@@ -5,6 +5,7 @@ from pathlib import Path
 
 from mcp import Client, StdioServerParameters
 from test_integration import data
+from test_tasks_extension import host_form_ui
 
 import universal_tools
 from universal_tools.skill_client import SkillClient, SkillRegistry, SkillSource
@@ -27,7 +28,9 @@ async def test_sdk22_tasks_and_skills(tmp_path, sdk2_python, sdk22_root):
         ],
     )
     tasks = TaskClient()
-    async with Client(target, mode="2026-07-28", extensions=[tasks], cache=None) as client:
+    async with Client(
+        target, mode="2026-07-28", extensions=[tasks], elicitation_callback=host_form_ui, cache=None
+    ) as client:
         created = await tasks.create(client.session, "export", {"request_id": "sdk22-task-001"})
         task_id = created["taskId"]
         assert (await tasks.get(client.session, task_id))["status"] == "input_required"

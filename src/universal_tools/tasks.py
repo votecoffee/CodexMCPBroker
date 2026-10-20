@@ -406,6 +406,18 @@ class TaskExtension(Extension):
                     record["data"]["handle"],
                 )
                 await self._poll(record, route, principal)
+                if record["data"]["wire"]["status"] == "input_required":
+                    capability = ctx.session.client_capabilities.elicitation
+                    if capability is None or (
+                        capability.form is None and capability.url is not None
+                    ):
+                        raise MCPError(
+                            -32021,
+                            "task requires a form-capable client",
+                            data={
+                                "requiredCapabilities": {"elicitation": {"form": {}}},
+                            },
+                        )
                 return {"resultType": "complete", **deepcopy(record["data"]["wire"])}
         except MCPError:
             raise
@@ -446,10 +458,17 @@ class TaskExtension(Extension):
                     for key, response in params.input_responses.items():
                         if key not in outstanding:
                             continue
-                        form = ElicitRequestFormParams.model_validate(outstanding[key]["params"])
-                        answer = ElicitResult.model_validate(response)
-                        if answer.action == "accept":
-                            form_validator(form).validate(answer.content or {})
+                        try:
+                            form = ElicitRequestFormParams.model_validate(
+                                outstanding[key]["params"]
+                            )
+                            answer = ElicitResult.model_validate(response)
+                            if answer.action == "accept":
+                                form_validator(form).validate(answer.content or {})
+                        except Exception:
+                            raise BrokerError(
+                                "task response does not match its outstanding form"
+                            ) from None
                         responses[key] = answer.model_dump(
                             mode="json", by_alias=True, exclude_none=True
                         )
@@ -512,6 +531,32 @@ class TaskClient(ClientExtension):
         value = result.model_dump(mode="json", by_alias=True, exclude_none=True)
         DEFAULT_JSON_BUDGET.check(value)
         _json(value)
+        if method == "tasks/get" or value["resultType"] == "task":
+            if (
+                not isinstance(value.get("taskId"), str)
+                or not 1 <= len(value["taskId"]) <= 128
+                or value.get("status") not in {"working", "input_required", *TERMINAL}
+                or not isinstance(value.get("createdAt"), str)
+                or not isinstance(value.get("lastUpdatedAt"), str)
+                or "ttlMs" not in value
+                or (value["ttlMs"] is not None and type(value["ttlMs"]) is not int)
+            ):
+                raise BrokerError("server returned invalid task metadata")
+            if method == "tasks/get":
+                if value["taskId"] != params["taskId"] or value["resultType"] != "complete":
+                    raise BrokerError("server returned a different task or incomplete observation")
+                if value["status"] == "completed":
+                    CallToolResult.model_validate(value.get("result"))
+                elif value["status"] == "failed":
+                    from mcp.types import ErrorData
+
+                    ErrorData.model_validate(value.get("error"))
+                elif value["status"] == "input_required" and not isinstance(
+                    value.get("inputRequests"), dict
+                ):
+                    raise BrokerError("task omitted its outstanding input requests")
+        elif method in {"tasks/update", "tasks/cancel"} and value["resultType"] != "complete":
+            raise BrokerError("task mutation was not acknowledged")
         return value
 
     async def create(self, session, name, arguments):

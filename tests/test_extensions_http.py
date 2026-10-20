@@ -10,6 +10,7 @@ import pytest
 from mcp.shared.exceptions import MCPError
 from test_integration import data, free_port
 from test_modern_http import connection
+from test_tasks_extension import host_form_ui
 
 from universal_tools.cli import initialize, process_options
 from universal_tools.skill_client import SkillRegistry, SkillSource
@@ -51,7 +52,9 @@ async def test_http_process_restart_retains_handle_and_denies_another_chat(tmp_p
     tasks = TaskClient()
     try:
         first = await start()
-        async with connection(settings, "a" * 32, extensions=[tasks]) as client:
+        async with connection(
+            settings, "a" * 32, extensions=[tasks], elicitation_callback=host_form_ui
+        ) as client:
             created = await tasks.create(
                 client.session,
                 "export",
@@ -62,10 +65,14 @@ async def test_http_process_restart_retains_handle_and_denies_another_chat(tmp_p
         first.kill()  # Only this disposable fixture, with synthetic jobs.
         await asyncio.to_thread(first.wait, 10)
         await start()
-        async with connection(settings, "b" * 32, extensions=[tasks]) as other:
+        async with connection(
+            settings, "b" * 32, extensions=[tasks], elicitation_callback=host_form_ui
+        ) as other:
             with pytest.raises(MCPError, match="unknown or expired"):
                 await tasks.get(other.session, task_id)
-        async with connection(settings, "a" * 32, extensions=[tasks]) as client:
+        async with connection(
+            settings, "a" * 32, extensions=[tasks], elicitation_callback=host_form_ui
+        ) as client:
             pending = await tasks.get(client.session, task_id)
             assert pending["status"] == "input_required"
             await tasks.update(

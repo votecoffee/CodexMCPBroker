@@ -329,3 +329,10 @@ def test_openai_combined_archive_budget_and_distinct_normalized_paths(tmp_path):
     )
     with pytest.raises(BrokerError, match="conflict"):
         validate_entry(collision)
+    collision = deepcopy(entry)
+    for path in ("%C3%A9.txt", "%C3%89.txt"):
+        collision["resources"].append(
+            {"uri": "skill://synthetic/" + path, "size": 0, "digest": "sha256:" + "a" * 64}
+        )
+    with pytest.raises(BrokerError, match="conflict"):
+        validate_entry(collision)

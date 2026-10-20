@@ -9,7 +9,12 @@ import pytest
 from jsonschema import Draft202012Validator
 from mcp import Client
 from mcp.shared.exceptions import MCPError
-from mcp.types import CallToolRequestParams, ClientCapabilities
+from mcp.types import (
+    CallToolRequestParams,
+    ClientCapabilities,
+    ElicitationCapability,
+    FormElicitationCapability,
+)
 
 from universal_tools.extensions import ExtensionServer
 from universal_tools.models import BrokerError
@@ -35,6 +40,12 @@ FORM = {
         },
     },
 }
+
+
+async def host_form_ui(*args):
+    raise AssertionError(
+        "Tasks must expose forms through polling, not invoke callbacks automatically"
+    )
 
 
 class Jobs:
@@ -123,7 +134,13 @@ async def test_real_wire_create_input_updates_cancel_and_immutable_terminal(tmp_
     jobs = Jobs()
     ext = extension(tmp_path, jobs)
     tasks = TaskClient()
-    async with Client(server(ext), mode="2026-07-28", extensions=[tasks], cache=None) as client:
+    async with Client(
+        server(ext),
+        mode="2026-07-28",
+        extensions=[tasks],
+        elicitation_callback=host_form_ui,
+        cache=None,
+    ) as client:
         created = await tasks.create(client.session, "export", {"request_id": "export-001"})
         assert created["resultType"] == "task"
         assert_wire(created, "CreateTaskResult")
@@ -167,12 +184,17 @@ async def test_lost_start_and_update_reconcile_after_extension_restart_without_d
     jobs.lost_start = True
     tasks = TaskClient()
     async with Client(
-        server(extension(tmp_path, jobs)), mode="2026-07-28", extensions=[tasks]
+        server(extension(tmp_path, jobs)),
+        mode="2026-07-28",
+        extensions=[tasks],
+        elicitation_callback=host_form_ui,
     ) as client:
         created = await tasks.create(client.session, "export", {"request_id": "lost-job-001"})
     task_id = created["taskId"]
     restored = extension(tmp_path, jobs)
-    async with Client(server(restored), mode="2026-07-28", extensions=[tasks]) as client:
+    async with Client(
+        server(restored), mode="2026-07-28", extensions=[tasks], elicitation_callback=host_form_ui
+    ) as client:
         duplicate = await tasks.create(client.session, "export", {"request_id": "lost-job-001"})
         assert duplicate["taskId"] == task_id
         assert (await tasks.get(client.session, task_id))["status"] == "input_required"
@@ -184,7 +206,10 @@ async def test_lost_start_and_update_reconcile_after_extension_restart_without_d
                 {"review": {"action": "accept", "content": {"approved": True}}},
             )
     async with Client(
-        server(extension(tmp_path, jobs)), mode="2026-07-28", extensions=[tasks]
+        server(extension(tmp_path, jobs)),
+        mode="2026-07-28",
+        extensions=[tasks],
+        elicitation_callback=host_form_ui,
     ) as client:
         assert (await tasks.get(client.session, task_id))["status"] == "completed"
         await tasks.update(
@@ -205,10 +230,17 @@ async def test_per_request_capabilities_owner_identity_and_no_implicit_fallback(
         with pytest.raises(MCPError):
             await client.call_tool("export", {"request_id": "legacy-001"})
     assert jobs.starts == 0
-    async with Client(server(ext), mode="2026-07-28", extensions=[tasks]) as client:
+    async with Client(
+        server(ext), mode="2026-07-28", extensions=[tasks], elicitation_callback=host_form_ui
+    ) as client:
         created = await tasks.create(client.session, "export", {"request_id": "owned-job-001"})
     task_id = created["taskId"]
-    async with Client(server(ext, "b" * 32), mode="2026-07-28", extensions=[tasks]) as client:
+    async with Client(
+        server(ext, "b" * 32),
+        mode="2026-07-28",
+        extensions=[tasks],
+        elicitation_callback=host_form_ui,
+    ) as client:
         for operation in (
             tasks.get(client.session, task_id),
             tasks.cancel(client.session, task_id),
@@ -224,11 +256,27 @@ async def test_per_request_capabilities_owner_identity_and_no_implicit_fallback(
     assert jobs.starts == 1 and jobs.cancels == 0
 
 
+async def test_task_input_does_not_bypass_underlying_form_capability(tmp_path):
+    jobs = Jobs()
+    tasks = TaskClient()
+    async with Client(
+        server(extension(tmp_path, jobs)), mode="2026-07-28", extensions=[tasks]
+    ) as client:
+        created = await tasks.create(client.session, "export", {"request_id": "no-form-ui-001"})
+        with pytest.raises(MCPError) as error:
+            await tasks.get(client.session, created["taskId"])
+        assert error.value.error.code == -32021
+    assert jobs.starts == 1 and not jobs.updates
+
+
 def context(owner="owner", capabilities=True):
     return SimpleNamespace(
         protocol_version="2026-07-28",
         session=SimpleNamespace(
-            client_capabilities=ClientCapabilities(extensions={TASKS: {}} if capabilities else {})
+            client_capabilities=ClientCapabilities(
+                extensions={TASKS: {}} if capabilities else {},
+                elicitation=ElicitationCapability(form=FormElicitationCapability()),
+            )
         ),
         owner=owner,
     )

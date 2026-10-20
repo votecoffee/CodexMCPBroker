@@ -151,14 +151,15 @@ def validate_entry(entry, profile=MCP_PROFILE):
         if not isinstance(item, dict):
             raise BrokerError("invalid skill manifest resource")
         resource = safe_uri(item.get("uri"))
-        if not resource.startswith(root) or resource.casefold() in seen:
+        normalized = unquote(resource).casefold()
+        if not resource.startswith(root) or normalized in seen:
             raise BrokerError("skill paths conflict or escape their origin namespace")
         relative = unquote(resource[len(root) :])
         # Host-independent safe extraction names, including Windows devices.
         for segment in relative.split("/"):
             if re.fullmatch(r"(?i)(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?", segment):
                 raise BrokerError("skill contains a reserved filesystem name")
-        seen.add(resource.casefold())
+        seen.add(normalized)
         size = item.get("size")
         limit = profile.max_instruction_bytes if resource == uri else profile.max_file_bytes
         if type(size) is not int or not 0 <= size <= limit:
@@ -167,11 +168,11 @@ def validate_entry(entry, profile=MCP_PROFILE):
         if not isinstance(digest, str) or not re.fullmatch(r"sha256:[a-f0-9]{64}", digest):
             raise BrokerError("invalid skill resource digest")
         total += size
-    if uri.casefold() not in seen or total > profile.max_skill_bytes:
+    if unquote(uri).casefold() not in seen or total > profile.max_skill_bytes:
         raise BrokerError("skill manifest missing SKILL.md or exceeds host total budget")
     for path in seen:
         parent = path.rsplit("/", 1)[0]
-        while parent.startswith(root.casefold()):
+        while parent.startswith(unquote(root).casefold()):
             if parent in seen:
                 raise BrokerError("skill file collides with a directory")
             parent = parent.rsplit("/", 1)[0]

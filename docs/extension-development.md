@@ -70,7 +70,7 @@ An opaque `request_id` of 8–128 characters is required in tool arguments by de
 
 `inspect` receives a persisted pending intent after an ambiguous operation. `TaskObservation(reconciled=True, ...)` explicitly confirms that the app reconciled it. Until then, further mutations are blocked. Return `handle=...` to bind a recovered app job. A database handle surviving restart does not prove that a native process, project or queued operation survived. Preserve the app's resource fencing and uncertain-write recovery barriers.
 
-Return `TaskObservation("completed", result=call_tool_result_dict)` for successful **and app-error** results (`isError: true`). Use `failed` only with a JSON-RPC `error` object. Terminal states are immutable. `input_required` carries one to eight outstanding ordinary form requests; every key is unique for the lifetime of that task. Answered or superseded keys cannot be reused. Unknown/consumed response keys are ignored, partial answers are supported, and decline/cancel answers carry no approval content. URL elicitation, sampling and nested task inputs are rejected by this profile.
+Return `TaskObservation("completed", result=call_tool_result_dict)` for successful **and app-error** results (`isError: true`). Use `failed` only with a JSON-RPC `error` object. Terminal states are immutable. `input_required` carries one to eight outstanding ordinary form requests; every key is unique for the lifetime of that task. Answered or superseded keys cannot be reused. Unknown/consumed response keys are ignored, partial answers are supported, and decline/cancel answers carry no approval content. URL elicitation, sampling and nested task inputs are rejected by this profile. Polling form inputs also requires the client to advertise form elicitation support; otherwise it receives a missing-capability error and can reconnect with an appropriate UI. No approval answer is synthesized.
 
 The store defaults to 10,000 records and 64 MiB of bounded record data including per-record overhead. Individual task data is limited to 4 MiB, and a task has at most 128 lifetime form keys. Default TTL is one day, configurable between one second and thirty days. Expiry denies further access and dispatch; it does not cancel a native job. Deduplication tombstones are retained, so archival is an explicit app-operator operation that must preserve its operation-key ledger. SQLite's page/free-list overhead is outside the logical data quota. Store form answers and results in private, access-controlled app state with appropriate retention.
 
@@ -83,7 +83,9 @@ from mcp import Client
 from universal_tools.tasks import TaskClient
 
 tasks = TaskClient()
-async with Client(target, mode="2026-07-28", extensions=[tasks]) as client:
+async with Client(
+    target, mode="2026-07-28", extensions=[tasks], elicitation_callback=host_approval_ui
+) as client:
     created = await tasks.create(client.session, "start_export", export_arguments)
     task_id = created["taskId"]  # Persist in caller-private state.
     current = await tasks.get(client.session, task_id)

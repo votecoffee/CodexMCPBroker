@@ -49,8 +49,8 @@
     },
     {
       "path": "docs/extension-development.md",
-      "size": 17538,
-      "sha256": "3f82a90a9996df64976195ffcc8d73941655087eafc705b04ef23c748deaab23"
+      "size": 17793,
+      "sha256": "4641e1bd77f98f974693cdb451ccaff26469b975700972feb81e1dfa853edccf"
     },
     {
       "path": "docs/native-skill-bundles.md",
@@ -244,8 +244,8 @@
     },
     {
       "path": "interop/test_extensions_sdk22.py",
-      "size": 2131,
-      "sha256": "8ac4d61dd0224f0935d227fc07ad3f326014cd01ba442db4e6197d212499f61c"
+      "size": 2226,
+      "sha256": "e49a3e6d1fcca7f9cbb4611e85b541536d0bb442ab376e4eb4b78aa36e629b33"
     },
     {
       "path": "interop/test_modern_sdk22.py",
@@ -534,8 +534,8 @@
     },
     {
       "path": "src/universal_tools/skill_catalog.py",
-      "size": 13387,
-      "sha256": "7bcac72237771ff24efe644db10a3682a5bc131a8c041b4741bbe16ae81e3abd"
+      "size": 13405,
+      "sha256": "13eb5ab835bea86550ce6d495320b661498a6a5dae9542ecebde0b8a36a78fd5"
     },
     {
       "path": "src/universal_tools/skill_client.py",
@@ -544,8 +544,8 @@
     },
     {
       "path": "src/universal_tools/skill_manifest.py",
-      "size": 8703,
-      "sha256": "9dd6e31ee01eac92918487819b2bd0ce99b638b358f8e235a2555ee517510d3d"
+      "size": 8753,
+      "sha256": "4f46bd221ebc65b379b8a8d407b2309cc3348684fb8b9447c2fd091f18a82dd4"
     },
     {
       "path": "src/universal_tools/surface.py",
@@ -554,8 +554,8 @@
     },
     {
       "path": "src/universal_tools/tasks.py",
-      "size": 22166,
-      "sha256": "82a0dd9a12f6776b60bee08e8bdcbea08b2e83130dee7e92da2e1fcd6da46a56"
+      "size": 24653,
+      "sha256": "703dc3ae76ad7d38a071891962bbf80af418ed71ff7224232d74132c01f6f4db"
     },
     {
       "path": "src/universal_tools/transport.py",
@@ -659,8 +659,8 @@
     },
     {
       "path": "tests/test_extensions_http.py",
-      "size": 4738,
-      "sha256": "ae11e0c88e965715be3cba94ed0d8e0d66b045ed21cb44222bf759f3f34c4c04"
+      "size": 4955,
+      "sha256": "4cdf573856d90fc74ef90e6c0e3819ca84310ab6393476a3c7945f8896569d0a"
     },
     {
       "path": "tests/test_feature_limits.py",
@@ -779,13 +779,13 @@
     },
     {
       "path": "tests/test_skills_extension.py",
-      "size": 13275,
-      "sha256": "9b6e48e5bfa411884a4489d1274a613775c736de8e324274b7c5bffdff19fb2d"
+      "size": 13583,
+      "sha256": "3dea42181a2400f353e9dc93649651f41007999a4595f8186ba1310544fb3808"
     },
     {
       "path": "tests/test_tasks_extension.py",
-      "size": 13852,
-      "sha256": "decd70270207f439cba4d30cbc4a10a2b5308617d8d831ebdd6c7780c71a8693"
+      "size": 15114,
+      "sha256": "c9d867e90920437baa8dfb64c53669c38cf7667d862e2845df74dd11d4aba50d"
     },
     {
       "path": "tests/test_workflow_integration.py",

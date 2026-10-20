@@ -7,7 +7,7 @@ import hashlib
 import mimetypes
 from copy import deepcopy
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 from mcp.server.extension import Extension, MethodBinding, ResourceBinding
 from mcp.server.mcpserver.resources import Resource
@@ -137,7 +137,7 @@ class SkillCatalog(Extension):
                 raise BrokerError("host profile requires unique skill names")
             names.add(name)
             for resource in entry["resources"]:
-                uri = resource["uri"].casefold()
+                uri = unquote(resource["uri"]).casefold()
                 if uri in paths:
                     raise BrokerError("published resource paths conflict")
                 paths.add(uri)
