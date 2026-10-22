@@ -6,7 +6,9 @@ Shared MCP application framework and Windows service manager
 
 Build app-owned MCP hosts from one versioned dependency. Each application keeps its own Codex plugin, domain services, native software ownership and authorization. The shared framework standardizes backend discovery, controlled replacement, policy, sessions and durable operation receipts to reduce unnecessary Codex reloads.
 
-**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current version is **0.20.1**, using **MCP Python SDK 2.3.0**.
+**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current packaged checkpoint is **0.20.1**, using **MCP Python SDK 2.3.0**.
+
+The latest packaged checkpoint is **0.20.1**. Development source **0.21.0.dev1** adds an opt-in Windows contained stdio provider. Harmless byte/message fixtures cover its source lifecycle; actual SDK/application integration and a reviewed release wheel remain pending. Existing standalone app testing does not require this optional shared-host migration.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** The framework is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Each app owns installation, migration and native/Codex acceptance. A package upgrade does not fix an app's resource leaks automatically. The durable [resource ownership API](docs/resource-ownership.md) and manager cleanup controls require explicit app adoption; management registration alone is not resource tracking.
 
@@ -28,7 +30,7 @@ The optional [Windows tray manager](docs/service-management.md) displays install
 
 The manager's **Owned resources** view reads durable private JSON independently of a live service endpoint. It can review and clean up eligible app-declared orphan processes by exact creation identity. The shared `ResourceLedger`/`ResourceOwner` API includes Windows job-contained launching and app-owned recovery attestations. Attached user software, shared leases, unknown identities and unresolved outcomes are protected. See the [resource guide](docs/resource-ownership.md) for limits and adoption requirements.
 
-Apps can select a host-local [session and stdio transport factory](docs/app-framework.md#app-owned-session-and-transport-factories) for every discovery, probe and worker connection. This selection hook preserves task ownership and refuses fallback when the provider fails. The built-in contained launcher still supplies background workers only; a common contained SDK stdio provider remains to be implemented and validated before apps select that deployment route.
+Apps can select a host-local [session and stdio transport factory](docs/app-framework.md#app-owned-session-and-transport-factories) for every discovery, probe and worker connection. This selection hook preserves task ownership and refuses fallback when the provider fails. The development [owned stdio provider](docs/app-framework.md#contained-stdio-development-profile) adds restricted byte pipes to the Windows launcher; it requires separate SDK/application acceptance before deployment.
 
 ## Table of Contents
 

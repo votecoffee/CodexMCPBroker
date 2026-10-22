@@ -347,7 +347,11 @@ class ResourceLedger:
                 if candidate.members != record.members:
                     record = self._replace(record, members=[i.model_dump() for i in members])
             handle = None
-            if plan["process_state"] == "alive":
+            if _group is not None:
+                # The owner retained the exact creation handle/job before resume.
+                # Do not reopen its recyclable PID during a short exit window.
+                _ = _group.returncode
+            elif plan["process_state"] == "alive":
                 # Hold the exact checked OS process, not just its recyclable PID.
                 handle = stack.enter_context(self.driver.open(record.process.model_dump()))
             elif plan["process_state"] not in {"absent", "different"}:
@@ -437,14 +441,18 @@ class ResourceOwner:
             ledger._save(record)
             return record
 
-    def bind_process(self, resource_id, pid, *, containment="app_owned"):
+    def bind_process(self, resource_id, pid, *, containment="app_owned", _creation_identity=None):
         ledger = self.ledger
         with ledger._locked():
             record = ledger.get(resource_id)
             ledger._current_owner(record, self)
             if record.state != "launching" or record.process is not None:
                 raise ValueError("resource already bound or no longer awaiting launch")
-            identity = ProcessIdentity.model_validate(ledger.driver.capture(pid))
+            identity = ProcessIdentity.model_validate(
+                ledger.driver.capture(pid) if _creation_identity is None else _creation_identity
+            )
+            if identity.pid != pid:
+                raise ValueError("creation handle identity does not match the launched process")
             if identity == self.identity:
                 raise ValueError("owner cannot register itself as its resource")
             if record.ownership == "private" and int(identity.created) < int(self.identity.created):
@@ -545,7 +553,8 @@ class ResourceOwner:
 
         Apps must explicitly authorize forced teardown for this resource and preserve
         native document/write evidence themselves. This API does not attach to user
-        software or provide inherited stdio for an MCP transport.
+        software. The default background profile inherits no standard streams; a
+        trusted common stdio provider may supply a restricted handle list.
         """
         if allow_termination is not True:
             raise ValueError("the app must explicitly authorize owned-tree termination")
@@ -553,7 +562,12 @@ class ResourceOwner:
         group = None
         try:
             group = self.ledger.driver.create_suspended(argv, **options)
-            record = self.bind_process(record.resource_id, group.pid, containment="windows_job")
+            record = self.bind_process(
+                record.resource_id,
+                group.pid,
+                containment="windows_job",
+                _creation_identity=group.identity,
+            )
             group.resume()
         except BaseException:
             if group is not None:

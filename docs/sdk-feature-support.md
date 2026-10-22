@@ -2,7 +2,7 @@
 
 This matrix describes framework **0.20.1**, pinned to **MCP Python SDK 2.3.0**, with selected interoperability checks on **SDK 2.2.0**. SDK releases, protocol revisions and extension revisions are separate. It is a source/API coverage assessment, not a certification or claim that every combination passed in a real app/host. Applications keep their own plugins; the former universal plugin is retired.
 
-The app host accepts a scoped [session/stdio factory](app-framework.md#app-owned-session-and-transport-factories) across discovery, probes and retained/transient connections. This is a lifecycle selection hook. The common atomic contained SDK stdio provider is still an implementation gap; the background launcher and a selected callable do not establish SDK worker ownership.
+The app host accepts a scoped [session/stdio factory](app-framework.md#app-owned-session-and-transport-factories) across discovery, probes and retained/transient connections. Packaged 0.20.1 supplies selection only. Development source 0.21.0.dev1 adds [contained Windows stdio](app-framework.md#contained-stdio-development-profile) with harmless byte/message and lifecycle evidence; real SDK/application and release-package acceptance remain pending. A selected callable alone does not establish worker ownership.
 
 The framework has two distinct surfaces: `ApplicationHost` uses the fourteen fixed discovery/invocation tools over app-owned backends; `ExtensionServer` subclasses the SDK's `MCPServer` and accepts explicitly composed native extensions. An SDK feature available on the native server is not automatically a downstream broker feature. See the [developer guide](server-development/README.md) for the reading path.
 

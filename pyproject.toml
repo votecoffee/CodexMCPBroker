@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-codex-tools"
-version = "0.20.1"
+version = "0.21.0.dev1"
 description = "Shared MCP application framework and Windows service manager"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -24,7 +24,7 @@ universal-tools = "universal_tools.cli:main"
 universal-tools-manager = "universal_tools.manager_cli:main"
 
 [tool.setuptools.package-data]
-universal_tools = ["manager_assets/*.ps1", "manager_assets/*.ico"]
+universal_tools = ["manager_assets/*.ps1", "manager_assets/*.ico", "SDK_STDIO_LICENSE.txt"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -82,7 +82,37 @@ async with ApplicationHost(private_state, app_publication, session_factory=sessi
 
 `owned_stdio_context` in this sketch must be supplied by the embedding app or a separately reviewed transport provider. Its signature accepts the SDK's `StdioServerParameters` and keyword `errlog`, then yields SDK read/write **message** streams. Byte pipes alone are not this contract. Environment additions remain restricted to the manifest's explicit allowlist; stderr stays separate from host logs. HTTP sessions continue through the normal HTTP transport. Factory selection is scoped to the host, never a global SDK patch, manifest import string or model-controlled executable hook.
 
-This API supplies selection and propagation, not a contained SDK process provider. The current `ResourceOwner.launch()` background profile has no stdio pipes. A complete common stdio provider still needs durable reservation, atomic suspended job assignment, narrowly inherited pipes, binding before resume, SDK framing/backpressure parity, bounded EOF/cancellation teardown and uncertain cleanup retention. Apps must keep an unsupported deployment route disabled until those implementation and acceptance gates pass. Supplying a callable does not prove containment, native shutdown safety or migration readiness.
+In packaged 0.20.1 this API supplies selection and propagation only. Development source 0.21.0.dev1 supplies the following owned provider. Supplying a callable does not by itself prove containment, native shutdown safety or migration readiness. A disabled shared-host migration need not block lifecycle tests of an independently reviewed standalone deployment profile.
+
+## Contained stdio development profile
+
+`universal_tools.owned_stdio.OwnedStdioTransport` is an opt-in development provider for CPython on Windows with the Proactor event loop and the locked Windows dependencies. One actual surviving app supervisor owns the `ResourceOwner` for all its backend connections:
+
+```python
+from functools import partial
+from universal_tools.framework import ApplicationHost
+from universal_tools.owned_stdio import OwnedStdioTransport
+from universal_tools.resources import ResourceLedger
+from universal_tools.transport import service_session
+
+ledger = ResourceLedger(private_management_registry)
+with ledger.owner("example-app") as resources:
+    stdio = OwnedStdioTransport(resources, allow_termination=True, max_processes=8)
+    sessions = partial(service_session, stdio_client_factory=stdio)
+    async with ApplicationHost(private_state, app_publication, session_factory=sessions) as host:
+        client = host.client()
+        result = await client.invoke("search_tools", {"query": "inspect"})
+```
+
+The provider creates overlapped pipes, selects exactly three inherited standard handles and assigns a private non-breakaway job during suspended process creation. It binds the creation-handle fingerprint durably before resume. The supervisor retains the job and exact process handle. Default platform environment plus explicit manifest additions reach the worker; argv, environment and message contents do not enter the resource ledger. Executable resolution does not select a shell fallback; script wrappers need an explicit reviewed executable/argument definition.
+
+`owned_byte_process()` exposes the same contained process with async byte streams, identity, resource ID, return code and `wait()` for non-MCP consumers and fixtures. Pipe I/O uses bounded chunks and Proactor backpressure. Shutdown closes stdin, permits a configurable 0–10 second grace (default 2), then records exactly one owned-tree cleanup and verifies the job is empty. Repeated close observes the same cleanup task/receipt, including uncertain results. Startup/binding failure never resumes worker code; supervisor death closes the non-inherited job handle. Existing attached/shared software is never adopted into the job.
+
+The message adapter uses the pinned SDK's public JSON-RPC types and serialization, with an attributed SDK-derived stdio bridge packaged under [the SDK MIT notice](../src/universal_tools/SDK_STDIO_LICENSE.txt). SDK globals and private launch functions are unchanged. Unicode, IDs and complete frames are preserved; parse diagnostics are redacted. The default frame budget is 64 MiB, configurable up to 512 MiB. Match it to the app's reviewed payload/memory profile; encoding and native host limits still need acceptance. EOF, cancellation and backpressure teardown remain within the transport's original actor task; only OS cleanup uses its own shielded task.
+
+`allow_termination=True` declares that forced teardown of this private backend is safe. It does not save native documents, authorize a write, release shared native software or clear app journals. Apps must fence work and preserve dirty/uncertain barriers before close; refusal remains a retained recovery condition. Frontends created by Codex belong to Codex and require their own EOF/parent/lease handling, not relabelling as host-owned children.
+
+This source profile has harmless byte-echo/message-type and resource-policy checks. It is not yet a reviewed release wheel or proof of a real SDK server's handshake, app/native close, Codex display or shared-host migration. Keep unaccepted deployment routes disabled. Standalone profiles may be tested separately with their own approved process owners.
 
 ## Publication and reload guards
 

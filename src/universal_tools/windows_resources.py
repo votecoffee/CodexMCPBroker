@@ -82,6 +82,7 @@ class ProcessDriver:
             "CloseHandle": ([w.HANDLE], w.BOOL),
             "WaitForSingleObject": ([w.HANDLE, w.DWORD], w.DWORD),
             "TerminateProcess": ([w.HANDLE, w.UINT], w.BOOL),
+            "GetExitCodeProcess": ([w.HANDLE, ctypes.POINTER(w.DWORD)], w.BOOL),
             "GetProcessTimes": ([w.HANDLE, *([ctypes.POINTER(w.FILETIME)] * 4)], w.BOOL),
             "QueryFullProcessImageNameW": (
                 [w.HANDLE, w.DWORD, w.LPWSTR, ctypes.POINTER(w.DWORD)],
@@ -206,12 +207,15 @@ class ProcessDriver:
             handle.close()
             raise
 
-    def create_suspended(self, argv, *, cwd=None, env=None, max_processes=32, show_window=False):
+    def create_suspended(
+        self, argv, *, cwd=None, env=None, max_processes=32, show_window=False, stdio_handles=None
+    ):
         """Assign a non-inherited kill-on-close job DURING CreateProcess, before execution.
 
         This intentionally has no uncontained fallback. The caller must durably bind
-        the returned process identity before calling resume(). Standard streams are
-        not inherited; use an app-owned IPC/argument contract for a background worker.
+        the returned process identity before calling resume(). By default no handles
+        are inherited. A trusted stdio provider may select exactly three pipe/file
+        handles; the job and all unrelated inheritable handles remain excluded.
         """
         self._require_windows()
         import win32job
@@ -224,6 +228,13 @@ class ProcessDriver:
             raise ValueError("use an existing absolute executable")
         if type(max_processes) is not int or not 1 <= max_processes <= 256:
             raise ValueError("invalid process tree limit")
+        if stdio_handles is not None and (
+            not isinstance(stdio_handles, (tuple, list))
+            or len(stdio_handles) != 3
+            or any(type(h) is not int or h <= 0 for h in stdio_handles)
+            or len(set(stdio_handles)) != 3
+        ):
+            raise ValueError("stdio requires three distinct explicitly selected handles")
         command = subprocess.list2cmdline(argv)
         if len(command.encode("utf-16-le")) > 65532:
             raise ValueError("process command line exceeds Windows limit")
@@ -261,12 +272,15 @@ class ProcessDriver:
                 job, win32job.JobObjectExtendedLimitInformation, limits
             )
             size = ctypes.c_size_t()
-            self.kernel.InitializeProcThreadAttributeList(None, 1, 0, ctypes.byref(size))
+            count = 2 if stdio_handles is not None else 1
+            self.kernel.InitializeProcThreadAttributeList(None, count, 0, ctypes.byref(size))
             if not size.value:
                 raise ctypes.WinError(ctypes.get_last_error())
             attributes = ctypes.create_string_buffer(size.value)
             checked(
-                self.kernel.InitializeProcThreadAttributeList(attributes, 1, 0, ctypes.byref(size))
+                self.kernel.InitializeProcThreadAttributeList(
+                    attributes, count, 0, ctypes.byref(size)
+                )
             )
             attributes_ready = True
             jobs = (w.HANDLE * 1)(int(job))
@@ -280,6 +294,20 @@ class ProcessDriver:
             startup.startup.cb = ctypes.sizeof(startup)
             startup.startup.dwFlags = 1  # STARTF_USESHOWWINDOW
             startup.startup.wShowWindow = 1 if show_window else 0
+            if stdio_handles is not None:
+                handles = (w.HANDLE * 3)(*stdio_handles)
+                # PROC_THREAD_ATTRIBUTE_HANDLE_LIST: no other inheritable handle leaks.
+                checked(
+                    self.kernel.UpdateProcThreadAttribute(
+                        attributes, 0, 0x20002, handles, ctypes.sizeof(handles), None, None
+                    )
+                )
+                startup.startup.dwFlags |= 0x100  # STARTF_USESTDHANDLES
+                (
+                    startup.startup.hStdInput,
+                    startup.startup.hStdOutput,
+                    startup.startup.hStdError,
+                ) = stdio_handles
             startup.attributes = ctypes.cast(attributes, ctypes.c_void_p)
             info = ProcessInfo()
             flags = 0x4 | 0x80000 | 0x400  # suspended, extended startup, Unicode environment
@@ -291,7 +319,7 @@ class ProcessDriver:
                     ctypes.create_unicode_buffer(command),
                     None,
                     None,
-                    False,
+                    stdio_handles is not None,
                     flags,
                     environment,
                     str(cwd) if cwd else None,
@@ -351,10 +379,25 @@ class ContainedProcess:
     def __init__(self, driver, job, info):
         self.driver, self.job, self.info = driver, job, info
         self.identity = driver.capture_handle(info.process, info.pid)
+        self._returncode = None
 
     @property
     def pid(self):
         return self.info.pid
+
+    @property
+    def returncode(self):
+        if self._returncode is None and self.info.process:
+            result = self.driver.kernel.WaitForSingleObject(self.info.process, 0)
+            if result == 0:
+                code = w.DWORD()
+                checked(
+                    self.driver.kernel.GetExitCodeProcess(self.info.process, ctypes.byref(code))
+                )
+                self._returncode = code.value
+            elif result != 258:
+                raise OSError("owned process wait failed")
+        return self._returncode
 
     def resume(self):
         if not self.info.thread:
@@ -399,6 +442,7 @@ class ContainedProcess:
         return identities
 
     def close(self):
+        _ = self.returncode  # Retain the exit code before closing the creation handle.
         if self.job is not None:
             self.job.Close()
             self.job = None
