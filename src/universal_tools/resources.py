@@ -22,11 +22,12 @@ from pydantic import Field, field_validator, model_validator
 
 from .instance_lock import InstanceLock
 from .management import default_registry, private_directory, read_json
-from .models import ID_PATTERN, StrictModel, canonical_digest
+from .models import ID_PATTERN, BrokerError, StrictModel, canonical_digest
 
 TOKEN = r"^[0-9a-f]{32}$"
 MAX_RESOURCES = 4096
 TERMINAL = {"released", "terminated", "failed"}
+_LOCK_TIMEOUT = 2.0
 
 
 class ProcessIdentity(StrictModel):
@@ -170,8 +171,14 @@ class ResourceLedger:
             lock.is_symlink() or getattr(lock.stat(), "st_file_attributes", 0) & 0x400
         ):
             raise ValueError("resource lock must be an ordinary file")
-        with self._mutex, InstanceLock(lock):
-            yield
+        deadline = time.monotonic() + _LOCK_TIMEOUT
+        if not self._mutex.acquire(timeout=_LOCK_TIMEOUT):
+            raise BrokerError("resource ledger remained busy; no operation was started")
+        try:
+            with InstanceLock(lock, timeout=max(0, deadline - time.monotonic())):
+                yield
+        finally:
+            self._mutex.release()
 
     def get(self, resource_id):
         record = ResourceRecord.model_validate(read_json(self._path(resource_id)))

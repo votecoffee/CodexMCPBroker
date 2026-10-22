@@ -109,8 +109,8 @@
     },
     {
       "path": "docs/resource-ownership.md",
-      "size": 11825,
-      "sha256": "7ac5a21429ebe0d4e34d981db11df45c0cdedada496c9e13986390a227e9af2d"
+      "size": 12400,
+      "sha256": "0256366792a9a1a056bfdb3ff9c2883ff0c5635bf3ad131bcd36dbe5d23955be"
     },
     {
       "path": "docs/sdk-feature-support.md",
@@ -334,8 +334,8 @@
     },
     {
       "path": "README.md",
-      "size": 36298,
-      "sha256": "e98396c2f2336518d5a9a8a67e80e5587d824bb920d6eb205c0cc153d03b6cc6"
+      "size": 36529,
+      "sha256": "beec8c06c8d7b2c94815311a3030667a8dda50271f78769b01fb833b4d4739db"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -479,8 +479,8 @@
     },
     {
       "path": "src/universal_tools/instance_lock.py",
-      "size": 1115,
-      "sha256": "572430026492ca90a26fbfd63051edb6c5ba0aa795dc765cfa64294e304c5f96"
+      "size": 2254,
+      "sha256": "3f132a6c7731361071a49e1bb1293c798ebe3b8f92c181cf3d79b2cf423964ee"
     },
     {
       "path": "src/universal_tools/journal.py",
@@ -549,8 +549,8 @@
     },
     {
       "path": "src/universal_tools/resources.py",
-      "size": 30285,
-      "sha256": "2afd609a6a3b137f9bb1c91ba872e071a07d766708265c8adec69fee7011e0a6"
+      "size": 30622,
+      "sha256": "684dd96cdf59a99e76784ae59669ddda5d227e90786a1a9246a09a1564b9a857"
     },
     {
       "path": "src/universal_tools/schemas.py",
@@ -838,6 +838,11 @@
       "sha256": "f61a6041f0a408262915faf3d6322cbc7f257ef0ee1b34d09f27e23d46ffdfd7"
     },
     {
+      "path": "tests/test_resource_contention.py",
+      "size": 5467,
+      "sha256": "937cb771b16563ab5dcc950e98bffe47878b41edb5647bd798c78e8bf7fd0874"
+    },
+    {
       "path": "tests/test_resource_startup.py",
       "size": 2896,
       "sha256": "326b166d9b66b98d822fd35fb81e00396891a783c9496a9ceb958ef4720c1ef5"
@@ -904,8 +909,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 34302,
-      "sha256": "c3172cb58724225d810abbae588ea81acb88131b7c91162b7f9b2d0b45648fe8"
+      "size": 34757,
+      "sha256": "0df29f2f9e3f5282ec624dd11d4fbc571375ac18fe6ade8bc599badda28ca246"
     }
   ]
 }

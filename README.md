@@ -10,6 +10,8 @@ Build app-owned MCP hosts from one versioned dependency. Each application keeps 
 
 The latest packaged checkpoint is **0.20.1**. Development source **0.21.0.dev1** adds an opt-in Windows contained stdio provider. Harmless byte/message fixtures cover its source lifecycle; actual SDK/application integration and a reviewed release wheel remain pending. Existing standalone app testing does not require this optional shared-host migration.
 
+Development source also bounds ledger lock contention, allowing brief competing updates to serialize before admission. Existing packaged applications keep their reviewed dependency pins until a new package is separately verified.
+
 **Status: experimental and under active development. This tool is not mature or production-ready.** The framework is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Each app owns installation, migration and native/Codex acceptance. A package upgrade does not fix an app's resource leaks automatically. The durable [resource ownership API](docs/resource-ownership.md) and manager cleanup controls require explicit app adoption; management registration alone is not resource tracking.
 
 The [SDK 2 feature guide](docs/sdk2-features.md) describes opt-in modern connections, ownership-bound approval continuations, catalog notifications, scoped discovery caches, SSE response budgets, tracing and skill resource snapshots. These features do not migrate existing integrations.

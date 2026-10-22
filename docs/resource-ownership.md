@@ -12,6 +12,8 @@ Each fingerprint also has a `host_id`: SHA-256 of the canonical lowercase hyphen
 
 The runtime model `ResourceRecord.model_json_schema()` and [checked-in schema](../examples/resource-record.schema.json) define the language-neutral record, including required integer `schema_version: 1`. The current native process driver is Windows-only. Other platforms report unknown rather than enabling PID-based termination. Native .NET bindings remain future work; another runtime must implement the same ownership, locking, identity and receipt rules before writing interoperable records. The owner must be the actual surviving supervisor, not a temporary Python/CLI registration helper that exits immediately.
 
+Development source serializes competing ledger writers with a two-second admission budget across its thread and OS file locks. It waits only before entering the critical section. If the ledger remains busy, the operation fails before reservation, record mutation or cleanup dispatch; no side effect is retried. This bounded wait is not yet in the packaged 0.20.1 baseline. Long-lived broker/manager instance ownership continues to reject a second owner immediately. Applications must handle an admission refusal without launching an unrecorded worker or bypassing the lock.
+
 | Ownership | App responsibility | Manager cleanup |
 | --- | --- | --- |
 | `private` | Resource was created exclusively for this supervisor; define whether forced teardown is safe. | Only with explicit `cleanup_mode="terminate"`, a departed owner and verified resource identity. |
