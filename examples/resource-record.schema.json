@@ -1,0 +1,278 @@
+{
+  "$defs": {
+    "CleanupReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "expected_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expected Revision",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "dispatching",
+            "terminated",
+            "already_exited",
+            "uncertain"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 512,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "expected_revision",
+        "outcome",
+        "message"
+      ],
+      "title": "CleanupReceipt",
+      "type": "object"
+    },
+    "ProcessIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "host_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Host Id",
+          "type": "string"
+        },
+        "pid": {
+          "maximum": 4294967295,
+          "minimum": 1,
+          "title": "Pid",
+          "type": "integer"
+        },
+        "created": {
+          "pattern": "^[0-9]{1,24}$",
+          "title": "Created",
+          "type": "string"
+        },
+        "executable": {
+          "maxLength": 32768,
+          "minLength": 1,
+          "title": "Executable",
+          "type": "string"
+        }
+      },
+      "required": [
+        "host_id",
+        "pid",
+        "created",
+        "executable"
+      ],
+      "title": "ProcessIdentity",
+      "type": "object"
+    },
+    "ResourceReconciliation": {
+      "additionalProperties": false,
+      "properties": {
+        "actor_owner_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "title": "Actor Owner Id",
+          "type": "string"
+        },
+        "actor": {
+          "$ref": "#/$defs/ProcessIdentity"
+        },
+        "previous_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Previous Revision",
+          "type": "string"
+        },
+        "evidence": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "recorded_at": {
+          "title": "Recorded At",
+          "type": "number"
+        }
+      },
+      "required": [
+        "actor_owner_id",
+        "actor",
+        "previous_revision",
+        "evidence",
+        "recorded_at"
+      ],
+      "title": "ResourceReconciliation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "resource_id": {
+      "pattern": "^[0-9a-f]{32}$",
+      "title": "Resource Id",
+      "type": "string"
+    },
+    "app_id": {
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+      "title": "App Id",
+      "type": "string"
+    },
+    "owner_id": {
+      "pattern": "^[0-9a-f]{32}$",
+      "title": "Owner Id",
+      "type": "string"
+    },
+    "owner": {
+      "$ref": "#/$defs/ProcessIdentity"
+    },
+    "label": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Label",
+      "type": "string"
+    },
+    "kind": {
+      "default": "process",
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+      "title": "Kind",
+      "type": "string"
+    },
+    "ownership": {
+      "enum": [
+        "private",
+        "attached",
+        "shared"
+      ],
+      "title": "Ownership",
+      "type": "string"
+    },
+    "cleanup_mode": {
+      "default": "report",
+      "enum": [
+        "terminate",
+        "report"
+      ],
+      "title": "Cleanup Mode",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "launching",
+        "active",
+        "released",
+        "terminated",
+        "failed",
+        "uncertain"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "process": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProcessIdentity"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "members": {
+      "items": {
+        "$ref": "#/$defs/ProcessIdentity"
+      },
+      "maxItems": 256,
+      "title": "Members",
+      "type": "array"
+    },
+    "containment": {
+      "default": "app_owned",
+      "enum": [
+        "app_owned",
+        "windows_job"
+      ],
+      "title": "Containment",
+      "type": "string"
+    },
+    "recovery_barrier": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Recovery Barrier"
+    },
+    "receipt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CleanupReceipt"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "reconciliation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResourceReconciliation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "barrier_resolution": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResourceReconciliation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "number"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "number"
+    }
+  },
+  "required": [
+    "schema_version",
+    "resource_id",
+    "app_id",
+    "owner_id",
+    "owner",
+    "label",
+    "ownership",
+    "state",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "ResourceRecord",
+  "type": "object"
+}

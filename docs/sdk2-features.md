@@ -1,6 +1,6 @@
 # SDK 2 features
 
-Framework 0.19.0 keeps MCP Python SDK 2.3.0 pinned and exercises SDK 2.2 app backends through explicit integration profiles. Other SDK versions need their own assessment. SDK versions and wire revisions are independent. No existing app registration, installation, plugin or native project is migrated by upgrading the package. The former universal plugin is retired. The [SDK support matrix](sdk-feature-support.md) distinguishes framework support, inherited SDK APIs, relay gaps and deployment acceptance.
+Framework 0.20.0 keeps MCP Python SDK 2.3.0 pinned and exercises SDK 2.2 app backends through explicit integration profiles. Other SDK versions need their own assessment. SDK versions and wire revisions are independent. No existing app registration, installation, plugin or native project is migrated by upgrading the package. The former universal plugin is retired. The [SDK support matrix](sdk-feature-support.md) distinguishes framework support, inherited SDK APIs, relay gaps and deployment acceptance.
 
 ## Modern connections and ownership
 

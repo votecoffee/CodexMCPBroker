@@ -6,9 +6,9 @@ Shared MCP application framework and Windows service manager
 
 Build app-owned MCP hosts from one versioned dependency. Each application keeps its own Codex plugin, domain services, native software ownership and authorization. The shared framework standardizes backend discovery, controlled replacement, policy, sessions and durable operation receipts to reduce unnecessary Codex reloads.
 
-**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current version is **0.19.0**, using **MCP Python SDK 2.3.0**.
+**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current version is **0.20.0**, using **MCP Python SDK 2.3.0**.
 
-**Status: experimental and under active development. This tool is not mature or production-ready.** The framework is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Each app owns installation, migration and native/Codex acceptance. A package upgrade does not fix an app's resource leaks automatically. Persistent resource ownership and abnormal-exit cleanup are under development; management registration is not a resource ownership ledger.
+**Status: experimental and under active development. This tool is not mature or production-ready.** The framework is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Each app owns installation, migration and native/Codex acceptance. A package upgrade does not fix an app's resource leaks automatically. The durable [resource ownership API](docs/resource-ownership.md) and manager cleanup controls require explicit app adoption; management registration alone is not resource tracking.
 
 The [SDK 2 feature guide](docs/sdk2-features.md) describes opt-in modern connections, ownership-bound approval continuations, catalog notifications, scoped discovery caches, SSE response budgets, tracing and skill resource snapshots. These features do not migrate existing integrations.
 
@@ -16,7 +16,7 @@ The [extension developer guide](docs/extension-development.md) covers durable MC
 
 The [deployment guide](docs/deployment.md) covers opt-in remote HTTPS/OAuth, service and workload-identity grants, DPoP clients, shared notification delivery and durable shared Tasks. The [native Apps example](examples/native_features.py) demonstrates interactive tool resources with meaningful text fallback. Replicated native SDK hosts and retained broker workers have distinct process/state contracts.
 
-The [SDK feature support matrix](docs/sdk-feature-support.md) records implemented profiles, inherited SDK APIs and remaining relay/configuration gaps. Framework 0.19.0 does not claim complete forwarding of every SDK feature. In particular, relayed resource/prompt input rounds and automatic downstream Tasks/UI forwarding remain outside the current profile.
+The [SDK feature support matrix](docs/sdk-feature-support.md) records implemented profiles, inherited SDK APIs and remaining relay/configuration gaps. Framework 0.20.0 does not claim complete forwarding of every SDK feature. In particular, relayed resource/prompt input rounds and automatic downstream Tasks/UI forwarding remain outside the current profile.
 
 The [beta completion plan](ROADMAP.md) separates the implemented broker foundation from remaining adapter/host acceptance and later native migration pilots. Parallel private contexts and full app/host payload parity are not currently promised.
 
@@ -25,6 +25,8 @@ The [adapter assessment](docs/adapter-assessment.md) covers session ownership, a
 Building a new server? Start with the [MCP server developer guide](docs/server-development/README.md), including a read-only quickstart, shared-service architecture, state/recovery contracts, registration/discovery and a reusable acceptance record. The guide distinguishes MCP conformance from this broker's supported integration profile.
 
 The optional [Windows tray manager](docs/service-management.md) displays installed/running/available versions, pending updates and app-reported health. Its default view groups instances by app and explicitly flags multiple responding instances. **Show instances and history** reveals exact processes and stopped/unreachable registrations; historical rows are not running servers. Run **`InstallManager.cmd`** to install it independently of the broker/plugin. Apps opt into `universal_tools.management` for live status and guarded restart controls. Other installed plugins appear as **Not reporting**, with restart disabled.
+
+The manager's **Owned resources** view reads durable private JSON independently of a live service endpoint. It can review and clean up eligible app-declared orphan processes by exact creation identity. The shared `ResourceLedger`/`ResourceOwner` API includes Windows job-contained launching and app-owned recovery attestations. Attached user software, shared leases, unknown identities and unresolved outcomes are protected. See the [resource guide](docs/resource-ownership.md) for limits and adoption requirements.
 
 ## Table of Contents
 
@@ -91,6 +93,7 @@ Pass `-PythonVersion` to select another installed Python version. Each applicati
 Run these commands from the repository root:
 
 ```powershell
+.\.local\development\Scripts\python.exe -m universal_tools --state .\.local\development-state init
 .\scripts\Broker.ps1 start
 .\scripts\Broker.ps1 status
 .\scripts\Broker.ps1 list

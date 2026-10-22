@@ -105,6 +105,12 @@ The status callback must be fast and thread-safe, using a cached snapshot withou
 
 ## Restart and uncertain outcomes
 
+### Durable owned resources
+
+Framework 0.20 adds `universal_tools.resources.ResourceLedger` and `ResourceOwner`, plus the manager's **Owned resources** view. Apps explicitly record the software/processes they create, distinguish private launches from user-owned attachments/shared instances and declare cleanup policy. The JSON ledger survives server/endpoint loss. An eligible orphan requires a departed owner, verified process creation identity, explicit termination policy and no unresolved barrier or competing claim; the manager requires an exact reviewed revision and unique cleanup ID. Cleanup intents/receipts are retained, including uncertain outcomes. No arbitrary stored command is executed and no software is automatically relaunched.
+
+The contained Windows launcher reserves a record before creation, starts the worker suspended with a kill-on-close job already assigned, records its identity durably and only then resumes execution. The job covers descendants between membership snapshots. Existing launchers/native APIs outside that containment must supply their own tracking and recovery. This does not automatically manage pre-existing installations or terminate attached/shared user software. Use the [resource ownership guide](resource-ownership.md) and [record schema](../examples/resource-record.schema.json) for the package API, CLI, interoperability, barriers and separate app/native acceptance.
+
 The user selects **Restart selected service**. The request binds app/instance, current status revision and a unique operation ID. The agent rechecks status and refuses active operations, starting/busy services, changed revisions and app refusals. The callback must atomically fence new work and enforce ownership leases, unsaved documents, review plans, queued jobs and unresolved effects before scheduling a restart. A counter alone is insufficient. Return acceptance before the supervisor closes the management endpoint.
 
 A SQLite intent is durable before callback dispatch. Duplicate IDs return the earlier receipt; changed payloads under the same ID are rejected. Callback failure or process interruption leaves an uncertain barrier that blocks further restarts for that app, including other instances and later process lifetimes. Lost client receipts are never automatically retried. The manager cannot clear app journals or management barriers.

@@ -1,4 +1,4 @@
-"""Desktop manager commands. The manager never installs or kills app services."""
+"""Desktop manager and explicit, identity-bound orphan resource cleanup commands."""
 
 from __future__ import annotations
 
@@ -40,10 +40,13 @@ def parent_alive(pid):
 
 
 def watch(args):
+    from .resources import ResourceLedger
+
     registry = ManagementRegistry(args.registry)
     registry.prepare()
     client = ManagementClient(registry.directory)
     inventory = CodexInventory() if not args.no_codex else None
+    resources = ResourceLedger(registry.directory)
     with InstanceLock(registry.directory / "manager.lock"):
         refresh_seen = None
         while not args.stop_file.exists() and (
@@ -61,7 +64,15 @@ def watch(args):
             refresh_seen = refresh_stamp
             if warning:
                 snapshot["warnings"].append(warning)
-            atomic_json(args.snapshot_file, present_snapshot(snapshot, plugins))
+            display = present_snapshot(snapshot, plugins)
+            try:
+                display["resources"] = resources.snapshot()
+            except (ValueError, OSError):
+                display["resources"] = []
+                display["warnings"].append(
+                    "Owned resource inventory is unavailable; cleanup disabled"
+                )
+            atomic_json(args.snapshot_file, display)
             if args.once:
                 break
             # Small interruptible intervals keep manager exit responsive.
@@ -77,6 +88,17 @@ def main(argv=None):
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("status")
     commands.add_parser("doctor")
+    commands.add_parser("resources", help="inspect durable app-owned resource records")
+    resource_plan = commands.add_parser("resource-plan", help="review one orphan cleanup candidate")
+    resource_plan.add_argument("--resource-id", required=True)
+    resource_cleanup = commands.add_parser(
+        "cleanup-resource", help="apply an exact reviewed orphan plan"
+    )
+    resource_cleanup.add_argument("--resource-id", required=True)
+    resource_cleanup.add_argument("--revision", required=True)
+    resource_cleanup.add_argument("--request-id", required=True)
+    resource_cleanup.add_argument("--apply", action="store_true", required=True)
+    resource_cleanup.add_argument("--result-file", type=Path)
     tray = commands.add_parser("tray")
     tray.add_argument("--show", action="store_true")
     watcher = commands.add_parser("watch")
@@ -130,6 +152,18 @@ def main(argv=None):
                     (assets / n).is_file() for n in ("Tray.ps1", "icon.ico")
                 ),
             }
+        elif args.command in {"resources", "resource-plan", "cleanup-resource"}:
+            from .resources import ResourceLedger
+
+            ledger = ResourceLedger(args.registry)
+            if args.command == "resources":
+                result = {"resources": ledger.snapshot()}
+            elif args.command == "resource-plan":
+                result = ledger.plan(args.resource_id)
+            else:
+                result = ledger.cleanup(args.resource_id, args.revision, args.request_id)
+                if args.result_file:
+                    atomic_json(args.result_file, result)
         elif args.command == "status":
             result = ManagementClient(args.registry).snapshot()
         else:

@@ -5,7 +5,8 @@ param(
     [switch]$NoCodexInventory,
     [int]$ExitAfterSeconds = 0,
     [string]$SmokeTestReport,
-    [switch]$SmokeTestShowInstances
+    [switch]$SmokeTestShowInstances,
+    [switch]$SmokeTestShowResources
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
@@ -145,6 +146,106 @@ function Request-Restart {
     Show-Selection
 }
 
+function Update-ResourceSelection {
+    $context = $script:resourceWindow
+    if (!$context) { return }
+    $entry = if ($context.Grid.CurrentRow) { $context.Grid.CurrentRow.Tag } else { $null }
+    $context.Cleanup.Enabled = $entry -and $entry.eligible -and !$script:pending -and (Test-FreshSnapshot)
+    if ($entry) {
+        $context.Details.Text = "Resource: $($entry.resource_id); owner generation: $($entry.owner_id)`r`nProcess: $($entry.process_state); record: $($entry.record.state); cleanup policy: $($entry.record.cleanup_mode)`r`n$($entry.record.process.executable)`r`n$($entry.reason)"
+        if ($entry.record.receipt) {
+            $context.Details.Text += "`r`nOriginal cleanup: $($entry.record.receipt.outcome); request $($entry.record.receipt.request_id). $($entry.record.receipt.message)"
+        }
+        if ($entry.record.recovery_barrier) { $context.Details.Text += "`r`nRecovery barrier: $($entry.record.recovery_barrier)" }
+        if ($entry.record.reconciliation) { $context.Details.Text += "`r`nApp attestation: $($entry.record.reconciliation.evidence)" }
+    }
+}
+
+function Show-OwnedResources {
+    $resourceForm = New-Object System.Windows.Forms.Form
+    $resourceForm.Text = 'Owned application resources'
+    $resourceForm.Size = [Drawing.Size]::new(1080, 520)
+    $resourceForm.StartPosition = 'CenterParent'
+    $resourceForm.Font = $form.Font
+    $resourceGrid = New-Object System.Windows.Forms.DataGridView
+    $resourceGrid.Dock = 'Fill'
+    $resourceGrid.ReadOnly = $true
+    $resourceGrid.AllowUserToAddRows = $false
+    $resourceGrid.AllowUserToDeleteRows = $false
+    $resourceGrid.MultiSelect = $false
+    $resourceGrid.SelectionMode = 'FullRowSelect'
+    $resourceGrid.RowHeadersVisible = $false
+    $resourceGrid.AutoSizeColumnsMode = 'Fill'
+    foreach ($column in @('Application', 'Resource', 'PID', 'Ownership', 'Owner status', 'Cleanup')) {
+        [void]$resourceGrid.Columns.Add($column, $column)
+    }
+    $resourceGrid.Columns[1].FillWeight = 180
+    $resourceGrid.Columns[5].FillWeight = 230
+    foreach ($entry in $script:lastSnapshot.resources) {
+        $processId = if ($entry.record.process) { "$($entry.record.process.pid)" } else { 'Unbound' }
+        $index = $resourceGrid.Rows.Add($entry.app_id, $entry.label, $processId,
+            $entry.record.ownership, $entry.owner_state, $entry.reason)
+        $resourceGrid.Rows[$index].Tag = $entry
+    }
+    $resourceDetails = New-Object System.Windows.Forms.TextBox
+    $resourceDetails.Dock = 'Bottom'
+    $resourceDetails.Height = 85
+    $resourceDetails.Multiline = $true
+    $resourceDetails.ReadOnly = $true
+    $resourceDetails.ScrollBars = 'Vertical'
+    $resourceDetails.Text = 'Only resources explicitly reported by applications appear here. Select one to review ownership and cleanup eligibility.'
+    $resourceButtons = New-Object System.Windows.Forms.FlowLayoutPanel
+    $resourceButtons.Dock = 'Bottom'
+    $resourceButtons.Height = 46
+    $cleanupButton = New-Object System.Windows.Forms.Button
+    $cleanupButton.Text = 'Clean up selected orphan'
+    $cleanupButton.AutoSize = $true
+    $cleanupButton.Enabled = $false
+    $script:resourceWindow = @{ Form = $resourceForm; Grid = $resourceGrid;
+        Details = $resourceDetails; Cleanup = $cleanupButton }
+    $cleanupButton.Add_Click({
+        $resourceGrid = $script:resourceWindow.Grid
+        $resourceForm = $script:resourceWindow.Form
+        if (!$resourceGrid.CurrentRow -or $script:pending -or !(Test-FreshSnapshot)) { return }
+        $entry = $resourceGrid.CurrentRow.Tag
+        if (!$entry -or !$entry.eligible) { return }
+        $message = "Clean up '$($entry.label)' for $($entry.app_id)?`n`nRecorded PID: $($entry.record.process.pid)`nExecutable: $($entry.record.process.executable)`nOwner: $($entry.owner_state)`n`nThis stops only the exact recorded private process if it is still running. The app's cleanup policy must permit termination."
+        $answer = [Windows.Forms.MessageBox]::Show($resourceForm, $message, 'Review orphan cleanup',
+            [Windows.Forms.MessageBoxButtons]::YesNo, [Windows.Forms.MessageBoxIcon]::Warning,
+            [Windows.Forms.MessageBoxDefaultButton]::Button2)
+        if ($answer -ne [Windows.Forms.DialogResult]::Yes) { return }
+        $requestId = [Guid]::NewGuid().ToString('N')
+        $resultFile = Join-Path $uiDirectory "cleanup-$requestId.json"
+        $arguments = @('-B', '-m', 'universal_tools.manager_cli', '--registry', (Quote-Argument $RegistryDirectory),
+            'cleanup-resource', '--resource-id', $entry.resource_id, '--revision', $entry.revision,
+            '--request-id', $requestId, '--apply', '--result-file', (Quote-Argument $resultFile))
+        $process = Start-Process -FilePath $Python -ArgumentList $arguments -WindowStyle Hidden -PassThru `
+            -RedirectStandardOutput (Join-Path $uiDirectory "cleanup-$requestId.log") `
+            -RedirectStandardError (Join-Path $uiDirectory "cleanup-$requestId.err")
+        $script:pending = @{ Process = $process; Result = $resultFile; Name = "Cleanup: $($entry.label)" }
+        $footer.Text = "Checking recorded ownership before cleanup of $($entry.label)..."
+        $resourceForm.Close()
+    })
+    $resourceGrid.Add_SelectionChanged({ Update-ResourceSelection })
+    $resourceForm.Add_Shown({
+        Update-ResourceSelection
+        if ($SmokeTestReport -and $SmokeTestShowResources) {
+            @{ visible = $script:resourceWindow.Form.Visible;
+               row_count = $script:resourceWindow.Grid.Rows.Count;
+               column_count = $script:resourceWindow.Grid.Columns.Count;
+               cleanup_enabled = $script:resourceWindow.Cleanup.Enabled } |
+                ConvertTo-Json | Set-Content -LiteralPath ($SmokeTestReport + '.resources.json') -Encoding utf8
+            $script:resourceWindow.Form.Close()
+        }
+    })
+    [void]$resourceButtons.Controls.Add($cleanupButton)
+    foreach ($control in @($resourceGrid, $resourceDetails, $resourceButtons)) {
+        [void]$resourceForm.Controls.Add($control)
+    }
+    try { [void]$resourceForm.ShowDialog($form) }
+    finally { $resourceForm.Dispose(); $script:resourceWindow = $null }
+}
+
 try {
     $form = New-Object System.Windows.Forms.Form
     $form.Text = "MCP Service Manager $managerVersion"
@@ -182,6 +283,11 @@ try {
     [void]$buttons.Controls.Add($refreshButton)
     [void]$buttons.Controls.Add($restartButton)
     [void]$buttons.Controls.Add($showInstances)
+    $resourcesButton = New-Object System.Windows.Forms.Button
+    $resourcesButton.Text = 'Owned resources'
+    $resourcesButton.AutoSize = $true
+    $resourcesButton.Add_Click({ Show-OwnedResources })
+    [void]$buttons.Controls.Add($resourcesButton)
 
     $footer = New-Object System.Windows.Forms.Label
     $footer.Dock = 'Bottom'
@@ -254,11 +360,15 @@ try {
             if ($SmokeTestReport -and $SmokeTestShowInstances -and $script:lastSnapshot -and !$showInstances.Checked) {
                 $showInstances.Checked = $true
             }
+            if ($SmokeTestReport -and $SmokeTestShowResources -and $script:lastSnapshot -and !$script:resourcesSmokeShown) {
+                $script:resourcesSmokeShown = $true
+                Show-OwnedResources
+            }
             if ($script:pending -and $script:pending.Process.HasExited) {
                 if (Test-Path -LiteralPath $script:pending.Result) {
                     $result = Get-Content -LiteralPath $script:pending.Result -Raw | ConvertFrom-Json
                     $script:lastError = "$($script:pending.Name): $($result.message)"
-                } else { $script:lastError = 'Restart outcome unavailable. Inspect the app before another request.' }
+                } else { $script:lastError = 'Management outcome unavailable. Inspect the app before another request.' }
                 $script:pending.Process.Dispose()
                 $script:pending = $null
                 Request-Refresh
@@ -292,7 +402,9 @@ try {
                        responding_instances = $script:lastSnapshot.responding_instances;
                        inactive_instances = $script:lastSnapshot.inactive_instances;
                        multiple_instance_applications = $script:lastSnapshot.multiple_instance_applications;
-                       title = $form.Text; window_visible = $form.Visible } |
+                       title = $form.Text; window_visible = $form.Visible;
+                       owned_resource_count = $script:lastSnapshot.resources.Count;
+                       resources_button = $resourcesButton.Enabled } |
                         ConvertTo-Json | Set-Content -LiteralPath $SmokeTestReport -Encoding utf8
                 }
                 $script:exiting = $true
