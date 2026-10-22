@@ -4,25 +4,18 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import shutil
 import subprocess
 import time
 from pathlib import Path
 
 from .management import MAX_BYTES, read_json
+from .versioning import numeric_version, versions_equal
 
 
 def newer_numeric_version(available, installed):
-    pattern = r"[0-9]+(?:\.[0-9]+){1,3}"
-    if not all(isinstance(v, str) and re.fullmatch(pattern, v) for v in (available, installed)):
-        return False
-
-    def parts(value):
-        numbers = tuple(map(int, value.split(".")))
-        return numbers + (0,) * (4 - len(numbers))
-
-    return parts(available) > parts(installed)
+    first, second = numeric_version(available), numeric_version(installed)
+    return first is not None and second is not None and first > second
 
 
 def parse_inventory(data):
@@ -58,7 +51,7 @@ def parse_inventory(data):
                 "available": available,
                 "enabled": item.get("enabled") is True,
                 "update_pending": newer_numeric_version(available, version),
-                "source_differs": available is not None and available != version,
+                "source_differs": available is not None and not versions_equal(available, version),
             }
         )
     if len({r["plugin_id"] for r in rows}) != len(rows):
@@ -121,8 +114,12 @@ def application_rows(rows):
         primary = min(selected, key=lambda r: severity.get(r["state"], 6))
         summary = {**primary, "key": "application:" + identity, "details": dict(primary["details"])}
         for field in ("installed", "running", "available"):
-            values = {r[field] for r in selected}
-            summary[field] = next(iter(values)) if len(values) == 1 else "Mixed"
+            values = [r[field] for r in selected]
+            summary[field] = (
+                max(values, key=len)
+                if all(versions_equal(values[0], value) for value in values)
+                else "Mixed"
+            )
         summary["update"] = next(
             (
                 label
@@ -167,7 +164,8 @@ def present_snapshot(snapshot, inventory):
             plugin and plugin["update_pending"]
         )
         restart_pending = any(
-            c["running"] is not None and c["installed"] != c["running"] for c in components.values()
+            c["running"] is not None and not versions_equal(c["installed"], c["running"])
+            for c in components.values()
         )
         rows.append(
             {

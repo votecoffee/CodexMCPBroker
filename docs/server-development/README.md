@@ -14,6 +14,7 @@ CodexMCPBroker is experimental. **MCP protocol conformance, broker compatibility
 | [SDK feature support](../sdk-feature-support.md) | Distinguish implemented framework features, inherited SDK APIs, relay gaps and unverified deployment behavior. |
 | [Optional extensions](../extension-development.md) | Integrate durable app-owned Tasks, verified Skills consumption, live publication and host profiles without automatic app migration. |
 | [Tray service management](../service-management.md) | Report health, component versions, updates and app-owned guarded restarts to the Windows tray manager. |
+| [Release versioning](../versioning.md) | Stamp fixed timestamp releases, normalize package identities and map Windows/.NET file versions. |
 | [Durable resource ownership](../resource-ownership.md) | Track owned processes/software across abnormal exits and expose reviewed orphan cleanup without a plugin. |
 | [Deployment profiles](../deployment.md) | Select authenticated remote hosts or shared native SDK deployments with explicit ownership and infrastructure contracts. |
 | [Tool and workflow design](tools-and-workflows.md) | Design schemas, side-effect annotations, revisions, reviewed writes, jobs and results. |

@@ -68,6 +68,8 @@ Provider deadline cases cover both stdio and a prestarted HTTP fixture. They rec
 
 ## Shared app framework profile
 
+For release version changes, run `python scripts/stamp_version.py --check` and `tests/test_versioning.py` with `tests/test_management.py`. Verify the fixed `YY.MMDD.HHmmss` label in source, CLI/doctor, the installed manager title and release manifests. Check wheel metadata and `RECORD` against the package identity, allowing numeric normalization of leading zeroes. Include January/midnight and Windows/.NET component-bound cases; padded/canonical equivalents must not produce false update, mixed-version or restart indicators. See the [versioning guide](docs/versioning.md). Retain historical artifacts and existing application framework pins.
+
 Run `tests/test_resource_contention.py` for bounded ledger admission against real competing lock-holder processes and threads. Check serialization into one reservation, no mutation on a busy timeout, immediate singleton refusal, and propagation of unrelated I/O errors with closed handles. Waiting occurs before the critical section and never retries a launch or cleanup effect. These harmless fixtures do not establish application or native acceptance.
 
 Run `tests/test_sdk23.py` for typed pagination, form/URL capabilities, exact local form-refusal normalization, unrelated RPC/timeout propagation and rejection of implicit ownership on modern stateless requests. Native protocol profiles must preserve connection affinity across SDK 2 request-scoped session proxies, authenticate transport session reuse and keep explicit HTTP/body budgets. HTTP readiness probes should inspect response headers and close the stream; an SDK 2 GET can return an open SSE stream rather than a finite error body.

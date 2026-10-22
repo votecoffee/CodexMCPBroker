@@ -2,7 +2,7 @@
 
 The architecture is a reusable app-owned MCP framework and independent Windows manager. Apps keep their own Codex plugins. The universal plugin, marketplace and skill-composition installer are retired; there is no universal plugin to install instead of app plugins. Retained routing components are framework internals and development fixtures.
 
-The current framework is 0.20.1, using MCP Python SDK 2.3.0 with a separate SDK 2.2 compatibility profile. It provides `universal_tools.framework`, durable [process/resource ownership](resource-ownership.md), an authenticated loopback reference host and optional Tasks, Skills, native protocol federation, Apps and OAuth/shared deployment profiles. See the [SDK support matrix](sdk-feature-support.md), [extension guide](extension-development.md) and [deployment guide](deployment.md). The framework remains experimental. Each app owns adoption and native/Codex acceptance.
+The current framework is 26.1022.173624, using MCP Python SDK 2.3.0 with a separate SDK 2.2 compatibility profile. It provides `universal_tools.framework`, durable [process/resource ownership](resource-ownership.md), an authenticated loopback reference host and optional Tasks, Skills, native protocol federation, Apps and OAuth/shared deployment profiles. See the [SDK support matrix](sdk-feature-support.md), [extension guide](extension-development.md) and [deployment guide](deployment.md). The framework remains experimental. Each app owns adoption and native/Codex acceptance.
 
 ## Stable front door, replaceable backends
 
@@ -38,6 +38,8 @@ Python apps can use editable installs during coordinated development and version
 Native .NET bindings can be distributed through NuGet with `PackageReference` when implemented. They are not shipped in this checkpoint. Keep lifecycle/publication contracts versioned across languages, while native engine adapters remain language-specific. An out-of-process MCP backend can already be implemented in another language; that is distinct from an in-process .NET framework library.
 
 Use package versions, release hashes, compatibility tests and app-controlled upgrades. Source submodules are not the default dependency model. Do not copy framework implementation files into each app or make each app track the repository's current branch. Framework/runtime, backend publication and native skill package versions have separate lifecycles. Publishing packages or pushing repository changes remains a separate release action.
+
+New releases use a fixed `YY.MMDD.HHmmss` label in New York local time. Follow the [versioning guide](versioning.md) for stamping, numeric package identities and Windows/.NET metadata. A timestamp change does not update an application's reviewed framework pin automatically.
 
 ## API and reference host
 
@@ -82,7 +84,7 @@ async with ApplicationHost(private_state, app_publication, session_factory=sessi
 
 `owned_stdio_context` in this sketch must be supplied by the embedding app or a separately reviewed transport provider. Its signature accepts the SDK's `StdioServerParameters` and keyword `errlog`, then yields SDK read/write **message** streams. Byte pipes alone are not this contract. Environment additions remain restricted to the manifest's explicit allowlist; stderr stays separate from host logs. HTTP sessions continue through the normal HTTP transport. Factory selection is scoped to the host, never a global SDK patch, manifest import string or model-controlled executable hook.
 
-In packaged 0.20.1 this API supplies selection and propagation only. Development source 0.21.0.dev1 supplies the following owned provider. Supplying a callable does not by itself prove containment, native shutdown safety or migration readiness. A disabled shared-host migration need not block lifecycle tests of an independently reviewed standalone deployment profile.
+Historical package 0.20.1 supplies selection and propagation only. Release 26.1022.173624 also includes the following opt-in experimental provider. Supplying a callable does not by itself prove containment, native shutdown safety or migration readiness. A disabled shared-host migration need not block lifecycle tests of an independently reviewed standalone deployment profile.
 
 ## Contained stdio development profile
 
@@ -138,7 +140,7 @@ This checkpoint does not provide native .NET packages, automatic app migration, 
 
 ## MCP SDK 2.3 upgrade
 
-Framework 0.20.1 requires `mcp==2.3.0`. Supported app interoperability targets SDK 2.2 and later; SDK 1.x compatibility is not maintained. The explicit matrix currently verifies SDK 2.2.0 and 2.3.0; later SDK releases still require validation. Update the framework package and dependency lock together in a stopped, app-owned environment. Do not replace a live backend environment or downgrade an app SDK to adopt the framework. Existing app publication/registration schema versions remain unchanged; the resource ledger has its own versioned record schema.
+The current framework requires `mcp==2.3.0`. Supported app interoperability targets SDK 2.2 and later; SDK 1.x compatibility is not maintained. The explicit matrix currently verifies SDK 2.2.0 and 2.3.0; later SDK releases still require validation. Update the framework package and dependency lock together in a stopped, app-owned environment. Do not replace a live backend environment or downgrade an app SDK to adopt the framework. Existing app publication/registration schema versions remain unchanged; the resource ledger has its own versioned record schema.
 
 SDK version and wire-protocol revision are separate. By default, downstream sessions explicitly perform the legacy handshake and use the negotiated `2025-11-25` contract. That remains the default integration profile. Opt-in modern discovery, scoped caching, catalog notifications and owner-bound input rounds use the `auto` or `2026-07-28` profile; see the [SDK 2 feature guide](sdk2-features.md) for configuration and limits. Actual host and app acceptance remains separate.
 

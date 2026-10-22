@@ -6,11 +6,11 @@ Shared MCP application framework and Windows service manager
 
 Build app-owned MCP hosts from one versioned dependency. Each application keeps its own Codex plugin, domain services, native software ownership and authorization. The shared framework standardizes backend discovery, controlled replacement, policy, sessions and durable operation receipts to reduce unnecessary Codex reloads.
 
-**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current packaged checkpoint is **0.20.1**, using **MCP Python SDK 2.3.0**.
+**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current framework and manager release is **26.1022.173624**, using **MCP Python SDK 2.3.0**.
 
-The latest packaged checkpoint is **0.20.1**. Development source **0.21.0.dev1** adds an opt-in Windows contained stdio provider. Harmless byte/message fixtures cover its source lifecycle; actual SDK/application integration and a reviewed release wheel remain pending. Existing standalone app testing does not require this optional shared-host migration.
+Releases use a fixed **`YY.MMDD.HHmmss`** timestamp in New York local time. The [versioning guide](docs/versioning.md) explains release stamping, package normalization and Windows/.NET version mapping. SDK and protocol versions retain their own numbering.
 
-Development source also bounds ledger lock contention, allowing brief competing updates to serialize before admission. Existing packaged applications keep their reviewed dependency pins until a new package is separately verified.
+This release includes bounded ledger lock admission and an opt-in experimental Windows contained stdio provider, previously developed as `0.21.0.dev1`. Harmless byte/message fixtures cover the provider's source lifecycle; actual SDK/application integration remains pending. Existing standalone app testing does not require this optional shared-host migration. Apps keep their reviewed dependency pins until a new package is separately verified and adopted.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** The framework is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Each app owns installation, migration and native/Codex acceptance. A package upgrade does not fix an app's resource leaks automatically. The durable [resource ownership API](docs/resource-ownership.md) and manager cleanup controls require explicit app adoption; management registration alone is not resource tracking.
 
@@ -20,7 +20,7 @@ The [extension developer guide](docs/extension-development.md) covers durable MC
 
 The [deployment guide](docs/deployment.md) covers opt-in remote HTTPS/OAuth, service and workload-identity grants, DPoP clients, shared notification delivery and durable shared Tasks. The [native Apps example](examples/native_features.py) demonstrates interactive tool resources with meaningful text fallback. Replicated native SDK hosts and retained broker workers have distinct process/state contracts.
 
-The [SDK feature support matrix](docs/sdk-feature-support.md) records implemented profiles, inherited SDK APIs and remaining relay/configuration gaps. Framework 0.20.1 does not claim complete forwarding of every SDK feature. In particular, relayed resource/prompt input rounds and automatic downstream Tasks/UI forwarding remain outside the current profile.
+The [SDK feature support matrix](docs/sdk-feature-support.md) records implemented profiles, inherited SDK APIs and remaining relay/configuration gaps. The framework does not claim complete forwarding of every SDK feature. In particular, relayed resource/prompt input rounds and automatic downstream Tasks/UI forwarding remain outside the current profile.
 
 The [beta completion plan](ROADMAP.md) separates the implemented broker foundation from remaining adapter/host acceptance and later native migration pilots. Parallel private contexts and full app/host payload parity are not currently promised.
 
