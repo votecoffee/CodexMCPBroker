@@ -23,7 +23,8 @@ from pydantic import Field, field_validator
 from . import __version__
 from .models import ID_PATTERN, StrictModel, atomic_json, canonical_digest
 
-MAX_RECORDS = 256
+# Includes retained registrations from previous process lifetimes, not just live services.
+MAX_RECORDS = 4096
 MAX_BYTES = 32 * 1024
 INSTANCE_PATTERN = r"^[a-f0-9]{32}$"
 
@@ -566,12 +567,18 @@ class ManagementClient:
             "instance_id": record.instance_id,
             "plugin_id": record.plugin_id,
             "pid": record.pid,
+            "started_at": record.started_at,
             "monitored": True,
             "checked_at": time.time(),
             "revision": None,
             "status": record.last_status.model_dump(mode="json"),
         }
         if record.stopped:
+            row["status"].update(
+                state="stopped",
+                restart_allowed=False,
+                restart_reason="This registered process has stopped",
+            )
             return row
         try:
             result = self._get(record, "GET", "/status")

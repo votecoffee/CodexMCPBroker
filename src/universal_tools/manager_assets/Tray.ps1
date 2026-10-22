@@ -4,7 +4,8 @@ param(
     [switch]$ShowWindow,
     [switch]$NoCodexInventory,
     [int]$ExitAfterSeconds = 0,
-    [string]$SmokeTestReport
+    [string]$SmokeTestReport,
+    [switch]$SmokeTestShowInstances
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
@@ -54,12 +55,58 @@ function Get-SelectedService {
     return $null
 }
 
+function Test-FreshSnapshot {
+    return $script:lastSnapshot -and $watch -and !$watch.HasExited -and
+        ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - $script:lastSnapshot.updated_at -le 20)
+}
+
+function Render-Snapshot($snapshot) {
+    if (!$snapshot) { return }
+    $selected = Get-SelectedService
+    $selectedKey = if ($selected) { $selected.key } else { '' }
+    $grid.Rows.Clear()
+    $rows = if ($showInstances.Checked) { $snapshot.rows } else { $snapshot.applications }
+    foreach ($row in $rows) {
+        $state = switch ($row.state) {
+            'unmonitored' { 'Not reporting' }
+            'offline' { 'Not responding' }
+            default { [Globalization.CultureInfo]::InvariantCulture.TextInfo.ToTitleCase($row.state) }
+        }
+        if (!$showInstances.Checked -and $row.multiple_instances) {
+            $state += " ($($row.details.instance_counts.responding) instances)"
+        }
+        $name = $row.name
+        if ($showInstances.Checked -and $row.details.pid) { $name += " - PID $($row.details.pid)" }
+        $index = $grid.Rows.Add($name, $state, $row.installed, $row.running, $row.available, $row.update)
+        $grid.Rows[$index].Tag = $row
+        if ($row.state -in @('error', 'degraded', 'offline')) { $grid.Rows[$index].DefaultCellStyle.ForeColor = [Drawing.Color]::DarkRed }
+        elseif ($row.multiple_instances -or $row.update) { $grid.Rows[$index].DefaultCellStyle.ForeColor = [Drawing.Color]::DarkOrange }
+        elseif ($row.state -in @('unmonitored', 'disabled', 'stopped')) { $grid.Rows[$index].DefaultCellStyle.ForeColor = [Drawing.Color]::DimGray }
+        if ($row.key -eq $selectedKey) { $grid.CurrentCell = $grid.Rows[$index].Cells[0] }
+    }
+    $icon.Text = "MCP Manager: $($snapshot.responding_applications) apps, $($snapshot.responding_instances) instances"
+    if ($snapshot.multiple_instance_applications) { $icon.Text += "; $($snapshot.multiple_instance_applications) multiple" }
+    if ($icon.Text.Length -gt 63) { $icon.Text = $icon.Text.Substring(0,63) }
+    Show-Selection
+}
+
 function Show-Selection {
     $selected = Get-SelectedService
-    $restartButton.Enabled = $selected -and $selected.restart_allowed -and !$script:pending
+    $restartButton.Enabled = $selected -and $selected.restart_allowed -and !$script:pending -and (Test-FreshSnapshot)
     $restartMenu.Enabled = $restartButton.Enabled
     if (!$selected) { $details.Text = 'Select a service to see its versions and restart availability.'; return }
     $lines = @($selected.details.message, $selected.details.restart_reason) | Where-Object { $_ }
+    if ($selected.details.instance_counts) {
+        $counts = $selected.details.instance_counts
+        $lines = @("Responding instances: $($counts.responding); stopped registrations: $($counts.stopped); not responding: $($counts.offline).") + $lines
+        if ($selected.details.responding_pids.Count) { $lines += 'Responding process IDs: ' + ($selected.details.responding_pids -join ', ') }
+    } elseif ($selected.details.pid) {
+        $lines = @("Registered process ID: $($selected.details.pid); instance: $($selected.instance_id)") + $lines
+        if ($selected.details.started_at) {
+            $registeredStart = [DateTimeOffset]::FromUnixTimeSeconds([long]$selected.details.started_at).ToLocalTime()
+            $lines += "Registered start: $registeredStart"
+        }
+    }
     if ($selected.details.versions) {
         foreach ($component in $selected.details.versions.PSObject.Properties) {
             $version = $component.Value
@@ -71,7 +118,7 @@ function Show-Selection {
 
 function Request-Restart {
     $selected = Get-SelectedService
-    if (!$selected -or !$selected.restart_allowed -or $script:pending) { return }
+    if (!$selected -or !$selected.restart_allowed -or $script:pending -or !(Test-FreshSnapshot)) { return }
     $requestId = [Guid]::NewGuid().ToString('N')
     $resultFile = Join-Path $uiDirectory "restart-$requestId.json"
     $arguments = @('-B', '-m', 'universal_tools.manager_cli', '--registry', (Quote-Argument $RegistryDirectory),
@@ -95,7 +142,7 @@ try {
     $form.Icon = [Drawing.Icon]::new((Join-Path $PSScriptRoot 'icon.ico'))
 
     $header = New-Object System.Windows.Forms.Label
-    $header.Text = 'Plugins and MCP services'
+    $header.Text = 'MCP applications and instances'
     $header.Font = [Drawing.Font]::new('Segoe UI', 17, [Drawing.FontStyle]::Bold)
     $header.Dock = 'Top'
     $header.Height = 48
@@ -114,8 +161,14 @@ try {
     $restartButton.AutoSize = $true
     $restartButton.Enabled = $false
     $restartButton.Add_Click({ Request-Restart })
+    $showInstances = New-Object System.Windows.Forms.CheckBox
+    $showInstances.Text = 'Show instances and history'
+    $showInstances.AutoSize = $true
+    $showInstances.Margin = [Windows.Forms.Padding]::new(14, 5, 0, 0)
+    $showInstances.Add_CheckedChanged({ Render-Snapshot $script:lastSnapshot })
     [void]$buttons.Controls.Add($refreshButton)
     [void]$buttons.Controls.Add($restartButton)
+    [void]$buttons.Controls.Add($showInstances)
 
     $footer = New-Object System.Windows.Forms.Label
     $footer.Dock = 'Bottom'
@@ -181,6 +234,9 @@ try {
     $timer.Interval = 1000
     $timer.Add_Tick({
         try {
+            if ($SmokeTestReport -and $SmokeTestShowInstances -and $script:lastSnapshot -and !$showInstances.Checked) {
+                $showInstances.Checked = $true
+            }
             if ($script:pending -and $script:pending.Process.HasExited) {
                 if (Test-Path -LiteralPath $script:pending.Result) {
                     $result = Get-Content -LiteralPath $script:pending.Result -Raw | ConvertFrom-Json
@@ -193,26 +249,8 @@ try {
             if (Test-Path -LiteralPath $snapshotFile) {
                 $snapshot = Get-Content -LiteralPath $snapshotFile -Raw | ConvertFrom-Json
                 if (!$script:lastSnapshot -or $script:lastSnapshot.updated_at -ne $snapshot.updated_at) {
-                    $selected = Get-SelectedService
-                    $selectedKey = if ($selected) { $selected.key } else { '' }
-                    $grid.Rows.Clear()
-                    foreach ($row in $snapshot.rows) {
-                        $state = switch ($row.state) {
-                            'unmonitored' { 'Not reporting' }
-                            'offline' { 'Not responding' }
-                            default { [Globalization.CultureInfo]::InvariantCulture.TextInfo.ToTitleCase($row.state) }
-                        }
-                        $index = $grid.Rows.Add($row.name, $state, $row.installed, $row.running, $row.available, $row.update)
-                        $grid.Rows[$index].Tag = $row
-                        if ($row.state -in @('error', 'degraded', 'offline')) { $grid.Rows[$index].DefaultCellStyle.ForeColor = [Drawing.Color]::DarkRed }
-                        elseif ($row.update) { $grid.Rows[$index].DefaultCellStyle.ForeColor = [Drawing.Color]::DarkOrange }
-                        elseif ($row.state -in @('unmonitored', 'disabled', 'stopped')) { $grid.Rows[$index].DefaultCellStyle.ForeColor = [Drawing.Color]::DimGray }
-                        if ($row.key -eq $selectedKey) { $grid.CurrentCell = $grid.Rows[$index].Cells[0] }
-                    }
                     $script:lastSnapshot = $snapshot
-                    $icon.Text = "MCP Manager: $($snapshot.running) running, $($snapshot.updates) pending"
-                    if ($icon.Text.Length -gt 63) { $icon.Text = $icon.Text.Substring(0,63) }
-                    Show-Selection
+                    Render-Snapshot $snapshot
                 }
                 $age = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - $snapshot.updated_at
                 if ($age -gt 20) {
@@ -220,7 +258,9 @@ try {
                     $restartButton.Enabled = $false; $restartMenu.Enabled = $false
                 } elseif ($script:lastError) { $footer.Text = $script:lastError }
                 elseif ($snapshot.warnings.Count) { $footer.Text = $snapshot.warnings -join '; ' }
-                elseif (!$script:pending) { $footer.Text = "$($snapshot.rows.Count) entries. Installed plugins do not report live status until their app enables management." }
+                elseif (!$script:pending) {
+                    $footer.Text = "$($snapshot.applications.Count) apps; $($snapshot.responding_instances) responding instances; $($snapshot.inactive_instances) stopped/not responding; $($snapshot.multiple_instance_applications) apps with multiple instances; $($snapshot.application_updates) updates."
+                }
             }
             if ($watch.HasExited) {
                 $footer.Text = 'The status monitor stopped. Exit and reopen the manager.'
@@ -230,7 +270,11 @@ try {
                 if ($SmokeTestReport) {
                     @{ tray_visible = $icon.Visible; column_count = $grid.Columns.Count; row_count = $grid.Rows.Count;
                        monitor_running = !$watch.HasExited; snapshot_received = [bool]$script:lastSnapshot;
-                       restart_enabled = $restartButton.Enabled } |
+                       restart_enabled = $restartButton.Enabled; instance_view = $showInstances.Checked;
+                       application_count = $script:lastSnapshot.applications.Count;
+                       responding_instances = $script:lastSnapshot.responding_instances;
+                       inactive_instances = $script:lastSnapshot.inactive_instances;
+                       multiple_instance_applications = $script:lastSnapshot.multiple_instance_applications } |
                         ConvertTo-Json | Set-Content -LiteralPath $SmokeTestReport -Encoding utf8
                 }
                 $script:exiting = $true

@@ -101,6 +101,56 @@ class CodexInventory:
         return self.rows, self.error
 
 
+def application_rows(rows):
+    """Summarize applications without concealing distinct responding instances.
+
+    Exact-instance rows remain available. A summary of multiple responding instances
+    cannot choose a restart target on the user's behalf.
+    """
+    groups = {}
+    for row in rows:
+        plugin_id = (row["details"].get("plugin") or {}).get("plugin_id")
+        identity = plugin_id or row.get("plugin_id") or row["app_id"] or row["key"]
+        groups.setdefault(identity, []).append(row)
+    applications = []
+    severity = {"error": 0, "degraded": 1, "busy": 2, "starting": 3, "running": 4, "stopped": 5}
+    for identity, instances in groups.items():
+        responding = [r for r in instances if r["revision"]]
+        latest = max(instances, key=lambda r: r["details"].get("started_at", 0))
+        selected = responding or [latest]
+        primary = min(selected, key=lambda r: severity.get(r["state"], 6))
+        summary = {**primary, "key": "application:" + identity, "details": dict(primary["details"])}
+        for field in ("installed", "running", "available"):
+            values = {r[field] for r in selected}
+            summary[field] = next(iter(values)) if len(values) == 1 else "Mixed"
+        summary["update"] = next(
+            (
+                label
+                for label in ("Update pending", "Restart pending", "Source differs")
+                if any(r["update"] == label for r in selected)
+            ),
+            "",
+        )
+        counts = {
+            "responding": len(responding),
+            "stopped": sum(r["state"] == "stopped" and not r["revision"] for r in instances),
+            "offline": sum(r["state"] == "offline" for r in instances),
+            "registered": sum(r["app_id"] is not None for r in instances),
+        }
+        summary["details"]["instance_counts"] = counts
+        summary["details"]["responding_pids"] = sorted({r["details"]["pid"] for r in responding})
+        summary["multiple_instances"] = len(responding) > 1
+        if len(responding) != 1:
+            summary.update(restart_allowed=False, instance_id=None, revision=None)
+            if responding:
+                summary["details"]["restart_reason"] = (
+                    "Multiple instances are responding. Select Show instances and inspect the "
+                    "exact process before requesting an app-approved restart."
+                )
+        applications.append(summary)
+    return sorted(applications, key=lambda r: (r["name"].casefold(), r["key"]))
+
+
 def present_snapshot(snapshot, inventory):
     """Build a nontechnical UI model without credentials or executable metadata."""
     rows = []
@@ -140,6 +190,7 @@ def present_snapshot(snapshot, inventory):
                 else "",
                 "restart_allowed": bool(status["restart_allowed"] and service["revision"]),
                 "app_id": service["app_id"],
+                "plugin_id": service["plugin_id"],
                 "instance_id": service["instance_id"],
                 "revision": service["revision"],
                 "details": {
@@ -148,6 +199,7 @@ def present_snapshot(snapshot, inventory):
                     "versions": components,
                     "plugin": plugin,
                     "pid": service["pid"],
+                    "started_at": service.get("started_at", 0),
                 },
             }
         )
@@ -178,11 +230,22 @@ def present_snapshot(snapshot, inventory):
                 },
             }
         )
+    applications = application_rows(rows)
     return {
         "schema_version": 1,
         "updated_at": snapshot["updated_at"],
         "rows": sorted(rows, key=lambda r: (r["name"].casefold(), r["key"])),
+        "applications": applications,
         "warnings": snapshot["warnings"],
         "running": sum(r["state"] == "running" for r in rows),
         "updates": sum(bool(r["update"]) for r in rows),
+        "application_updates": sum(bool(r["update"]) for r in applications),
+        "responding_instances": sum(bool(r["revision"]) for r in rows),
+        "responding_applications": sum(
+            r["details"]["instance_counts"]["responding"] > 0 for r in applications
+        ),
+        "multiple_instance_applications": sum(r["multiple_instances"] for r in applications),
+        "inactive_instances": sum(
+            r["state"] in {"offline", "stopped"} and not r["revision"] for r in rows
+        ),
     }

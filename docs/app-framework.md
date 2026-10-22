@@ -2,7 +2,7 @@
 
 The primary development direction is a reusable app-owned MCP framework that reduces Codex reloads and standardizes backend code. The universal broker remains an optional aggregation experiment. Apps can use the framework with their own standalone Codex plugin and no Universal Tools installation.
 
-The current framework is 0.18.0, using MCP Python SDK 2.3.0 with a separate SDK 2.2 compatibility profile. It provides the Python `universal_tools.framework` API and an authenticated loopback reference host, plus optional Tasks, Skills, native protocol federation, Apps and OAuth/shared deployment profiles. See the [SDK support matrix](sdk-feature-support.md), [extension guide](extension-development.md) and [deployment guide](deployment.md). The framework remains experimental. Each app owns its adoption; real Codex activation, native behavior, performance and full standalone/aggregated parity require app-specific acceptance.
+The current framework is 0.18.1, using MCP Python SDK 2.3.0 with a separate SDK 2.2 compatibility profile. It provides the Python `universal_tools.framework` API and an authenticated loopback reference host, plus optional Tasks, Skills, native protocol federation, Apps and OAuth/shared deployment profiles. See the [SDK support matrix](sdk-feature-support.md), [extension guide](extension-development.md) and [deployment guide](deployment.md). The framework remains experimental. Each app owns its adoption; real Codex activation, native behavior, performance and full standalone/aggregated parity require app-specific acceptance.
 
 ## Stable front door, replaceable backends
 
@@ -88,7 +88,7 @@ This checkpoint does not provide native .NET packages, automatic app migration, 
 
 ## MCP SDK 2.3 upgrade
 
-Framework 0.18.0 requires `mcp==2.3.0`. Supported app interoperability targets SDK 2.2 and later; SDK 1.x compatibility is not maintained. The explicit matrix currently verifies SDK 2.2.0 and 2.3.0; later SDK releases still require validation. Update the framework package and its dependency lock together in a stopped, app-owned environment. Do not replace a live backend environment or downgrade an app SDK to adopt the framework. Existing app publication and registration schema versions remain unchanged.
+Framework 0.18.1 requires `mcp==2.3.0`. Supported app interoperability targets SDK 2.2 and later; SDK 1.x compatibility is not maintained. The explicit matrix currently verifies SDK 2.2.0 and 2.3.0; later SDK releases still require validation. Update the framework package and its dependency lock together in a stopped, app-owned environment. Do not replace a live backend environment or downgrade an app SDK to adopt the framework. Existing app publication and registration schema versions remain unchanged.
 
 SDK version and wire-protocol revision are separate. By default, downstream sessions explicitly perform the legacy handshake and use the negotiated `2025-11-25` contract. That remains the default integration profile. Opt-in modern discovery, scoped caching, catalog notifications and owner-bound input rounds use the `auto` or `2026-07-28` profile; see the [SDK 2 feature guide](sdk2-features.md) for configuration and limits. Actual host and app acceptance remains separate.
 

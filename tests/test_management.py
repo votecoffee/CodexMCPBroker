@@ -255,6 +255,116 @@ def test_inventory_does_not_double_count_registered_plugin(tmp_path):
         assert ui["updates"] == 1
 
 
+def test_application_summary_preserves_multiple_live_instances_and_exact_restart_targets(tmp_path):
+    first, _, first_effects, client = fixture_service(tmp_path)
+    second, current, second_effects, _ = fixture_service(tmp_path)
+    current["versions"]["app"]["running"] = "2.0.0"
+    with first, second:
+        ui = present_snapshot(client.snapshot(), [])
+        assert len(ui["rows"]) == 2 and len(ui["applications"]) == 1
+        summary = ui["applications"][0]
+        assert summary["details"]["instance_counts"] == {
+            "responding": 2,
+            "stopped": 0,
+            "offline": 0,
+            "registered": 2,
+        }
+        assert summary["running"] == "Mixed"
+        assert summary["multiple_instances"]
+        assert not summary["restart_allowed"]
+        assert summary["instance_id"] is None and summary["revision"] is None
+        assert all(r["restart_allowed"] and r["instance_id"] for r in ui["rows"])
+        assert ui["responding_instances"] == 2
+        assert ui["responding_applications"] == ui["multiple_instance_applications"] == 1
+        assert ui["application_updates"] == 1
+        assert first_effects == second_effects == []
+
+
+def test_application_summary_separates_history_and_unresponsive_instances(tmp_path, monkeypatch):
+    service, _, effects, client = fixture_service(tmp_path)
+    old, _, _, _ = fixture_service(tmp_path)
+    with old:
+        pass
+    with service:
+        stopped = present_snapshot(client.snapshot(), [])
+        summary = stopped["applications"][0]
+        assert len(stopped["rows"]) == 2
+        assert summary["details"]["instance_counts"]["stopped"] == 1
+        assert summary["details"]["instance_counts"]["responding"] == 1
+        assert summary["restart_allowed"] and summary["instance_id"] == service.instance_id
+        assert stopped["inactive_instances"] == 1
+        original = client._get
+
+        def unreachable(record, *args):
+            if record.instance_id == service.instance_id:
+                raise OSError("disconnected fixture")
+            return original(record, *args)
+
+        monkeypatch.setattr(client, "_get", unreachable)
+        offline = present_snapshot(client.snapshot(), [])
+        assert offline["responding_instances"] == 0
+        assert offline["inactive_instances"] == 2
+        assert offline["applications"][0]["details"]["instance_counts"]["offline"] == 1
+        assert not offline["applications"][0]["restart_allowed"]
+        assert effects == []
+
+
+def test_application_summary_does_not_merge_unrelated_apps_with_equal_display_names(tmp_path):
+    first, _, _, client = fixture_service(tmp_path)
+    second, _, _, _ = fixture_service(tmp_path)
+    second.app_id = "another-app"
+    second.plugin_id = "another@local"
+    with first, second:
+        ui = present_snapshot(client.snapshot(), [])
+        assert len(ui["applications"]) == 2
+        assert not any(r["multiple_instances"] for r in ui["applications"])
+
+
+def test_retained_stopped_history_does_not_hide_live_services_after_256_records(tmp_path):
+    from universal_tools.models import atomic_json
+
+    service, _, effects, client = fixture_service(tmp_path)
+    with service:
+        for number in range(270):
+            record = service.record.model_copy(
+                update={"instance_id": f"{number:032x}", "stopped": True}
+            )
+            atomic_json(
+                client.registry.path(record.app_id, record.instance_id),
+                record.model_dump(mode="json"),
+            )
+        snapshot = client.snapshot()
+        ui = present_snapshot(snapshot, [])
+        assert not snapshot["warnings"]
+        assert len(snapshot["services"]) == 271
+        assert ui["responding_instances"] == 1
+        assert ui["inactive_instances"] == 270
+        assert len(ui["applications"]) == 1
+        assert ui["applications"][0]["details"]["instance_counts"]["stopped"] == 270
+        assert ui["applications"][0]["instance_id"] == service.instance_id
+        assert effects == []
+
+
+def test_registry_history_still_has_a_bounded_total_capacity(tmp_path, monkeypatch):
+    from universal_tools import management
+    from universal_tools.models import atomic_json
+
+    service, _, _, client = fixture_service(tmp_path)
+    with service:
+        for number in range(3):
+            record = service.record.model_copy(
+                update={"instance_id": f"{number:032x}", "stopped": True}
+            )
+            atomic_json(
+                client.registry.path(record.app_id, record.instance_id),
+                record.model_dump(mode="json"),
+            )
+        monkeypatch.setattr(management, "MAX_RECORDS", 3)
+        snapshot = client.snapshot()
+        assert snapshot["services"] == []
+        assert snapshot["warnings"] == ["Management registry has too many instances"]
+
+
 def test_watch_command_writes_credential_free_snapshot(tmp_path):
     service, _, _, _ = fixture_service(tmp_path)
     with service:

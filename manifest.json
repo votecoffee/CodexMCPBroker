@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -40,7 +40,7 @@
     {
       "path": "docs/app-framework.md",
       "size": 16422,
-      "sha256": "c2c57ff876d761b02bea252a6ee284109f892cf7b5bb7e19e8b8d7361f21fa5c"
+      "sha256": "1f11fb7a8809be436c492727d3785b9842e6df6c9907954bced22b2b176e8cea"
     },
     {
       "path": "docs/capability-catalog.md",
@@ -70,12 +70,12 @@
     {
       "path": "docs/sdk-feature-support.md",
       "size": 9343,
-      "sha256": "cac45144cfbf9fd5ca404612a2a9eb8720c043d659df0053e7002caddb37330e"
+      "sha256": "9c832b1fef4a46c858ed1e6d9a5753ddf7da6421984fd58ea59123849a0b3807"
     },
     {
       "path": "docs/sdk2-features.md",
       "size": 9252,
-      "sha256": "3a0db83279ddcf76975113170c903f295b8f0a3d561a71bb815b67745c3e4559"
+      "sha256": "8d3258fc88e5f8e417727ba3cd74fc143375d754f099f4d5e55d965ae901daab"
     },
     {
       "path": "docs/server-development/acceptance.md",
@@ -95,7 +95,7 @@
     {
       "path": "docs/server-development/README.md",
       "size": 7425,
-      "sha256": "316535c438a78ac93acb49dcf781d873c1fb0dff2b1f0caae56377d8de864c50"
+      "sha256": "00fa8c9f6c8611ccf9915f0066762e521035ec28a943cd6889a2770a6620e921"
     },
     {
       "path": "docs/server-development/registration-and-discovery.md",
@@ -114,8 +114,8 @@
     },
     {
       "path": "docs/service-management.md",
-      "size": 10411,
-      "sha256": "1b3e3b9739e25ce70ae5d60e0c8ccc4a13e6264afb9d0ac45d8d586d901ad886"
+      "size": 11535,
+      "sha256": "46e102593f105af417eb543187f00edd6264776c109baf973ef1a77f498dbb14"
     },
     {
       "path": "docs/workflow-contributions.md",
@@ -375,7 +375,7 @@
     {
       "path": "plugins/universal-tools/plugin.json",
       "size": 587,
-      "sha256": "a7e07cd2e17e142442fe62d0b0dd77eb8bd313fb150c4bd77a0082471a0fec14"
+      "sha256": "e9ab0f0f773667f5b8db649df285084bb85debb3881d175f5668ef65373d13fa"
     },
     {
       "path": "plugins/universal-tools/server/launch.py",
@@ -395,12 +395,12 @@
     {
       "path": "pyproject.toml",
       "size": 1285,
-      "sha256": "34554ffad19693da95f94ab7e005f0f1f193d6a71da0569b09daf5d92ece700a"
+      "sha256": "2767ebe6910153fa29cc21e322efde5ec777d961bbdba5aa9518a96ffe39b792"
     },
     {
       "path": "README.md",
-      "size": 35147,
-      "sha256": "af0cb4b236d383ba44bd928bf8c84b30110cd5cc5def4838ed1e0989fcdbacb0"
+      "size": 35375,
+      "sha256": "c31230d7b0f80dfceb80f8318e44d4da2938ed214600789ae1e73ba06e372278"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -480,7 +480,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 99,
-      "sha256": "cd287a1c731f85cee59f95cc9510a27762f3f4e890a2e452d391e4d14f26e43d"
+      "sha256": "0afb6b2ff76f63e8306d29bfd0f2f1a7d4ad7b32be08973d72d9644d07d4cb7b"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -569,8 +569,8 @@
     },
     {
       "path": "src/universal_tools/management.py",
-      "size": 24826,
-      "sha256": "17c14b3f79eadd8c7962288f771ccfe413d3a35e523261f14225b511a9f1c606"
+      "size": 25153,
+      "sha256": "8053a2958cffbb1c91625394d296655b8de481880e9cf5d69765576899ca4b62"
     },
     {
       "path": "src/universal_tools/manager_assets/icon.ico",
@@ -579,8 +579,8 @@
     },
     {
       "path": "src/universal_tools/manager_assets/Tray.ps1",
-      "size": 12647,
-      "sha256": "e5c9b671e74e37e633f512d1c53f5b9f30d14a0cb1a8fe6803b0dadec17df794"
+      "size": 15215,
+      "sha256": "f38e528577cb08a4ca442e470079cce876d778a97a196b5e2b0d676a85ffe74a"
     },
     {
       "path": "src/universal_tools/manager_cli.py",
@@ -589,8 +589,8 @@
     },
     {
       "path": "src/universal_tools/manager_inventory.py",
-      "size": 7435,
-      "sha256": "f6bc198bb6772b05da62feb7f7d7620664d55084c6d684f5fc4452d0a5514740"
+      "size": 10659,
+      "sha256": "6e39918c6fbd232cf03814c18b73199fac00a99624c74066782be2154b710137"
     },
     {
       "path": "src/universal_tools/metadata.py",
@@ -819,8 +819,8 @@
     },
     {
       "path": "tests/test_management.py",
-      "size": 12807,
-      "sha256": "2ad62aff20c0dc9072e73fa24825e48e569860141c715a4ef7a3de162935e557"
+      "size": 17613,
+      "sha256": "f429e8531113d8690e9966d12dc6fb24c88d25c89b2bd26369890bf7baca3382"
     },
     {
       "path": "tests/test_metadata.py",
@@ -944,8 +944,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 31400,
-      "sha256": "711e482d8770321a90c0857193e862d0131c72aa703c0fcf7d263af84dc4d9b0"
+      "size": 31967,
+      "sha256": "285835c48c5383d9b09f31ffbfa02f07b72cea7feece01dd0bf710114ac2cb88"
     }
   ]
 }

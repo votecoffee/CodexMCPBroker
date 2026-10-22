@@ -1,6 +1,6 @@
 # MCP SDK feature support
 
-This matrix describes framework **0.18.0**, pinned to **MCP Python SDK 2.3.0**, with selected interoperability checks on **SDK 2.2.0**. SDK releases, protocol revisions and extension revisions are separate. It is a source/API coverage assessment, not a certification or a claim that every combination has passed in a real app or host.
+This matrix describes framework **0.18.1**, pinned to **MCP Python SDK 2.3.0**, with selected interoperability checks on **SDK 2.2.0**. SDK releases, protocol revisions and extension revisions are separate. It is a source/API coverage assessment, not a certification or a claim that every combination has passed in a real app or host.
 
 The framework has two distinct surfaces: `ApplicationHost` uses the fourteen fixed discovery/invocation tools over app-owned backends; `ExtensionServer` subclasses the SDK's `MCPServer` and accepts explicitly composed native extensions. An SDK feature available on the native server is not automatically a downstream broker feature. See the [developer guide](server-development/README.md) for the reading path.
 

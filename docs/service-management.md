@@ -28,7 +28,9 @@ The default registry is the Windows user Local AppData known folder plus `CodexM
 
 ## Status and versions
 
-The dashboard shows registered service instances, status, installed/running/available versions, updates and restart availability. Different processes receive separate random instance IDs and rows. Component details can include app, plugin, framework and SDK versions. Installed/running mismatch is **Restart pending**; apps explicitly declare **Update pending**. Available versions stay unknown when no source provides them.
+The dashboard defaults to one row per app, grouped by its exact plugin identity or app ID, never just its display name. It shows status, installed/running/available versions, updates and restart availability. Multiple responding instances are highlighted and counted explicitly; this can indicate independent chat workers, intentionally separate services or a lifecycle defect. Registration alone does not establish why a process exists or whether it is safe to stop.
+
+Select **Show instances and history** to inspect each process ID and instance identity. App details separate responding instances, stopped registrations and unreachable endpoints. Stopped/offline history is retained for diagnosis without inflating the count of responding applications. Grouping does not stop, consolidate or hide live processes. Different running versions display **Mixed**. A summary with multiple responding instances disables restart until the user selects an exact instance; the app's own refusal still applies. Component details can include app, plugin, framework and SDK versions. Installed/running mismatch is **Restart pending**; apps explicitly declare **Update pending**. Available versions stay unknown when no source provides them.
 
 The optional inventory adapter runs the fixed read-only `codex plugin list --json` command. Installed plugins without a management endpoint appear as **Not reporting**, with unknown running versions and restart disabled. Enabled installation does not prove server health or availability in a chat. Remote connectors and skill-only plugins can also appear.
 
@@ -42,8 +44,12 @@ Use the normal shared package dependency. Management works with direct SDK serve
 
 ```python
 from universal_tools.management import (
-    ComponentVersion, ManagedService, ManagedStatus, RestartResult,
+    ComponentVersion,
+    ManagedService,
+    ManagedStatus,
+    RestartResult,
 )
+
 
 def status():
     return ManagedStatus(
@@ -63,6 +69,7 @@ def status():
         restart_reason=supervisor.restart_reason,
     )
 
+
 def restart(request):
     # Atomically fence new work and enforce app/native safety before scheduling.
     accepted = supervisor.request_safe_restart(request.request_id)
@@ -71,9 +78,13 @@ def restart(request):
         message="Restart scheduled" if accepted else supervisor.restart_reason,
     )
 
+
 with ManagedService(
-    "example-app", "Example MCP Server", status,
-    restart=restart, plugin_id="example-app@example-marketplace",
+    "example-app",
+    "Example MCP Server",
+    status,
+    restart=restart,
+    plugin_id="example-app@example-marketplace",
 ):
     run_existing_app_service()
 ```
@@ -98,7 +109,7 @@ A SQLite intent is durable before callback dispatch. Duplicate IDs return the ea
 
 App/operator code can inspect unresolved IDs and receipts with `agent.pending_restarts()` without dispatching anything. After independently verifying the actual outcome, it can call `agent.reconcile_restart(request_id, RestartResult(...))`. This app-only API appends an attestation and preserves the original uncertain intent. It is not exposed through tray, HTTP or MCP. An accepted receipt means the supervisor accepted the request; observe a fresh registration/status to establish replacement health.
 
-The journal is bounded to 10,000 intents; archival must preserve operation IDs and unresolved outcomes. Registry enumeration is bounded to 256 instance records with a visible capacity warning. Stopped records are not automatically erased.
+The journal is bounded to 10,000 intents; archival must preserve operation IDs and unresolved outcomes. Registry enumeration is bounded to 4,096 instance records, including retained history, with a visible capacity warning. Stopped records are not automatically erased. App tests must use a dedicated registry and close their own workers; normal per-chat workers must close management endpoints on shutdown. Neither historical registrations nor a missing launcher parent authorize killing a process or clearing uncertain outcomes.
 
 ## Local coordination protocol
 
