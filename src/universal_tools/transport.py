@@ -220,7 +220,15 @@ async def watching(session, enabled):
 
 
 @asynccontextmanager
-async def service_session(manifest: ServiceManifest):
+async def service_session(manifest: ServiceManifest, *, stdio_client_factory=None):
+    """Open an SDK session through a selected host-local stdio transport context.
+
+    The optional factory accepts SDK StdioServerParameters and errlog, and yields
+    the SDK's read/write message streams. It owns its process/pipe lifecycle. This
+    hook does not provide durable launch containment by itself or patch the SDK.
+    """
+    if stdio_client_factory is not None and not callable(stdio_client_factory):
+        raise TypeError("stdio_client_factory must be an async context manager factory")
     transport = manifest.transport
     if isinstance(transport, HttpTransport):
         token = None
@@ -283,7 +291,8 @@ async def service_session(manifest: ServiceManifest):
         )
         # App stderr can contain secrets; do not merge it into broker logs.
         with open(os.devnull, "w", encoding="utf-8") as errlog:
-            async with stdio_client(params, errlog=errlog) as (read, write):
+            factory = stdio_client_factory if stdio_client_factory is not None else stdio_client
+            async with factory(params, errlog=errlog) as (read, write):
                 async with InitializedSession(
                     read,
                     write,

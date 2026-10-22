@@ -152,7 +152,12 @@ class Lease:
 
 
 class Broker:
-    def __init__(self, state: Path, *, max_request_body_bytes: int = MAX_REQUEST_BYTES):
+    def __init__(
+        self, state: Path, *, max_request_body_bytes: int = MAX_REQUEST_BYTES, session_factory=None
+    ):
+        if session_factory is not None and not callable(session_factory):
+            raise TypeError("session_factory must be an async context manager factory")
+        self._session_factory = session_factory
         self.state = state
         self.max_request_body_bytes = max_request_body_bytes
         self.registry = state / "services"
@@ -174,6 +179,11 @@ class Broker:
         self._closed = False
         self._clock = time.monotonic
         self.catalog_listeners = set()
+
+    def _connect_session(self, manifest):
+        # Selection is host-local. A refusal must never fall back to the SDK launcher.
+        factory = self._session_factory if self._session_factory is not None else service_session
+        return factory(manifest)
 
     async def start(self):
         if self._reaper is None:
@@ -359,7 +369,7 @@ class Broker:
                         else:
                             phase = "connect_initialize"
                             async with asyncio.timeout(manifest.timeout_seconds):
-                                async with service_session(manifest) as session:
+                                async with self._connect_session(manifest) as session:
                                     phase = "list_tools"
                                     tools = await list_all_tools(session)
                                     phase = "initialization_metadata"
@@ -687,7 +697,7 @@ class Broker:
                         )
                     else:
                         async with asyncio.timeout(manifest.timeout_seconds):
-                            async with service_session(manifest) as session:
+                            async with self._connect_session(manifest) as session:
                                 state = await read_catalog(session, manifest)
                 self._registration_matches(manifest)
                 state = self._bound_capability_state(manifest, state)
@@ -770,7 +780,7 @@ class Broker:
         self.ownership.reserve(
             manifest, owner if owner is not None else self._shared_owner, context_id
         )
-        worker = SessionWorker(manifest, service_session)
+        worker = SessionWorker(manifest, self._connect_session)
         lease = Lease(manifest, owner, context_id, 0, worker)
         self._leases[manifest.id] = lease
         try:
@@ -1007,7 +1017,7 @@ class Broker:
                         await self._renew(lease)
                         return result
                     async with asyncio.timeout(entry.manifest.timeout_seconds):
-                        async with service_session(entry.manifest) as session:
+                        async with self._connect_session(entry.manifest) as session:
                             return await invoke(session)
             except BaseException as error:
                 if claimed:

@@ -45,6 +45,8 @@ The launcher writes a launch reservation, creates the worker suspended with a pr
 
 The helper requires Windows 10/Server 2016 or later and the locked Windows dependencies. Its background-worker profile does not inherit standard streams or provide an MCP stdio transport. It does not replace the SDK's stdio transport. Apps integrating existing stdio launchers must retain correct client EOF/parent cleanup and either add equivalent atomic containment or register their processes separately.
 
+The [session/transport factory API](app-framework.md#app-owned-session-and-transport-factories) lets an app select the same reviewed provider for every engine connection. It does not supply a complete owned stdio implementation; pipe creation, byte/message adaptation and bounded teardown still need their own evidence before an app enables that route.
+
 Membership is a snapshot of verifiable live processes, not a complete OS process-audit history. The job owns all contained descendants even between snapshots. Processes launched indirectly by another service, COM broker, WMI or another mechanism outside the job require separate explicit resource records and app-specific cleanup. Never assume an SDK connection or Windows parent relationship contains native software.
 
 The underlying Windows contracts are documented by Microsoft: [job objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects) and [process-creation job attributes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).

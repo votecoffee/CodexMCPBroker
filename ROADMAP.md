@@ -7,6 +7,8 @@ The finish line is a shared app framework and independent Windows manager that s
 - [x] Durable per-app/per-owner process/software ownership ledger, independent of live management endpoints.
 - [x] Exact process creation identity and bounded Windows job-contained startup; attached/shared resources remain report-only.
 - [x] Reviewed manager orphan cleanup, app startup recovery APIs and retained intent/receipt evidence, including uncertain outcomes.
+- [x] Host-local session/stdio transport factory selection across discovery, probes, transient calls and retained workers, without default fallback on provider failure.
+- [ ] Common atomic contained SDK stdio provider with restricted inherited pipes, byte/message parity and bounded EOF/cancellation teardown.
 - [ ] App-owned acceptance of EOF, clean close, startup failure, crash, native document handling and repeated reconnects without process growth.
 
 ## Shared app framework first

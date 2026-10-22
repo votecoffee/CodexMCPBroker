@@ -2,7 +2,7 @@
 
 The architecture is a reusable app-owned MCP framework and independent Windows manager. Apps keep their own Codex plugins. The universal plugin, marketplace and skill-composition installer are retired; there is no universal plugin to install instead of app plugins. Retained routing components are framework internals and development fixtures.
 
-The current framework is 0.20.0, using MCP Python SDK 2.3.0 with a separate SDK 2.2 compatibility profile. It provides `universal_tools.framework`, durable [process/resource ownership](resource-ownership.md), an authenticated loopback reference host and optional Tasks, Skills, native protocol federation, Apps and OAuth/shared deployment profiles. See the [SDK support matrix](sdk-feature-support.md), [extension guide](extension-development.md) and [deployment guide](deployment.md). The framework remains experimental. Each app owns adoption and native/Codex acceptance.
+The current framework is 0.20.1, using MCP Python SDK 2.3.0 with a separate SDK 2.2 compatibility profile. It provides `universal_tools.framework`, durable [process/resource ownership](resource-ownership.md), an authenticated loopback reference host and optional Tasks, Skills, native protocol federation, Apps and OAuth/shared deployment profiles. See the [SDK support matrix](sdk-feature-support.md), [extension guide](extension-development.md) and [deployment guide](deployment.md). The framework remains experimental. Each app owns adoption and native/Codex acceptance.
 
 ## Stable front door, replaceable backends
 
@@ -63,6 +63,27 @@ python -m universal_tools --state .local/framework-example app-serve --publicati
 
 In a second terminal, publish generation 2 with the same state and port. Through the still-connected app MCP client, release any owned context after completing its work, then call `refresh_services`. `text-engine/count_words` becomes searchable while the fourteen frontend definitions stay unchanged. The example only inspects supplied text and starts disposable Python workers. Keep its bearer token/private runtime settings outside public files.
 
+## App-owned session and transport factories
+
+`ApplicationHost(..., session_factory=...)` and `serve_application(..., session_factory=...)` accept a trusted in-process async context manager factory. It receives a `ServiceManifest` and yields an initialized SDK-compatible client session. The same selection covers discovery, capability probes, transient calls and retained exclusive/shared actors, including publication refresh. Each retained actor enters and exits its context in the same task. A selected factory's refusal, failed initialization or failed cleanup never selects the default transport as a retry.
+
+To customize only stdio transport, compose the existing session implementation:
+
+```python
+from functools import partial
+from universal_tools.framework import ApplicationHost
+from universal_tools.transport import service_session
+
+sessions = partial(service_session, stdio_client_factory=owned_stdio_context)
+async with ApplicationHost(private_state, app_publication, session_factory=sessions) as host:
+    client = host.client()
+    result = await client.invoke("search_tools", {"query": "inspect"})
+```
+
+`owned_stdio_context` in this sketch must be supplied by the embedding app or a separately reviewed transport provider. Its signature accepts the SDK's `StdioServerParameters` and keyword `errlog`, then yields SDK read/write **message** streams. Byte pipes alone are not this contract. Environment additions remain restricted to the manifest's explicit allowlist; stderr stays separate from host logs. HTTP sessions continue through the normal HTTP transport. Factory selection is scoped to the host, never a global SDK patch, manifest import string or model-controlled executable hook.
+
+This API supplies selection and propagation, not a contained SDK process provider. The current `ResourceOwner.launch()` background profile has no stdio pipes. A complete common stdio provider still needs durable reservation, atomic suspended job assignment, narrowly inherited pipes, binding before resume, SDK framing/backpressure parity, bounded EOF/cancellation teardown and uncertain cleanup retention. Apps must keep an unsupported deployment route disabled until those implementation and acceptance gates pass. Supplying a callable does not prove containment, native shutdown safety or migration readiness.
+
 ## Publication and reload guards
 
 The app updater owns the publication file and immutable backend deployment directories. Editing that file is an explicit local trust/configuration action; no model tool accepts executable paths or installs modules. A revision change is required when a selected backend definition changes. Stdio publications bind an absolute executable or entrypoint argument to SHA-256. Entry bytes are checked before publication, metadata probing and dispatch. This is an entrypoint integrity guard, not authentication or proof of the complete dependency/resource closure. Apps must preserve and validate their full deployment artifacts separately. Hashing cost scales with entrypoint size; native latency parity is not established.
@@ -87,7 +108,7 @@ This checkpoint does not provide native .NET packages, automatic app migration, 
 
 ## MCP SDK 2.3 upgrade
 
-Framework 0.20.0 requires `mcp==2.3.0`. Supported app interoperability targets SDK 2.2 and later; SDK 1.x compatibility is not maintained. The explicit matrix currently verifies SDK 2.2.0 and 2.3.0; later SDK releases still require validation. Update the framework package and dependency lock together in a stopped, app-owned environment. Do not replace a live backend environment or downgrade an app SDK to adopt the framework. Existing app publication/registration schema versions remain unchanged; the resource ledger has its own versioned record schema.
+Framework 0.20.1 requires `mcp==2.3.0`. Supported app interoperability targets SDK 2.2 and later; SDK 1.x compatibility is not maintained. The explicit matrix currently verifies SDK 2.2.0 and 2.3.0; later SDK releases still require validation. Update the framework package and dependency lock together in a stopped, app-owned environment. Do not replace a live backend environment or downgrade an app SDK to adopt the framework. Existing app publication/registration schema versions remain unchanged; the resource ledger has its own versioned record schema.
 
 SDK version and wire-protocol revision are separate. By default, downstream sessions explicitly perform the legacy handshake and use the negotiated `2025-11-25` contract. That remains the default integration profile. Opt-in modern discovery, scoped caching, catalog notifications and owner-bound input rounds use the `auto` or `2026-07-28` profile; see the [SDK 2 feature guide](sdk2-features.md) for configuration and limits. Actual host and app acceptance remains separate.
 

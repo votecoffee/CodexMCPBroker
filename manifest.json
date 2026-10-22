@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "files": [
     {
       "path": ".gitattributes",
@@ -79,8 +79,8 @@
     },
     {
       "path": "docs/app-framework.md",
-      "size": 16395,
-      "sha256": "d2fcdebae6f228f033ef2b283ca8b11def58aadf5426cbc40563a601af7163ae"
+      "size": 18717,
+      "sha256": "091ece59d6dfcc0614d3dbc02e69d48578500fdf49b0d70e0e37f0f46455fb16"
     },
     {
       "path": "docs/capability-catalog.md",
@@ -109,18 +109,18 @@
     },
     {
       "path": "docs/resource-ownership.md",
-      "size": 11334,
-      "sha256": "e604f6f9cb905e4a54f1069668f4d4091c51727d3299d3a0f4cf0187d42a5026"
+      "size": 11688,
+      "sha256": "95fd0220c7403884ca055b4279600ea835a01a1aa01f1ec28cdb9fa19fbc468b"
     },
     {
       "path": "docs/sdk-feature-support.md",
-      "size": 9849,
-      "sha256": "1ab95246d5cd48335dcb1cd9167a9ea42b9423e83acfe373397dd8c9b1d96c4e"
+      "size": 10227,
+      "sha256": "8ddacac25533712892e1198b935dd9bf025868549a0b612ec5e3018a02284f74"
     },
     {
       "path": "docs/sdk2-features.md",
       "size": 9296,
-      "sha256": "56796fc1c4e0aaf70a8c726f95279b36ec26b57eac15ed4e2c2336853bf4255e"
+      "sha256": "4f074c4b348780b3fa40ae1c8b29d0fc8e154316e5e99a62fa8c25339df7ad58"
     },
     {
       "path": "docs/server-development/acceptance.md",
@@ -330,12 +330,12 @@
     {
       "path": "pyproject.toml",
       "size": 1277,
-      "sha256": "a9b08673350974b338bb131aab1ad37ba8dca3e45d6a1758e3946e76f9f03047"
+      "sha256": "906e64f2ffe63c33a09b8e42ba8f0910e26faa8246f16488bf7a6cb649ceff2f"
     },
     {
       "path": "README.md",
-      "size": 35439,
-      "sha256": "3111f4e138f6987523f4a064ab52f438edb147b45b5494bfaf570eb2dbac7ca7"
+      "size": 35905,
+      "sha256": "c08319877722e7b138d8dd9f63aaa9c30c56fa4b1f42a13d701f10c45439edc0"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -349,8 +349,8 @@
     },
     {
       "path": "ROADMAP.md",
-      "size": 7583,
-      "sha256": "0d424370b42a4625d833068021f3200191c0494016e657cca08f2bad2db9361a"
+      "size": 7893,
+      "sha256": "2b64b7e9269f694e04e1b9f01f3fcdf587a6091ccac52491435db89aa48d738b"
     },
     {
       "path": "scripts/Broker.ps1",
@@ -400,7 +400,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 104,
-      "sha256": "3581eecf3065a81f7e613c54d24a87590d64b860826c30d6d40e80b1be9c113c"
+      "sha256": "fe460d4d516cc59ec645e7bdcae68c5c7567849860f07853e86a1bdb58422988"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -414,8 +414,8 @@
     },
     {
       "path": "src/universal_tools/broker.py",
-      "size": 46908,
-      "sha256": "d339ab1273aad675ac5ae053ec63efe35788adb019692f78ae09fcfdf07178b5"
+      "size": 47439,
+      "sha256": "fb2cef71d486116c0b43d1f385d017c42dee6daf23d9f874888e8b7f985a88db"
     },
     {
       "path": "src/universal_tools/budgets.py",
@@ -469,8 +469,8 @@
     },
     {
       "path": "src/universal_tools/framework.py",
-      "size": 20960,
-      "sha256": "b0184dc5dea6b0b47492ba95e06a1b48f2cb9b0657620292b576d716c664e998"
+      "size": 21156,
+      "sha256": "c7267f587421c8f47bb12a75c2d124404df4ca9c7d511d082068b1a6df624ec0"
     },
     {
       "path": "src/universal_tools/identity.py",
@@ -594,8 +594,8 @@
     },
     {
       "path": "src/universal_tools/transport.py",
-      "size": 12699,
-      "sha256": "8cfd595ee78a737b9dd1fdbbdead8f622a21bbabf09e1479c146f32c8d1e02bc"
+      "size": 13327,
+      "sha256": "023441cf53cf9589f6edbe67b4957be130649c9396bfd2fd5d4a1d02b1b6ceca"
     },
     {
       "path": "src/universal_tools/windows_resources.py",
@@ -838,6 +838,11 @@
       "sha256": "3367410debd89016c1ce1ad3bf534b032ffd6be93814dc6163b847f683db386f"
     },
     {
+      "path": "tests/test_session_factory.py",
+      "size": 8511,
+      "sha256": "9e6d254f25982ec3ea0a0164be1264f3dd33cc0e3d087f8e42d4a0b0fce84856"
+    },
+    {
       "path": "tests/test_sessions.py",
       "size": 16437,
       "sha256": "414045f5ff07962c0ba200a2dbc3c7a92f9da5526bd8efa54c32e5d4af6e599d"
@@ -884,8 +889,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 33080,
-      "sha256": "6c98c83c3faeef69d7cacfbc04cb9e8fe1f03fdac92e5eb6518f88a2cb4bd57e"
+      "size": 33711,
+      "sha256": "44472d6d200b7d2ae51f0bbd15e24a1b2ce3b5f1e51c46bd9a8d4a534820bd6c"
     }
   ]
 }

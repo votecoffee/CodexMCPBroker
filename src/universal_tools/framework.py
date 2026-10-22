@@ -184,12 +184,18 @@ class ApplicationHost:
     change on refresh. The app owns native code, authorization and update/reconciliation UI.
     """
 
-    def __init__(self, state, publication, *, max_request_body_bytes=MAX_REQUEST_BYTES):
+    def __init__(
+        self, state, publication, *, max_request_body_bytes=MAX_REQUEST_BYTES, session_factory=None
+    ):
         self.state = Path(state).resolve()
         self.publication = Path(publication).resolve()
         self.definition = load_application(self.publication)
         self.root = self.state / "framework"
-        self._engine = Broker(self.state, max_request_body_bytes=max_request_body_bytes)
+        self._engine = Broker(
+            self.state,
+            max_request_body_bytes=max_request_body_bytes,
+            session_factory=session_factory,
+        )
         self.backend = ApplicationBackend(self)
         self._selected = {}
         self._gates = {}
@@ -457,14 +463,17 @@ class ApplicationHost:
         return server
 
 
-def serve_application(state, publication, *, skills=None):
+def serve_application(state, publication, *, skills=None, session_factory=None):
     """Authenticated loopback reference host. Apps may embed the same ApplicationHost API."""
     import uvicorn
     from starlette.applications import Starlette
 
     settings = load_settings(state)
     host = ApplicationHost(
-        state, publication, max_request_body_bytes=settings.max_request_body_bytes
+        state,
+        publication,
+        max_request_body_bytes=settings.max_request_body_bytes,
+        session_factory=session_factory,
     )
     server = host.create_server(port=settings.port, skills=skills)
     base = server.streamable_http_app(**server.http_options)
