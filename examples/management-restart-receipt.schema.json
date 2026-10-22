@@ -1,0 +1,25 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "outcome": {
+      "enum": [
+        "accepted",
+        "blocked",
+        "uncertain"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "message": {
+      "maxLength": 1024,
+      "title": "Message",
+      "type": "string"
+    }
+  },
+  "required": [
+    "outcome",
+    "message"
+  ],
+  "title": "RestartReceipt",
+  "type": "object"
+}

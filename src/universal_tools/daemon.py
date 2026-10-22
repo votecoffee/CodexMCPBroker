@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hmac
-import os
 import re
 import secrets
 from contextlib import asynccontextmanager
@@ -18,40 +17,9 @@ from starlette.responses import JSONResponse
 from . import __version__
 from .broker import Broker
 from .identity import CLIENT_HEADER, CLIENT_PATTERN, client_identity
-from .models import BrokerError, Settings, canonical_digest, load_settings
+from .instance_lock import InstanceLock
+from .models import Settings, canonical_digest, load_settings
 from .surface import LocalBackend, create_surface
-
-
-class InstanceLock:
-    """An OS-owned lock is released automatically if the daemon exits or crashes."""
-
-    def __init__(self, path: Path):
-        self.path = path
-        self.stream = None
-
-    def __enter__(self):
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.stream = self.path.open("a+b")
-        if self.path.stat().st_size == 0:
-            self.stream.write(b"0")
-            self.stream.flush()
-        self.stream.seek(0)
-        try:
-            if os.name == "nt":
-                import msvcrt
-
-                msvcrt.locking(self.stream.fileno(), msvcrt.LK_NBLCK, 1)
-            else:
-                import fcntl
-
-                fcntl.flock(self.stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
-            self.stream.close()
-            raise BrokerError("a broker already owns this state directory") from None
-        return self
-
-    def __exit__(self, *args):
-        self.stream.close()
 
 
 class ProtectedApp:

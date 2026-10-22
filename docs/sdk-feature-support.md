@@ -1,6 +1,6 @@
 # MCP SDK feature support
 
-This matrix describes framework **0.17.0**, pinned to **MCP Python SDK 2.3.0**, with selected interoperability checks on **SDK 2.2.0**. SDK releases, protocol revisions and extension revisions are separate. It is a source/API coverage assessment, not a certification or a claim that every combination has passed in a real app or host.
+This matrix describes framework **0.18.0**, pinned to **MCP Python SDK 2.3.0**, with selected interoperability checks on **SDK 2.2.0**. SDK releases, protocol revisions and extension revisions are separate. It is a source/API coverage assessment, not a certification or a claim that every combination has passed in a real app or host.
 
 The framework has two distinct surfaces: `ApplicationHost` uses the fourteen fixed discovery/invocation tools over app-owned backends; `ExtensionServer` subclasses the SDK's `MCPServer` and accepts explicitly composed native extensions. An SDK feature available on the native server is not automatically a downstream broker feature. See the [developer guide](server-development/README.md) for the reading path.
 
@@ -50,6 +50,10 @@ Sampling, roots and MCP protocol logging are deprecated upstream. The generic br
 Nested task inputs, arbitrary downstream extension forwarding and automatic permission/approval synthesis are not supported. Replication does not move live Python stacks or native engineering sessions between processes. Native .NET bindings and a public package feed are project roadmap items, not missing Python SDK protocol features.
 
 Actual host skill selection/reload, form and Apps rendering, app-native jobs and effects, real identity-provider grants, HTTPS proxy behavior and external Redis durability/failover remain separate acceptance work. Synthetic checks and source inspection do not establish those outcomes. Record deployment and app-specific evidence outside public source.
+
+## Desktop management
+
+Framework 0.18 additionally provides an opt-in [tray management interface](service-management.md). It does not enable additional MCP protocol relays or migrate installed apps. The Windows manager lists installed plugins and reports live health/restart availability only for app-registered management endpoints.
 
 ## Upstream references
 

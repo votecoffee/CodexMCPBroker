@@ -1,0 +1,178 @@
+{
+  "$defs": {
+    "ComponentVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "installed": {
+          "maxLength": 128,
+          "title": "Installed",
+          "type": "string"
+        },
+        "running": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Running"
+        },
+        "available": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Available"
+        },
+        "update_pending": {
+          "default": false,
+          "title": "Update Pending",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "installed"
+      ],
+      "title": "ComponentVersion",
+      "type": "object"
+    },
+    "ManagedStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "default": "running",
+          "enum": [
+            "starting",
+            "running",
+            "busy",
+            "degraded",
+            "stopped",
+            "error"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "message": {
+          "default": "",
+          "maxLength": 1024,
+          "title": "Message",
+          "type": "string"
+        },
+        "versions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ComponentVersion"
+          },
+          "maxProperties": 16,
+          "title": "Versions",
+          "type": "object"
+        },
+        "active_operations": {
+          "default": 0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Active Operations",
+          "type": "integer"
+        },
+        "restart_allowed": {
+          "default": false,
+          "title": "Restart Allowed",
+          "type": "boolean"
+        },
+        "restart_reason": {
+          "default": "Restart is not configured",
+          "maxLength": 512,
+          "title": "Restart Reason",
+          "type": "string"
+        }
+      },
+      "title": "ManagedStatus",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "app_id": {
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+      "title": "App Id",
+      "type": "string"
+    },
+    "display_name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Display Name",
+      "type": "string"
+    },
+    "instance_id": {
+      "pattern": "^[a-f0-9]{32}$",
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "plugin_id": {
+      "anyOf": [
+        {
+          "maxLength": 256,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Plugin Id"
+    },
+    "pid": {
+      "minimum": 1,
+      "title": "Pid",
+      "type": "integer"
+    },
+    "started_at": {
+      "title": "Started At",
+      "type": "number"
+    },
+    "endpoint": {
+      "title": "Endpoint",
+      "type": "string"
+    },
+    "token": {
+      "pattern": "^[a-zA-Z0-9_-]{32,128}$",
+      "title": "Token",
+      "type": "string"
+    },
+    "stopped": {
+      "default": false,
+      "title": "Stopped",
+      "type": "boolean"
+    },
+    "last_status": {
+      "$ref": "#/$defs/ManagedStatus"
+    }
+  },
+  "required": [
+    "app_id",
+    "display_name",
+    "instance_id",
+    "pid",
+    "started_at",
+    "endpoint",
+    "token",
+    "last_status"
+  ],
+  "title": "Registration",
+  "type": "object"
+}

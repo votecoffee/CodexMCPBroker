@@ -18,6 +18,14 @@ The primary finish line is a reusable app framework that standardizes backend co
 
 The [framework guide](docs/app-framework.md) records current APIs, packaging, lifecycle boundaries and prototype limits. Backend refresh avoids native plugin changes only while the front-door schema and packaged skill entrypoint remain stable. Arbitrary in-process code/DLL replacement is outside the framework contract.
 
+## Desktop management
+
+- [x] Windows tray/dashboard, installed plugin inventory, version and pending-update views, and a separate root manager installer.
+- [x] Opt-in app coordination with authenticated loopback status, per-instance identity, revision-bound restart requests, durable duplicate/uncertain barriers and app-only reconciliation.
+- [ ] App-owned adoption and native restart acceptance for each selected server; unregistered plugins remain unmonitored.
+
+See [service management](docs/service-management.md) for the package interface and operational boundaries.
+
 ## Broker foundation
 
 - [x] One reusable plugin, fixed discovery/invocation tools and independent app registrations.

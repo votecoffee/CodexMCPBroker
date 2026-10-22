@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "ComponentVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "installed": {
+          "maxLength": 128,
+          "title": "Installed",
+          "type": "string"
+        },
+        "running": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Running"
+        },
+        "available": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Available"
+        },
+        "update_pending": {
+          "default": false,
+          "title": "Update Pending",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "installed"
+      ],
+      "title": "ComponentVersion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "state": {
+      "default": "running",
+      "enum": [
+        "starting",
+        "running",
+        "busy",
+        "degraded",
+        "stopped",
+        "error"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "message": {
+      "default": "",
+      "maxLength": 1024,
+      "title": "Message",
+      "type": "string"
+    },
+    "versions": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ComponentVersion"
+      },
+      "maxProperties": 16,
+      "title": "Versions",
+      "type": "object"
+    },
+    "active_operations": {
+      "default": 0,
+      "maximum": 1000000,
+      "minimum": 0,
+      "title": "Active Operations",
+      "type": "integer"
+    },
+    "restart_allowed": {
+      "default": false,
+      "title": "Restart Allowed",
+      "type": "boolean"
+    },
+    "restart_reason": {
+      "default": "Restart is not configured",
+      "maxLength": 512,
+      "title": "Restart Reason",
+      "type": "string"
+    }
+  },
+  "title": "ManagedStatus",
+  "type": "object"
+}

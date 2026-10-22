@@ -6,7 +6,7 @@ Shared app MCP framework with an optional universal discovery broker
 
 Build app-owned MCP hosts from one versioned package. A stable MCP front door discovers versioned backends, preserving common policy, session and recovery behavior while reducing Codex reloads. Apps keep their standalone plugins. The optional universal broker can aggregate independently installed app services; that route remains a separate integration profile.
 
-The optional plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. Apps use the `universal_tools.framework` API. The current version is **0.17.0**, using **MCP Python SDK 2.3.0**.
+The optional plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. Apps use the `universal_tools.framework` API. The current version is **0.18.0**, using **MCP Python SDK 2.3.0**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** The shared framework and optional broker are **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Standalone integrations remain independently usable. Each app owns its installation and migration, including workflow, host and native acceptance; upgrading this package does not perform that migration.
 
@@ -16,13 +16,15 @@ The [extension developer guide](docs/extension-development.md) covers durable MC
 
 The [deployment guide](docs/deployment.md) covers opt-in remote HTTPS/OAuth, service and workload-identity grants, DPoP clients, shared notification delivery and durable shared Tasks. The [native Apps example](examples/native_features.py) demonstrates interactive tool resources with meaningful text fallback. Replicated native SDK hosts and retained broker workers have distinct process/state contracts.
 
-The [SDK feature support matrix](docs/sdk-feature-support.md) records implemented profiles, inherited SDK APIs and remaining relay/configuration gaps. Framework 0.17.0 does not claim complete forwarding of every SDK feature. In particular, relayed resource/prompt input rounds and automatic downstream Tasks/UI forwarding remain outside the current profile.
+The [SDK feature support matrix](docs/sdk-feature-support.md) records implemented profiles, inherited SDK APIs and remaining relay/configuration gaps. Framework 0.18.0 does not claim complete forwarding of every SDK feature. In particular, relayed resource/prompt input rounds and automatic downstream Tasks/UI forwarding remain outside the current profile.
 
 The [beta completion plan](ROADMAP.md) separates the implemented broker foundation from remaining adapter/host acceptance and later native migration pilots. Parallel private contexts and full app/host payload parity are not currently promised.
 
 The [adapter assessment](docs/adapter-assessment.md) covers session ownership, app-owned jobs and production feature workers, including refresh, reload and failure handling. Passing those checks with fake native providers still leaves Codex host and native acceptance to complete for each selected workflow.
 
 Building a new server? Start with the [MCP server developer guide](docs/server-development/README.md), including a read-only quickstart, shared-service architecture, state/recovery contracts, registration/discovery and a reusable acceptance record. The guide distinguishes MCP conformance from this broker's supported integration profile.
+
+The optional [Windows tray manager](docs/service-management.md) displays installed/running/available versions, pending updates and app-reported health. Run **`InstallManager.cmd`** to install it independently of the broker/plugin. Apps opt into `universal_tools.management` for live status and guarded restart controls. Other installed plugins appear as **Not reporting**, with restart disabled.
 
 ## Table of Contents
 
@@ -57,6 +59,10 @@ The broker exposes fourteen fixed tools. App tools are namespaced catalog entrie
 ### Framework development
 
 Follow the [framework guide](docs/app-framework.md) for the `ApplicationHost` API, a harmless publish/reload example, package pinning and app adoption gates. Build/install a verified local wheel or use an editable development dependency; this repository does not imply a published package feed. The framework host has its own runtime requirements, so preserve an existing app's dependencies by using a separate host environment when needed.
+
+### Tray manager
+
+Run `.\InstallManager.cmd -NoPause` to install the tray and Start menu shortcut. Add `-StartAtLogon` for automatic startup. Its separate versioned runtime does not replace server environments or reinstall plugins. See [service management](docs/service-management.md) for app integration and isolated installation options.
 
 ### Optional universal broker launcher
 
