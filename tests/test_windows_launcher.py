@@ -21,7 +21,7 @@ def launcher(tmp_path):
     scripts.mkdir(parents=True)
     shutil.copyfile(ROOT / "InstallAndRun.cmd", project / "InstallAndRun.cmd")
     shutil.copyfile(ROOT / "scripts/InstallAndRun.ps1", scripts / "InstallAndRun.ps1")
-    for target in ("Manager", "Broker"):
+    for target in ("Manager",):
         (scripts / f"Install-{target}.ps1").write_text(
             """param(
                 [string]$PythonVersion, [int]$Port,
@@ -39,14 +39,9 @@ def launcher(tmp_path):
 
 
 @pytest.mark.parametrize("shell", SHELLS)
-@pytest.mark.parametrize("broker", [False, True])
-def test_dispatch_parameters_from_another_directory(launcher, tmp_path, shell, broker):
+def test_dispatch_parameters_from_another_directory(launcher, tmp_path, shell):
     project, env = launcher
-    options = (
-        ["-Broker", "-Port", "9888"]
-        if broker
-        else ["-InstallDirectory", str(tmp_path / "manager app"), "-InstallOnly", "-Reinstall"]
-    )
+    options = ["-InstallDirectory", str(tmp_path / "manager app"), "-InstallOnly", "-Reinstall"]
     result = subprocess.run(
         [
             shell,
@@ -68,13 +63,9 @@ def test_dispatch_parameters_from_another_directory(launcher, tmp_path, shell, b
     captured = json.loads(Path(env["LAUNCH_CAPTURE"]).read_text(encoding="utf-8-sig"))
     assert captured["NoPause"]["IsPresent"]
     assert captured["PythonVersion"] == "3.13"
-    if broker:
-        assert captured["Port"] == 9888
-        assert "ShowWindow" not in captured
-    else:
-        assert captured["ShowWindow"]["IsPresent"]
-        assert captured["Reinstall"]["IsPresent"]
-        assert captured["InstallDirectory"] == str(tmp_path / "manager app")
+    assert captured["ShowWindow"]["IsPresent"]
+    assert captured["Reinstall"]["IsPresent"]
+    assert captured["InstallDirectory"] == str(tmp_path / "manager app")
 
 
 @pytest.mark.parametrize("shell", SHELLS)
@@ -102,14 +93,10 @@ def test_incompatible_options_never_invoke_installer(launcher, tmp_path, shell, 
     assert not Path(env["LAUNCH_CAPTURE"]).exists()
 
 
-@pytest.mark.parametrize("broker", [False, True])
-def test_root_cmd_preserves_installer_exit_code(launcher, tmp_path, broker):
+def test_root_cmd_preserves_installer_exit_code(launcher, tmp_path):
     project, env = launcher
     env["LAUNCH_EXIT"] = "23"
-    options = " -Broker" if broker else ""
-    command = (
-        f'"{os.environ["COMSPEC"]}" /d /s /c ""{project / "InstallAndRun.cmd"}" -NoPause{options}"'
-    )
+    command = f'"{os.environ["COMSPEC"]}" /d /s /c ""{project / "InstallAndRun.cmd"}" -NoPause"'
     result = subprocess.run(
         command,
         env=env,

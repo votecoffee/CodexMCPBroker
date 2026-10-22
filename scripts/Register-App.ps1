@@ -4,7 +4,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$RuntimeFile = Join-Path $ProjectRoot 'plugins\universal-tools\runtime.json'
+$RuntimeFile = Join-Path $ProjectRoot '.local\development-runtime.json'
 if (-not (Test-Path -LiteralPath $RuntimeFile)) { throw 'Run Setup.ps1 first.' }
 $RuntimeSettings = Get-Content -LiteralPath $RuntimeFile -Raw | ConvertFrom-Json
 $RegistrationArgs = @('-m','universal_tools','--state',$RuntimeSettings.state,'register',$Manifest)

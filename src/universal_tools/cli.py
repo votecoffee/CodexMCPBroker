@@ -28,8 +28,6 @@ from .models import (
     load_settings,
 )
 from .ownership import OwnershipJournal
-from .skill_bundles import add_parser as skill_parser
-from .skill_bundles import execute as skill_command
 from .surface import RemoteBackend, create_surface
 from .transport import http_session
 
@@ -313,7 +311,6 @@ def main(argv: list[str] | None = None):
     parser.add_argument("--state", type=Path, default=Path.cwd() / ".local")
     parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
-    skill_parser(commands)
     application = commands.add_parser("app-serve", help="run the shared framework for one app")
     application.add_argument("--publication", type=Path, required=True)
     skill_options(application)
@@ -343,8 +340,6 @@ def main(argv: list[str] | None = None):
     registration.add_argument("--replace", action="store_true")
     remove = commands.add_parser("unregister")
     remove.add_argument("service_id")
-    configure = commands.add_parser("configure-plugin")
-    configure.add_argument("plugin", type=Path)
     recovery = commands.add_parser(
         "recover-context", help="clear a reconciled context while stopped"
     )
@@ -377,8 +372,6 @@ def main(argv: list[str] | None = None):
 
                 serve_application(state, args.publication, skills=skills)
                 return
-            case "skills":
-                result = skill_command(state, args)
             case "init":
                 settings = initialize(state, args.port)
                 result = {"state": str(state), "url": settings.url, "version": __version__}
@@ -435,15 +428,6 @@ def main(argv: list[str] | None = None):
                         state, "refresh_services" if args.command == "refresh" else "list_services"
                     )
                 )
-            case "configure-plugin":
-                load_settings(state)
-                plugin = args.plugin.resolve()
-                if not (plugin / "plugin.json").is_file():
-                    raise BrokerError("plugin.json is missing in the target plugin folder")
-                atomic_json(
-                    plugin / "runtime.json", {"python": sys.executable, "state": str(state)}
-                )
-                result = {"configured_plugin": str(plugin)}
         print(json.dumps(result, indent=2))
     except (BrokerError, ValueError, OSError, KeyError, TypeError, RecursionError) as error:
         # Validation messages from third-party libraries may quote inputs; keep them local/generic.

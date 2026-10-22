@@ -1,6 +1,6 @@
 # MCP SDK feature support
 
-This matrix describes framework **0.18.2**, pinned to **MCP Python SDK 2.3.0**, with selected interoperability checks on **SDK 2.2.0**. SDK releases, protocol revisions and extension revisions are separate. It is a source/API coverage assessment, not a certification or a claim that every combination has passed in a real app or host.
+This matrix describes framework **0.19.0**, pinned to **MCP Python SDK 2.3.0**, with selected interoperability checks on **SDK 2.2.0**. SDK releases, protocol revisions and extension revisions are separate. It is a source/API coverage assessment, not a certification or a claim that every combination has passed in a real app or host. Applications keep their own plugins; the former universal plugin is retired.
 
 The framework has two distinct surfaces: `ApplicationHost` uses the fourteen fixed discovery/invocation tools over app-owned backends; `ExtensionServer` subclasses the SDK's `MCPServer` and accepts explicitly composed native extensions. An SDK feature available on the native server is not automatically a downstream broker feature. See the [developer guide](server-development/README.md) for the reading path.
 
@@ -15,7 +15,7 @@ The framework has two distinct surfaces: `ApplicationHost` uses the fourteen fix
 | Progress and discovery changes | Opt-in request progress, backend tool-list watching, the public catalog-generation resource and scoped tool-discovery caching. Notifications are not durable event history. |
 | Native resources, templates, prompts and completions | Explicit `ProtocolRelay` sources with app authorization, namespaced references and principal-scoped modern resource/prompt notifications. Reads require app-owned authentication to be established before retrieval. |
 | Tasks | Explicit `TaskExtension` app adapters and `TaskClient`: durable handles, polling, authorized push, form/URL inputs and cooperative cancellation. SQLite and optional Redis stores do not make native jobs durable by themselves. |
-| Skills | `SkillCatalog`, `SkillRegistry`, origin/content verification, explicit federation, lazy file reads, live publication and separate native skill bundle composition. MCP publication does not activate a native host skill. |
+| Skills | `SkillCatalog`, `SkillRegistry`, origin/content verification, explicit federation, lazy file reads and live MCP publication. Applications own native plugin/skill packages; the universal skill composer is retired. MCP publication does not activate a native host skill. |
 | MCP Apps | SDK Apps extension composition and a tested native UI-resource example with text fallback. Downstream UI tool execution is not automatically proxied. |
 | Remote authentication | Optional HTTPS `OAuthDeployment`, service client credentials, RFC 7523 workload assertions and DPoP client proofs. Credential storage, verified identity and deployment remain app-owned. |
 | Shared native SDK deployment | Shared request-state keys, `RedisSubscriptionBus` and fenced/durable `RedisTaskStore`. Application resources, receipts and jobs need their own shared state and fencing. |

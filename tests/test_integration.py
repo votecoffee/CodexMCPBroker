@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import shutil
 import socket
 import subprocess
 import sys
@@ -365,24 +364,15 @@ def test_http_authentication_and_browser_origin_rejection(stack):
         )
 
 
-async def test_two_plugin_frontends_share_one_broker(stack, tmp_path):
+async def test_two_protocol_frontends_share_one_broker(stack):
     state, settings, _ = stack
-    plugin = tmp_path / "test-plugin"
-    shutil.copytree(
-        Path(__file__).resolve().parents[1] / "plugins/universal-tools",
-        plugin,
-        ignore=shutil.ignore_patterns("runtime.json", "__pycache__"),
-    )
-    runtime_path = plugin / "runtime.json"
-    original = runtime_path.read_bytes() if runtime_path.exists() else None
-    atomic_json(runtime_path, {"python": sys.executable, "state": str(state)})
     headers = {"Authorization": f"Bearer {settings.token}"}
     with httpx.Client(trust_env=False) as client:
         before = client.get(settings.url + "/health", headers=headers).json()["instance_id"]
 
     async def frontend(value):
         params = StdioServerParameters(
-            command=sys.executable, args=[str(plugin / "server/launch.py")]
+            command=sys.executable, args=["-m", "universal_tools", "--state", str(state), "proxy"]
         )
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:
@@ -390,17 +380,11 @@ async def test_two_plugin_frontends_share_one_broker(stack, tmp_path):
                 assert {tool.name for tool in (await session.list_tools()).tools} == TOOLS
                 return data(await invoke(session, "math/echo", {"value": value}))
 
-    try:
-        results = await asyncio.gather(frontend("chat-a"), frontend("chat-b"))
-        assert [item["value"] for item in results] == ["chat-a", "chat-b"]
-        with httpx.Client(trust_env=False) as client:
-            after = client.get(settings.url + "/health", headers=headers).json()["instance_id"]
-        assert before == after
-    finally:
-        if original is None:
-            runtime_path.unlink()
-        else:
-            runtime_path.write_bytes(original)
+    results = await asyncio.gather(frontend("chat-a"), frontend("chat-b"))
+    assert [item["value"] for item in results] == ["chat-a", "chat-b"]
+    with httpx.Client(trust_env=False) as client:
+        after = client.get(settings.url + "/health", headers=headers).json()["instance_id"]
+    assert before == after
 
 
 async def test_stdio_app_compatibility(stack):

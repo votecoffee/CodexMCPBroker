@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-codex-tools"
-version = "0.18.2"
-description = "Shared app MCP framework with an optional universal discovery broker"
+version = "0.19.0"
+description = "Shared MCP application framework and Windows service manager"
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.11"

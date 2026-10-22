@@ -1,14 +1,14 @@
 # CodexMCPBroker
 
-![CodexMCPBroker icon](plugins/universal-tools/assets/icon-128.png)
+![CodexMCPBroker icon](assets/icon-128.png)
 
-Shared app MCP framework with an optional universal discovery broker
+Shared MCP application framework and Windows service manager
 
-Build app-owned MCP hosts from one versioned package. A stable MCP front door discovers versioned backends, preserving common policy, session and recovery behavior while reducing Codex reloads. Apps keep their standalone plugins. The optional universal broker can aggregate independently installed app services; that route remains a separate integration profile.
+Build app-owned MCP hosts from one versioned dependency. Each application keeps its own Codex plugin, domain services, native software ownership and authorization. The shared framework standardizes backend discovery, controlled replacement, policy, sessions and durable operation receipts to reduce unnecessary Codex reloads.
 
-The optional plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. Apps use the `universal_tools.framework` API. The current version is **0.18.2**, using **MCP Python SDK 2.3.0**.
+**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current version is **0.19.0**, using **MCP Python SDK 2.3.0**.
 
-**Status: experimental and under active development. This tool is not mature or production-ready.** The shared framework and optional broker are **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Standalone integrations remain independently usable. Each app owns its installation and migration, including workflow, host and native acceptance; upgrading this package does not perform that migration.
+**Status: experimental and under active development. This tool is not mature or production-ready.** The framework is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Each app owns installation, migration and native/Codex acceptance. A package upgrade does not fix an app's resource leaks automatically. Persistent resource ownership and abnormal-exit cleanup are under development; management registration is not a resource ownership ledger.
 
 The [SDK 2 feature guide](docs/sdk2-features.md) describes opt-in modern connections, ownership-bound approval continuations, catalog notifications, scoped discovery caches, SSE response budgets, tracing and skill resource snapshots. These features do not migrate existing integrations.
 
@@ -16,7 +16,7 @@ The [extension developer guide](docs/extension-development.md) covers durable MC
 
 The [deployment guide](docs/deployment.md) covers opt-in remote HTTPS/OAuth, service and workload-identity grants, DPoP clients, shared notification delivery and durable shared Tasks. The [native Apps example](examples/native_features.py) demonstrates interactive tool resources with meaningful text fallback. Replicated native SDK hosts and retained broker workers have distinct process/state contracts.
 
-The [SDK feature support matrix](docs/sdk-feature-support.md) records implemented profiles, inherited SDK APIs and remaining relay/configuration gaps. Framework 0.18.2 does not claim complete forwarding of every SDK feature. In particular, relayed resource/prompt input rounds and automatic downstream Tasks/UI forwarding remain outside the current profile.
+The [SDK feature support matrix](docs/sdk-feature-support.md) records implemented profiles, inherited SDK APIs and remaining relay/configuration gaps. Framework 0.19.0 does not claim complete forwarding of every SDK feature. In particular, relayed resource/prompt input rounds and automatic downstream Tasks/UI forwarding remain outside the current profile.
 
 The [beta completion plan](ROADMAP.md) separates the implemented broker foundation from remaining adapter/host acceptance and later native migration pilots. Parallel private contexts and full app/host payload parity are not currently promised.
 
@@ -44,9 +44,9 @@ Apps own their tools, native processes, data and authorization. The [shared app 
 
 Manage the framework as a versioned package dependency, with tested app-specific pins and lock files. Python wheels are implemented; native .NET/NuGet bindings remain future work. See [package management and lifecycle](docs/app-framework.md#package-management). Source submodules and copied framework implementations are not the default model.
 
-Each app continues to distribute its standalone Codex plugin for independent use. **Broker-mode users should install Universal Tools instead of multiple app plugins.** The [native skill synchronizer](docs/native-skill-bundles.md) composes explicitly selected app skill packages into one Universal Tools package for installation and Codex reload. App-owned [workflow contributions](docs/workflow-contributions.md) also provide versioned guidance through existing discovery/read tools between package updates. Complete host/app parity remains unestablished. Future app installers may skip the standalone plugin after that app's broker route and guidance pass acceptance. See [installation choices](docs/plugin-coexistence.md). Automatic app selection is not implemented by this broker, and current app installations remain unchanged.
+Each app distributes its own Codex plugin and native skills. Backend capabilities and MCP-delivered guidance can update behind that app's stable connection. The framework and manager are shared code and administration facilities, not a replacement universal plugin. Historical broker/coexistence/skill-composition documents describe a retired deployment experiment; their plugin installation commands are no longer shipped.
 
-The broker exposes fourteen fixed tools. App tools are namespaced catalog entries selected through search and description. Opt-in app catalog providers also make inner capabilities searchable behind those outer tools. Neither becomes an individual native Codex tool definition. Separate chats share the broker, while each chat connects through its own stdio frontend. Integrations can opt into an exclusively owned context or a retained shared adapter for an app-owned service.
+The app framework can expose fourteen fixed discovery/invocation tools over app-owned backends, or an app can compose native SDK extensions. Retained routing/protocol components also support isolated development fixtures. These internals do not constitute a universal plugin. Connections must not cause unbounded native software copies; the app supervisor owns sharing, resource tracking and cleanup.
 
 ## Install
 
@@ -54,7 +54,7 @@ The broker exposes fourteen fixed tools. App tools are namespaced catalog entrie
 
 - Windows and PowerShell. Windows with Python 3.13 is the validated development environment.
 - Python 3.11 or newer with the Windows `py` launcher; setup defaults to Python 3.13.
-- Git to clone the source. The optional plugin installer also needs Codex with its `codex plugin` CLI commands available.
+- Git to clone the source. Codex CLI is optional for read-only plugin inventory in the manager.
 
 ### Framework development
 
@@ -64,29 +64,29 @@ Follow the [framework guide](docs/app-framework.md) for the `ApplicationHost` AP
 
 Double-click **`InstallAndRun.cmd`** to install and open the manager dashboard. `InstallManager.cmd` remains a direct tray installer. Add `-NoPause` to skip the closing prompt, `-StartAtLogon` for automatic startup or `-InstallOnly` to install without opening it. The manager title shows its runtime version. A matching verified installation is reused; opening an already running manager brings its dashboard forward. Exit the manager before upgrading, or use `-Reinstall` to rebuild the same version after exiting. Its separate runtime does not replace server environments or reinstall plugins. See [service management](docs/service-management.md) for app integration and isolated installation options.
 
-### Optional universal broker launcher
+### Development runtime
 
 From PowerShell:
 
 ```powershell
 git clone https://github.com/votecoffee/CodexMCPBroker.git
 Set-Location CodexMCPBroker
-.\InstallAndRun.cmd -Broker
+.\scripts\Setup.ps1
 ```
 
-The explicit `-Broker` option installs the locked broker runtime and Codex plugin, starts the broker, displays its status and waits for Enter before closing. Omit `-Broker` to open the manager instead. Add `-NoPause` to skip the closing prompt. Optional `-PythonVersion 3.13` and `-Port 8768` arguments configure broker setup; an omitted port preserves existing settings or uses 8768 on a new installation. The launcher works from another current directory and prefers PowerShell 7 when available, with Windows PowerShell as a fallback.
+Setup installs a local framework development environment. It does not install a Codex plugin, initialize registrations or start MCP services. The root `InstallAndRun.cmd` opens only the independent manager; the former `-Broker` option is removed.
 
-An already running broker blocks reinstallation. Finish active app work and use `scripts\Broker.ps1 stop` before rerunning the launcher. This avoids closing retained app sessions during installation. To start an existing installation without reinstalling, use `scripts\Broker.ps1 start`. The individual `Setup.ps1` and `Install-Plugin.ps1` scripts remain available for manual installation.
+Applications install and pin the shared framework in their own environments. No public package feed is implied; build and verify a local wheel. See the [framework package guide](docs/app-framework.md#package-management).
 
-Setup installs locked runtime dependencies into `.local/runtime`, initializes private broker state under `.local`, and writes an ignored plugin runtime pointer. Installation registers the local marketplace and adds `universal-tools@universal-tools-local`. Start a new Codex chat to load the plugin. No OpenAI API key is required by the broker.
+Setup keeps its runtime and private development pointer under ignored `.local/`. The manager uses a separate installed runtime. Neither path installs or enables application plugins.
 
-Setup also creates `.local/InstallAndRun.lnk` with the project icon and explicit `-Broker` argument. You can create a manager shortcut without installing or starting anything by running `.\scripts\Create-LauncherShortcut.ps1`, or add `-Broker` for the optional broker. Its target and icon paths belong to the local checkout; the generated shortcut stays ignored. The plugin uses the [OpenAI presentation fields](https://developers.openai.com/plugins/build/plugins) `composerIcon` and `logo` with the bundled PNG assets. The Windows ICO contains all eight original sizes from 16 to 256 pixels.
+You can create a manager launcher shortcut without installing or starting anything by running `.\scripts\Create-LauncherShortcut.ps1`. Its generated `.local/InstallAndRun.lnk` stays ignored. Project icons live under `assets/`; the Windows ICO preserves all eight original sizes from 16 to 256 pixels.
 
-To select another installed Python version, pass `-PythonVersion` to `Setup.ps1`. After broker code changes, stop the broker and rerun setup. After plugin package changes, rerun installation. Adding an app registration requires a catalog refresh.
+Pass `-PythonVersion` to select another installed Python version. Each application owns its framework dependency update, backend acceptance and plugin packaging.
 
 ## Usage
 
-### CLI
+### Internal development CLI
 
 Run these commands from the repository root:
 
@@ -98,17 +98,17 @@ Run these commands from the repository root:
 .\scripts\Broker.ps1 stop
 ```
 
-A plugin frontend also starts the broker when needed. Closing a chat leaves the shared broker available to other chats. Normal startup connects to registered apps; each HTTP app manages its own process lifecycle.
+These are explicit routing-library development commands. They are not installed as a Codex connection by this project. Use isolated fixtures, not normal native app registrations, for routine checks.
 
-### Aggregate native app skills
+### Application skills
 
-An app can publish a broker-compatible native skill bundle, including references, scripts, templates and assets. After setup and explicit bundle selection:
+Applications keep their own native skill packages and can expose dynamic guidance through MCP using `SkillCatalog` and `SkillRegistry`. MCP publication and native host skill activation are separate. See the [extension guide](docs/extension-development.md).
 
 ```powershell
-.\scripts\Sync-Skills.ps1 -BundleManifest 'C:\Apps\Example\broker-skills\skill-bundle.json' -Install
+# Publish skills through the application's own host and package.
 ```
 
-This builds and installs a single Universal Tools package. Restart Codex and test its native skills in a fresh chat. Omit `-Install` to compose without changing the installed plugin. The [bundle guide](docs/native-skill-bundles.md) covers inspection, pinned snapshots, multiple apps, update/removal, rollback and the remaining host acceptance boundary. The synchronizer does not migrate an app, install its standalone plugin or execute contributed scripts.
+The old Universal Tools skill composer and plugin installer are retired. The framework does not combine app plugins into a universal package.
 
 ### Try the example services
 
@@ -119,9 +119,9 @@ This builds and installs a single Universal Tools package. Restart Codex and tes
 
 The demonstration starts example math and notes services. Default loopback ports are 8768 for the broker, 8769 for math and 8770 for notes; setup can select a different broker port. The demo supervisor stops its example processes when the broker exits.
 
-In a new Codex chat, ask:
+For an explicitly authorized protocol fixture, use the SDK client directly:
 
-> Use Universal Tools. Refresh services, find and describe the example math add tool, and calculate 12 + 30.
+> Refresh the fixture catalog, describe the example math add tool, and calculate 12 + 30.
 
 ### Register an app
 
@@ -235,16 +235,19 @@ Only acknowledge after reconciliation. Recovery records that acknowledgement and
 
 ```mermaid
 flowchart LR
-    A[Codex chat A] --> P[Stdio frontend A]
-    B[Codex chat B] --> Q[Stdio frontend B]
-    P --> G[Authenticated loopback MCP broker]
-    Q --> G
-    G --> R[Local service registry]
-    G --> X[App A MCP server]
-    G --> Y[App B MCP server]
+    A[App's Codex plugin or direct MCP connection] --> H[App-owned MCP host]
+    H --> W[Versioned app backends]
+    W --> D[App-owned domain services and native software]
+    GUI[App GUI] --> D
+    F[Shared framework dependency] -. supplies .-> H
+    H -. cached status and guarded control .-> M[Independent Windows manager]
 ```
 
-The broker supports concurrent clients and independent apps. It serializes connection, validation and invocation per service ID. Exclusive mode adds a service-wide workflow lease bound to a randomly identified frontend instance. A dedicated worker task owns the downstream SDK transport through initialization, calls and teardown.
+Applications own their plugin, supervisor and software resources. The shared dependency standardizes framework code; the manager is an independent administrative application. No universal plugin is installed. The [resource lifecycle contract](docs/server-development/sessions-and-recovery.md#track-owned-software-and-subprocesses) distinguishes owned launches, user-owned attachments and deliberately shared resources.
+
+### Internal routing and receipts
+
+The framework's routing engine serializes connection, validation and invocation per service ID. Exclusive mode adds a workflow lease bound to a frontend instance. A dedicated worker task owns the downstream SDK transport through initialization, calls and teardown. These are app-host internals, not a universal plugin deployment.
 
 Each stdio frontend lazily reuses up to four initialized broker HTTP sessions. Sequential requests normally reuse one channel; concurrent requests borrow independent channels and queue when all four are occupied. Every channel carries that frontend's same identity. Failed calls are returned without automatic replay. A later explicit request can create a replacement connection. Frontend shutdown drains dispatched work and closes its connections; app contexts retain their existing lease and recovery rules.
 
@@ -295,7 +298,7 @@ The CLI entry point is `universal-tools`, also available as `python -m universal
 .\.local\runtime\Scripts\python.exe -m universal_tools --state .\.local status
 ```
 
-See [APP_CONTRACT.md](APP_CONTRACT.md) for downstream service contracts, [MIGRATION.md](MIGRATION.md) for compatibility assessment gates, and [VERIFICATION.md](VERIFICATION.md) for reproducible development and packaging checks. The Python implementation has no separately documented stable library API.
+See [the framework guide](docs/app-framework.md) for the app-facing API, [APP_CONTRACT.md](APP_CONTRACT.md) for internal downstream routing contracts, and [VERIFICATION.md](VERIFICATION.md) for reproducible development/package checks. Historical universal-plugin migration and composition documents are not current deployment instructions.
 
 ## Maintainers
 

@@ -1,4 +1,6 @@
-# Workflow contributions for one Universal Tools plugin
+# Archived: workflow contributions for one Universal Tools plugin
+
+**The universal plugin deployment described below is retired in 0.19.0.** There is no universal plugin to install or compose. The workflow data-format examples remain reference material for app-owned read tools. For current architecture use the [shared framework](app-framework.md); applications keep their own plugins and native skills.
 
 The intended broker-mode installation uses **Universal Tools alone** for the participating apps. An app still distributes its standalone Codex plugin for users who choose that independent route. Installing both is an explicit optional arrangement, not a prerequisite for aggregated app guidance.
 

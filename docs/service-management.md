@@ -1,6 +1,6 @@
 # Tray service management
 
-Framework **0.18.0** adds a Windows tray application and the app-facing `universal_tools.management` interface. The manager is independent of the Universal Tools plugin and broker. It does not change app installations, MCP schemas, routes or native project state.
+The shared package includes a Windows tray application and app-facing `universal_tools.management` interface. The manager needs no Codex plugin or MCP connection. Applications keep their own plugins; the former universal plugin is retired. Installing the manager does not change app installations, MCP schemas, routes or native project state.
 
 ## Install and open
 
@@ -14,7 +14,7 @@ Double-click **`InstallAndRun.cmd`** in the project root to install and open the
 .\InstallManager.cmd -InstallOnly -NoPause
 ```
 
-The installer creates a separate versioned Python runtime under the current user's local application data, verifies dependencies/package assets, adds a Start menu shortcut and opens the tray. The title bar shows the manager runtime version. `InstallAndRun.cmd` opens the dashboard, including when this version is already running; `InstallManager.cmd` opens the tray unless given `-ShowWindow`. Double-click the icon to open the dashboard. Closing the window keeps the tray running; **Exit manager** closes it without stopping app services. The root launcher selects the optional broker only with explicit `-Broker`.
+The installer creates a separate versioned Python runtime under the current user's local application data, verifies dependencies/package assets, adds a Start menu shortcut and opens the tray. The title bar shows the manager runtime version. `InstallAndRun.cmd` opens the dashboard, including when this version is already running; `InstallManager.cmd` opens the tray unless given `-ShowWindow`. Double-click the icon to open the dashboard. Closing the window keeps the tray running; **Exit manager** closes it without stopping app services. The root launcher has no broker/plugin installation mode.
 
 Requirements: Windows, Windows PowerShell/Windows Forms, Python 3.11+ and the Windows `py` launcher. Python 3.13 is the default installer profile. No administrator rights are required. Codex CLI is optional: registered app services still work without automatic plugin inventory.
 

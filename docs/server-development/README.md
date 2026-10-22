@@ -1,6 +1,6 @@
-# Developing broker-compatible MCP servers
+# Developing MCP servers with the shared app framework
 
-Use this guide when building a new app-owned MCP server or adding broker support to an existing one. The primary shared-code path is the [app framework](../app-framework.md): a versioned package, stable app MCP front door and controlled backend publication. The universal broker is optional. The contracts apply across application domains and implementation languages; native .NET bindings are not implemented yet.
+Use this guide to build app-owned MCP servers with the [shared framework](../app-framework.md), stable app front doors, controlled backend publication and independent Windows manager. Each app keeps its own Codex plugin and native skill packages. The universal plugin is retired. The contracts apply across application domains and implementation languages; native .NET/NuGet bindings are not implemented yet.
 
 CodexMCPBroker is experimental. **MCP protocol conformance, broker compatibility and native application acceptance are separate claims.** This guide defines a development profile for this broker; it is not an MCP certification program or a promise that every MCP feature is relayed.
 
@@ -18,11 +18,9 @@ CodexMCPBroker is experimental. **MCP protocol conformance, broker compatibility
 | [Tool and workflow design](tools-and-workflows.md) | Design schemas, side-effect annotations, revisions, reviewed writes, jobs and results. |
 | [Sessions and recovery](sessions-and-recovery.md) | Choose transient, exclusive or shared mode and define resource ownership and loss behavior. |
 | [Registration and discovery](registration-and-discovery.md) | Register transports, manage dependencies and publish optional inner catalogs. |
-| [Workflow contributions](../workflow-contributions.md) | Supply app guidance through one Universal Tools plugin, while retaining independent standalone packaging. |
-| [Native skill bundles](../native-skill-bundles.md) | Publish broker-compatible native skills/resources for composition into one Universal Tools package and Codex reload. |
 | [Acceptance and release](acceptance.md) | Run a staged test matrix and complete a reusable integration record. |
 
-The [app contract](../../APP_CONTRACT.md) and checked-in [service schema](../../examples/service.schema.json) are the broker's detailed references. The [capability catalog contract](../capability-catalog.md) governs optional inner discovery. Follow the [plugin coexistence policy](../plugin-coexistence.md) for standalone packaging and future installer choices. Avoid copying limits into app code without versioning the integration profile.
+The [app contract](../../APP_CONTRACT.md) and [service schema](../../examples/service.schema.json) describe the framework's retained routing engine. The [capability catalog contract](../capability-catalog.md) governs optional inner discovery. Historical universal plugin/coexistence/skill-composition documents are archived reference material, not current installation policy. Avoid copying limits into app code without versioning the integration profile.
 
 ## Start with the smallest required profile
 
@@ -42,7 +40,7 @@ Supported routes are local stdio executables, MCP Streamable HTTP at literal loo
 
 Ordinary URL elicitation is relayed alongside forms. Explicit framework adapters support Tasks, Skills, native resource/prompt/completion federation and SDK Apps. Sampling, roots, automatic downstream Tasks and UI tool forwarding remain outside generic routing. See the [extension guide](../extension-development.md) and [deployment profiles](../deployment.md). Native skill bundles use a separate explicit packaging/install/reload operation, not automatic MCP distribution. One exclusive registration has one frontend owner; shared calls are serialized and deliberately share app state/authorization. Independent private parallel contexts require additional app-defined fencing. See [limitations](../../README.md#limitations).
 
-Every app distributes its own MCP server and standalone Codex plugin after adoption. Broker-mode users should need only Universal Tools; app plugins are for the standalone choice, with coexistence optional. The workflow contribution profile is a reference path through existing tools, not native skill hot-loading or established host parity. Conditional app-plugin installation and automatic route selection remain proposed installer work. The broker neither installs app plugins nor switches a failed operation to a direct route.
+Every app distributes its own MCP server and Codex plugin after adoption. The shared dependency and manager need no universal plugin. App installers must not suppress their plugin because a universal plugin exists. Dynamic MCP skill/resource publication remains separate from native skill package installation and activation. No failed write may automatically switch routes or be replayed.
 
 ## Standards and implementation choices
 

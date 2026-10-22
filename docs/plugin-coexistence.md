@@ -1,4 +1,6 @@
-# Standalone plugins and broker integration
+# Archived: standalone plugins and universal broker integration
+
+**Retired in 0.19.0.** Applications retain their own Codex plugins. The manager and shared package need no plugin, and app installers must not suppress their plugin because a universal plugin is present. The proposed conditional-installation policy below is historical and must not be implemented for the current architecture. See the [shared framework](app-framework.md).
 
 Every participating app continues to ship and support its own MCP server and standalone Codex plugin after broker adoption. Its application and direct integration remain usable without CodexMCPBroker. **Broker users install Universal Tools in place of the participating app plugins; standalone users install the chosen app's plugin without needing the broker.** Shipping a standalone plugin does not require installing it in broker mode. Both routes expose the same app-owned services, validation and authorization.
 

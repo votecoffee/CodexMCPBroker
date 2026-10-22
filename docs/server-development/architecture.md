@@ -6,14 +6,14 @@
 
 Put domain operations in an application service layer that can be called by the GUI and MCP gateway. Keep native engine access, files, credentials, target identity, revision checks, authorization and acceptance in that layer. The MCP gateway translates protocol requests into service operations; the broker selects and routes those tools.
 
-The [shared app framework](../app-framework.md) packages the common host, discovery, policy, ownership and receipt implementation. Use it as a tested versioned dependency. Apps keep their own standalone plugins; the universal broker is optional. Controlled publication replaces backend processes behind a stable MCP front door, while domain services and native acceptance remain app-owned. Avoid copying framework source into each app or performing in-process module/DLL reload across live native handles.
+The [shared app framework](../app-framework.md) packages the common host, discovery, policy, ownership and receipt implementation. Use it as a tested versioned dependency. Apps keep their own Codex plugins; there is no universal plugin. Controlled publication replaces backend processes behind each app's stable MCP front door, while domain services and native acceptance remain app-owned. Avoid copying framework source or performing in-process module/DLL reload across live native handles.
 
 ```mermaid
 flowchart LR
     GUI[Application GUI] --> S[App-owned domain services]
     D[Standalone Codex plugin] --> M[App MCP interface]
-    U[Universal Tools plugin] --> B[Generic broker]
-    B --> M
+    P[Shared framework dependency] -. supplies .-> M
+    M -. cached status and guarded control .-> A[Independent Windows manager]
     M --> S
     S --> N[Native engine or data provider]
 ```
@@ -44,9 +44,9 @@ An independent app service is useful when jobs or business state must survive ad
 
 ## Preserve standalone operation
 
-Ship the app's own standalone Codex plugin alongside broker registration support. App installation and normal operation must not require this broker. Use the same app-owned service contracts through both integrations.
+Ship the app's own Codex plugin. The shared framework is a dependency, and the manager is an independent administrative app. Neither is a universal plugin. GUI and MCP routes use the same app-owned service contracts.
 
-App workflows need an assessed invocation path for each supported route. A standalone app can use a stable native skill entrypoint with current feature/workflow guidance behind its read tools. In optional broker mode, the target is Universal Tools alone: use [workflow contributions](../workflow-contributions.md) and/or explicit [native skill packaging](../native-skill-bundles.md). Do not require both plugins for routine broker use. See [plugin coexistence](../plugin-coexistence.md); automatic app adoption and conditional installer selection remain future work.
+App workflows need an assessed invocation path through that app's plugin or direct MCP connection. Keep its native skill entrypoint stable, with changing feature/workflow guidance behind app read tools and optional dynamic Skills over MCP. Do not suppress app-plugin installation based on a retired universal plugin or combine app packages into a universal plugin.
 
 Treat route changes as explicit lifecycle events. Finish or reconcile stateful work before switching. A direct adapter cannot adopt a broker context, convert a preview token into another session or silently retry an uncertain write.
 

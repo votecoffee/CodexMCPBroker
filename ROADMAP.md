@@ -1,6 +1,13 @@
 # Beta completion plan
 
-The primary finish line is a reusable app framework that standardizes backend code and reduces Codex reloads. The universal broker remains an optional aggregation host. A reviewable beta is separate from production maturity and permission to migrate an existing integration. Keep existing direct integrations available during assessment.
+The finish line is a shared app framework and independent Windows manager that standardize backend code and reduce Codex reloads. Apps keep their own plugins. The universal plugin, marketplace, installer and native skill composer are retired in 0.19.0. Retained routing components support app-host internals and isolated protocol fixtures. A reviewable beta is separate from production maturity and app-owned adoption.
+
+## Resource lifetime priority
+
+- [ ] Durable per-app/per-owner process/software ownership ledger, independent of live management endpoints.
+- [ ] Exact process creation identity and bounded private-resource startup; preserve attached user software and shared owners.
+- [ ] Startup recovery and reviewable manager cleanup after abnormal owner loss, with retained intent/receipt evidence.
+- [ ] App-owned acceptance of EOF, clean close, startup failure, crash, native document handling and repeated reconnects without process growth.
 
 ## Shared app framework first
 
@@ -14,7 +21,7 @@ The primary finish line is a reusable app framework that standardizes backend co
 - [ ] Publish verified package versions through an app-consumable feed; pin dependencies in each adopting app.
 - [ ] Implement/test native .NET bindings if required; share versioned contracts without duplicating domain services.
 - [ ] Complete real Codex standalone-plugin selection, resource/dependency behavior, reconnect/reload and native app acceptance.
-- [ ] Assess optional universal aggregation of framework-based hosts, including nested discovery/policy and route-aware guidance.
+- [ ] Validate multi-chat use of each app's stable MCP host with bounded supervisor-owned native instances.
 
 The [framework guide](docs/app-framework.md) records current APIs, packaging, lifecycle boundaries and prototype limits. Backend refresh avoids native plugin changes only while the front-door schema and packaged skill entrypoint remain stable. Arbitrary in-process code/DLL replacement is outside the framework contract.
 
@@ -28,20 +35,20 @@ See [service management](docs/service-management.md) for the package interface a
 
 ## Broker foundation
 
-- [x] One reusable plugin, fixed discovery/invocation tools and independent app registrations.
+- [x] Reusable fixed discovery/invocation engine and independently versioned app backends. The former universal plugin is retired.
 - [x] Multiple frontends, conservative read/write classification, exact write scopes and request-ID journals.
 - [x] Retained exclusive and opt-in shared sessions, ownership, durable recovery barriers and no automatic replay.
 - [x] App initialization guidance, scoped inner catalog hints, request-bound forms and progress.
 - [x] Bounded larger arguments and an independently configurable HTTP body limit, with existing defaults preserved.
 - [x] Source packaging, manifests, reusable assessment instructions and local-only app evidence.
-- [x] Explicit native skill bundle selection, snapshot composition, marketplace packaging and rollback; host skill activation and real app adoption remain acceptance work.
+- [x] Retire the universal plugin, marketplace and skill composer; keep native skills with each app's plugin and dynamic Skills over MCP with its host.
 
 These features need ongoing regression checks. Passing their synthetic tests does not establish native application behavior.
 
 ## Remaining beta acceptance
 
 1. **Refresh the selected adapter evidence against stable current revisions.** Review source drift, preserve direct/broker comparisons, and finish workflow-specific coverage such as app-owned jobs and production extension workers where those are required. Record untested routes explicitly; the objective is a defined workflow, not every hypothetical MCP feature.
-2. **Complete Universal Tools-only host acceptance in fresh chats with disposable data.** Keep the app plugins absent in that test profile. Check actual discovery and selection, contributed app instructions/references, media display, human approval forms, progress and failure messages against standalone behavior. The [workflow contribution reference profile](docs/workflow-contributions.md) uses existing catalogs/read tools; real app adoption and host activation remain open. Preserve each app's independently available standalone package and verify explicit route selection without automatic cross-route retries. Conditional app-installer selection remains future work. Protocol clients cannot establish that the host showed the right UI.
+2. **Complete each app's own plugin/connection acceptance in fresh chats with disposable data.** Check native skills, dynamic MCP guidance, tool selection, media, human forms, progress and failures. No universal plugin or conditional app-plugin suppression is part of this profile. Validate multi-chat sharing without native instance growth and preserve uncertain-write recovery. Protocol clients cannot establish the host's visible behavior.
 3. **Record each pilot decision and its limits.** Use the [assessment worksheet](docs/adapter-assessment.md), state supported session modes and target/resource contracts, and measure acceptable workflow latency. Keep completed app-specific decisions and installation evidence private. Publish a verified source checkpoint and generic limitations.
 
 Exclusive mode deliberately gives one frontend ownership of one registration at a time. Shared mode serves concurrent frontends only when the app's state and authorization are intentionally shared; calls to one registration remain serialized. Parallel independent private contexts are a separate design problem requiring app-defined resource fencing. A workflow that requires them remains a migration blocker; sharing private state is not a substitute.
