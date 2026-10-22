@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -40,7 +40,7 @@
     {
       "path": "docs/app-framework.md",
       "size": 16422,
-      "sha256": "1f11fb7a8809be436c492727d3785b9842e6df6c9907954bced22b2b176e8cea"
+      "sha256": "062856d23bf9964e8903efbbc1d9fcfb736545c1e6742df6a38eca82d7efefb9"
     },
     {
       "path": "docs/capability-catalog.md",
@@ -70,17 +70,17 @@
     {
       "path": "docs/sdk-feature-support.md",
       "size": 9343,
-      "sha256": "9c832b1fef4a46c858ed1e6d9a5753ddf7da6421984fd58ea59123849a0b3807"
+      "sha256": "6fc49f2b2667cd65872191b63797d0af4c519b488d19566336c9199ae049e901"
     },
     {
       "path": "docs/sdk2-features.md",
       "size": 9252,
-      "sha256": "8d3258fc88e5f8e417727ba3cd74fc143375d754f099f4d5e55d965ae901daab"
+      "sha256": "ae92bd5f65026c6910fb659e8b4053ba0922d19ba16ecdac73aca40b505092c6"
     },
     {
       "path": "docs/server-development/acceptance.md",
-      "size": 6080,
-      "sha256": "64c8b3e461e4885c8fcae3d98e302eb6c307c6a471a6bc5eb961894aab36bb87"
+      "size": 6431,
+      "sha256": "dec93fc92c83a184dc736a58de7778a927b1e1d520d190ebe44d17ba6058535c"
     },
     {
       "path": "docs/server-development/architecture.md",
@@ -95,7 +95,7 @@
     {
       "path": "docs/server-development/README.md",
       "size": 7425,
-      "sha256": "00fa8c9f6c8611ccf9915f0066762e521035ec28a943cd6889a2770a6620e921"
+      "sha256": "07cc431e149a9dd01828539ea3ebf06b4fda2cba33480c468b104519cd7e46ba"
     },
     {
       "path": "docs/server-development/registration-and-discovery.md",
@@ -104,8 +104,8 @@
     },
     {
       "path": "docs/server-development/sessions-and-recovery.md",
-      "size": 4876,
-      "sha256": "80eaa2514e1800a9de7f8b61731c42ea65a238ef1e11a5b5755678e63f8afd25"
+      "size": 8092,
+      "sha256": "9474cfe56cd22a2ace2cc2368b7f411f0e75d5c14dd34975c9ff8f829098804d"
     },
     {
       "path": "docs/server-development/tools-and-workflows.md",
@@ -114,8 +114,8 @@
     },
     {
       "path": "docs/service-management.md",
-      "size": 11535,
-      "sha256": "46e102593f105af417eb543187f00edd6264776c109baf973ef1a77f498dbb14"
+      "size": 12554,
+      "sha256": "e468dd1ab1762462b7d81dbe52891759d4834fb29b0165d9d4ed20b9dcc393d5"
     },
     {
       "path": "docs/workflow-contributions.md",
@@ -375,7 +375,7 @@
     {
       "path": "plugins/universal-tools/plugin.json",
       "size": 587,
-      "sha256": "e9ab0f0f773667f5b8db649df285084bb85debb3881d175f5668ef65373d13fa"
+      "sha256": "9ccc8295da91d30286efb04498107a4f0e30c8c65311b8b22318ad6c761bf89a"
     },
     {
       "path": "plugins/universal-tools/server/launch.py",
@@ -395,12 +395,12 @@
     {
       "path": "pyproject.toml",
       "size": 1285,
-      "sha256": "2767ebe6910153fa29cc21e322efde5ec777d961bbdba5aa9518a96ffe39b792"
+      "sha256": "a7ad599df2140303576b89e52da8ef084d9f94d6036862f4f8caf33dd572f9c2"
     },
     {
       "path": "README.md",
-      "size": 35375,
-      "sha256": "c31230d7b0f80dfceb80f8318e44d4da2938ed214600789ae1e73ba06e372278"
+      "size": 35826,
+      "sha256": "a597c1649910b5efaca09ef99423afed3b62fd84f5566b22d061dabf6b34db14"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -424,13 +424,18 @@
     },
     {
       "path": "scripts/Create-LauncherShortcut.ps1",
-      "size": 930,
-      "sha256": "e23ec1fdf9b247812153e38ae57548b5174ad4f49fcba6707ad22db677edb37a"
+      "size": 1092,
+      "sha256": "44c21b73d0bdb0d30a807d352bd769c3befcabd817ccfe1d79ebe5acd7af0bc3"
+    },
+    {
+      "path": "scripts/Install-Broker.ps1",
+      "size": 2455,
+      "sha256": "23fc734e29f616661e2bd41f055f03ddf323e9ded4f0b704332bba2975640147"
     },
     {
       "path": "scripts/Install-Manager.ps1",
-      "size": 5134,
-      "sha256": "9f2063addc62ca1cb00e50594b4b9820f6b38da29a7acd01112056c8554a39e7"
+      "size": 6785,
+      "sha256": "2a7b190104017deb8314a4c94d1178e28e8f7676be7001ab9637b2f59efa6160"
     },
     {
       "path": "scripts/Install-Plugin.ps1",
@@ -439,8 +444,8 @@
     },
     {
       "path": "scripts/InstallAndRun.ps1",
-      "size": 2455,
-      "sha256": "23fc734e29f616661e2bd41f055f03ddf323e9ded4f0b704332bba2975640147"
+      "size": 1340,
+      "sha256": "2a7cea8d160a0395ac70068c675399d214ddb87715349eb18253ef05b3d8078d"
     },
     {
       "path": "scripts/lock_dependencies.py",
@@ -449,8 +454,8 @@
     },
     {
       "path": "scripts/package_release.py",
-      "size": 1772,
-      "sha256": "7e181159838cf7474c5f07ebfffaa08ea24d89bfae39eda03c8c3e314ceec73d"
+      "size": 2901,
+      "sha256": "5206e0d6a111ec19936b5be4721bf12dfaa62ac5f060ac94b17da363bb0bd36f"
     },
     {
       "path": "scripts/Register-App.ps1",
@@ -459,8 +464,8 @@
     },
     {
       "path": "scripts/Setup.ps1",
-      "size": 1456,
-      "sha256": "596079b805b8191673555a596183dd5da1202b831c635b93952d1eced66ccebf"
+      "size": 1464,
+      "sha256": "a7a42adf49fd6bb836595b515e8f0941214c0e4cba54548808781ca6e11d5784"
     },
     {
       "path": "scripts/smoke_installed.py",
@@ -480,7 +485,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 99,
-      "sha256": "0afb6b2ff76f63e8306d29bfd0f2f1a7d4ad7b32be08973d72d9644d07d4cb7b"
+      "sha256": "02fc52095089925baf25f49c9510353674d55af43904f77668f098aa5221fb3e"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -579,8 +584,8 @@
     },
     {
       "path": "src/universal_tools/manager_assets/Tray.ps1",
-      "size": 15215,
-      "sha256": "f38e528577cb08a4ca442e470079cce876d778a97a196b5e2b0d676a85ffe74a"
+      "size": 16276,
+      "sha256": "4d089d2613278d508610870ba5dda6990a8d5c2ff3430f921e5962e0bb7686be"
     },
     {
       "path": "src/universal_tools/manager_cli.py",
@@ -844,8 +849,8 @@
     },
     {
       "path": "tests/test_packaging.py",
-      "size": 1000,
-      "sha256": "94070b41d01933ae0961f722e19618888e2827b0553cbbe0fbe62d8957a635ba"
+      "size": 3311,
+      "sha256": "7a06e2ecbb2b667107c03602f1635b99b245b9929ad8bd23458bcd5dcb442bb3"
     },
     {
       "path": "tests/test_payload_integration.py",
@@ -938,14 +943,19 @@
       "sha256": "0042c4c44b49b14a6c1d17a64f30c235ab645917f9f212bf059d193d0ab1e226"
     },
     {
+      "path": "tests/test_windows_launcher.py",
+      "size": 6077,
+      "sha256": "b0b40b0055b528357a46a2f8d2e7256a4c1c13044c002f78d3c87e60c05e1482"
+    },
+    {
       "path": "tests/test_workflow_integration.py",
       "size": 6615,
       "sha256": "f7c1bc70f2c524f603039bb400e35b26502561017a4b66df05043ebd211d037b"
     },
     {
       "path": "VERIFICATION.md",
-      "size": 31967,
-      "sha256": "285835c48c5383d9b09f31ffbfa02f07b72cea7feece01dd0bf710114ac2cb88"
+      "size": 32637,
+      "sha256": "70b06698ec7ff73948fe4cd0dbf2f89a800293adbc977fd1dec64b78f2abb7ec"
     }
   ]
 }

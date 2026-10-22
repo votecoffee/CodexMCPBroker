@@ -20,6 +20,6 @@ $StateDirectory = Join-Path $ProjectRoot '.local'
 if ($LASTEXITCODE -ne 0) { throw 'Broker initialization failed.' }
 & $RuntimePython -m universal_tools --state $StateDirectory configure-plugin (Join-Path $ProjectRoot 'plugins\universal-tools')
 if ($LASTEXITCODE -ne 0) { throw 'Plugin configuration failed.' }
-& (Join-Path $PSScriptRoot 'Create-LauncherShortcut.ps1')
+& (Join-Path $PSScriptRoot 'Create-LauncherShortcut.ps1') -Broker
 Write-Host 'Setup complete. Use Broker.ps1 start-demo for the examples, or Broker.ps1 start for registered apps.'
 Write-Host 'Use Install-Plugin.ps1 to install this local plugin into Codex.'

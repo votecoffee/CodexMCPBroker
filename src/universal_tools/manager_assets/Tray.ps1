@@ -19,12 +19,25 @@ $identity = [BitConverter]::ToString($hashProvider.ComputeHash([Text.Encoding]::
 $hashProvider.Dispose()
 $created = $false
 $mutex = [Threading.Mutex]::new($true, "Local\CodexMCPManager-$identity", [ref]$created)
-if (!$created) { $mutex.Dispose(); exit 0 }
+if (!$created) {
+    if ($ShowWindow) {
+        $existingUi = Join-Path $RegistryDirectory 'ui'
+        [void][IO.Directory]::CreateDirectory($existingUi)
+        [IO.File]::WriteAllText((Join-Path $existingUi 'show-request'), [Guid]::NewGuid().ToString('N'))
+    }
+    $mutex.Dispose(); exit 0
+}
 $uiDirectory = Join-Path $RegistryDirectory 'ui'
 [void][IO.Directory]::CreateDirectory($uiDirectory)
 $snapshotFile = Join-Path $uiDirectory "snapshot-$PID.json"
 $stopFile = Join-Path $uiDirectory "stop-$PID"
 $refreshFile = Join-Path $uiDirectory "refresh-$PID"
+$showFile = Join-Path $uiDirectory 'show-request'
+$script:lastShowRequest = if (Test-Path -LiteralPath $showFile) { [IO.File]::ReadAllText($showFile) } else { '' }
+$managerVersion = (& $Python -B -c 'from universal_tools import __version__; print(__version__)' | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or $managerVersion -notmatch '^\d+\.\d+\.\d+(?:[.+-][A-Za-z0-9.-]+)?$') {
+    $mutex.ReleaseMutex(); $mutex.Dispose(); throw 'Cannot read the manager runtime version.'
+}
 $script:exiting = $false
 $script:lastSnapshot = $null
 $script:pending = $null
@@ -134,7 +147,7 @@ function Request-Restart {
 
 try {
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = 'MCP Service Manager'
+    $form.Text = "MCP Service Manager $managerVersion"
     $form.Size = [Drawing.Size]::new(1120, 650)
     $form.MinimumSize = [Drawing.Size]::new(850, 480)
     $form.StartPosition = 'CenterScreen'
@@ -234,6 +247,10 @@ try {
     $timer.Interval = 1000
     $timer.Add_Tick({
         try {
+            if (Test-Path -LiteralPath $showFile) {
+                $request = [IO.File]::ReadAllText($showFile)
+                if ($request -ne $script:lastShowRequest) { $script:lastShowRequest = $request; Show-Dashboard }
+            }
             if ($SmokeTestReport -and $SmokeTestShowInstances -and $script:lastSnapshot -and !$showInstances.Checked) {
                 $showInstances.Checked = $true
             }
@@ -274,7 +291,8 @@ try {
                        application_count = $script:lastSnapshot.applications.Count;
                        responding_instances = $script:lastSnapshot.responding_instances;
                        inactive_instances = $script:lastSnapshot.inactive_instances;
-                       multiple_instance_applications = $script:lastSnapshot.multiple_instance_applications } |
+                       multiple_instance_applications = $script:lastSnapshot.multiple_instance_applications;
+                       title = $form.Text; window_visible = $form.Visible } |
                         ConvertTo-Json | Set-Content -LiteralPath $SmokeTestReport -Encoding utf8
                 }
                 $script:exiting = $true

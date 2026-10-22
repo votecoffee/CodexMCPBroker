@@ -6,7 +6,7 @@ Shared app MCP framework with an optional universal discovery broker
 
 Build app-owned MCP hosts from one versioned package. A stable MCP front door discovers versioned backends, preserving common policy, session and recovery behavior while reducing Codex reloads. Apps keep their standalone plugins. The optional universal broker can aggregate independently installed app services; that route remains a separate integration profile.
 
-The optional plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. Apps use the `universal_tools.framework` API. The current version is **0.18.1**, using **MCP Python SDK 2.3.0**.
+The optional plugin is named **Universal Tools**. The Python distribution and CLI retain the names `universal-codex-tools` and `universal-tools` for package and command compatibility. Apps use the `universal_tools.framework` API. The current version is **0.18.2**, using **MCP Python SDK 2.3.0**.
 
 **Status: experimental and under active development. This tool is not mature or production-ready.** The shared framework and optional broker are **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Standalone integrations remain independently usable. Each app owns its installation and migration, including workflow, host and native acceptance; upgrading this package does not perform that migration.
 
@@ -16,7 +16,7 @@ The [extension developer guide](docs/extension-development.md) covers durable MC
 
 The [deployment guide](docs/deployment.md) covers opt-in remote HTTPS/OAuth, service and workload-identity grants, DPoP clients, shared notification delivery and durable shared Tasks. The [native Apps example](examples/native_features.py) demonstrates interactive tool resources with meaningful text fallback. Replicated native SDK hosts and retained broker workers have distinct process/state contracts.
 
-The [SDK feature support matrix](docs/sdk-feature-support.md) records implemented profiles, inherited SDK APIs and remaining relay/configuration gaps. Framework 0.18.1 does not claim complete forwarding of every SDK feature. In particular, relayed resource/prompt input rounds and automatic downstream Tasks/UI forwarding remain outside the current profile.
+The [SDK feature support matrix](docs/sdk-feature-support.md) records implemented profiles, inherited SDK APIs and remaining relay/configuration gaps. Framework 0.18.2 does not claim complete forwarding of every SDK feature. In particular, relayed resource/prompt input rounds and automatic downstream Tasks/UI forwarding remain outside the current profile.
 
 The [beta completion plan](ROADMAP.md) separates the implemented broker foundation from remaining adapter/host acceptance and later native migration pilots. Parallel private contexts and full app/host payload parity are not currently promised.
 
@@ -62,7 +62,7 @@ Follow the [framework guide](docs/app-framework.md) for the `ApplicationHost` AP
 
 ### Tray manager
 
-Run `.\InstallManager.cmd -NoPause` to install the tray and Start menu shortcut. Add `-StartAtLogon` for automatic startup. Its separate versioned runtime does not replace server environments or reinstall plugins. See [service management](docs/service-management.md) for app integration and isolated installation options.
+Double-click **`InstallAndRun.cmd`** to install and open the manager dashboard. `InstallManager.cmd` remains a direct tray installer. Add `-NoPause` to skip the closing prompt, `-StartAtLogon` for automatic startup or `-InstallOnly` to install without opening it. The manager title shows its runtime version. A matching verified installation is reused; opening an already running manager brings its dashboard forward. Exit the manager before upgrading, or use `-Reinstall` to rebuild the same version after exiting. Its separate runtime does not replace server environments or reinstall plugins. See [service management](docs/service-management.md) for app integration and isolated installation options.
 
 ### Optional universal broker launcher
 
@@ -71,16 +71,16 @@ From PowerShell:
 ```powershell
 git clone https://github.com/votecoffee/CodexMCPBroker.git
 Set-Location CodexMCPBroker
-.\InstallAndRun.cmd
+.\InstallAndRun.cmd -Broker
 ```
 
-You can also double-click `InstallAndRun.cmd` in the project root. It installs the locked runtime and Codex plugin, starts the broker, displays its status and waits for Enter before closing. Run `.\InstallAndRun.cmd -NoPause` to skip the closing prompt. Optional `-PythonVersion 3.13` and `-Port 8768` arguments configure setup; an omitted port preserves existing settings or uses 8768 on a new installation. The launcher works from another current directory and prefers PowerShell 7 when available, with Windows PowerShell as a fallback.
+The explicit `-Broker` option installs the locked broker runtime and Codex plugin, starts the broker, displays its status and waits for Enter before closing. Omit `-Broker` to open the manager instead. Add `-NoPause` to skip the closing prompt. Optional `-PythonVersion 3.13` and `-Port 8768` arguments configure broker setup; an omitted port preserves existing settings or uses 8768 on a new installation. The launcher works from another current directory and prefers PowerShell 7 when available, with Windows PowerShell as a fallback.
 
 An already running broker blocks reinstallation. Finish active app work and use `scripts\Broker.ps1 stop` before rerunning the launcher. This avoids closing retained app sessions during installation. To start an existing installation without reinstalling, use `scripts\Broker.ps1 start`. The individual `Setup.ps1` and `Install-Plugin.ps1` scripts remain available for manual installation.
 
 Setup installs locked runtime dependencies into `.local/runtime`, initializes private broker state under `.local`, and writes an ignored plugin runtime pointer. Installation registers the local marketplace and adds `universal-tools@universal-tools-local`. Start a new Codex chat to load the plugin. No OpenAI API key is required by the broker.
 
-Setup also creates `.local/InstallAndRun.lnk` with the project icon. You can create that branded Windows shortcut without installing or starting anything by running `.\scripts\Create-LauncherShortcut.ps1`. Its target and icon paths belong to the local checkout; the generated shortcut stays ignored. The plugin uses the [OpenAI presentation fields](https://developers.openai.com/plugins/build/plugins) `composerIcon` and `logo` with the bundled PNG assets. The Windows ICO contains all eight original sizes from 16 to 256 pixels.
+Setup also creates `.local/InstallAndRun.lnk` with the project icon and explicit `-Broker` argument. You can create a manager shortcut without installing or starting anything by running `.\scripts\Create-LauncherShortcut.ps1`, or add `-Broker` for the optional broker. Its target and icon paths belong to the local checkout; the generated shortcut stays ignored. The plugin uses the [OpenAI presentation fields](https://developers.openai.com/plugins/build/plugins) `composerIcon` and `logo` with the bundled PNG assets. The Windows ICO contains all eight original sizes from 16 to 256 pixels.
 
 To select another installed Python version, pass `-PythonVersion` to `Setup.ps1`. After broker code changes, stop the broker and rerun setup. After plugin package changes, rerun installation. Adding an app registration requires a catalog refresh.
 

@@ -1,4 +1,4 @@
-param()
+param([switch]$Broker)
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $TargetPath = Join-Path $ProjectRoot 'InstallAndRun.cmd'
@@ -11,9 +11,10 @@ $ShortcutPath = Join-Path $LocalDirectory 'InstallAndRun.lnk'
 $Shell = New-Object -ComObject WScript.Shell
 $Shortcut = $Shell.CreateShortcut($ShortcutPath)
 $Shortcut.TargetPath = $TargetPath
+$Shortcut.Arguments = if ($Broker) { '-Broker' } else { '' }
 $Shortcut.WorkingDirectory = $ProjectRoot
 $Shortcut.IconLocation = "$IconPath,0"
-$Shortcut.Description = 'Install and start CodexMCPBroker'
+$Shortcut.Description = if ($Broker) { 'Install and start the optional Universal Tools broker' } else { 'Install and open MCP Service Manager' }
 $Shortcut.WindowStyle = 1
 $Shortcut.Save()
 Write-Host "Created branded launcher: $ShortcutPath"

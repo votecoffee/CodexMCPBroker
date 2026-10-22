@@ -4,7 +4,7 @@ Framework **0.18.0** adds a Windows tray application and the app-facing `univers
 
 ## Install and open
 
-Double-click **`InstallManager.cmd`** in the project root or run:
+Double-click **`InstallAndRun.cmd`** in the project root to install and open the dashboard, or use the direct **`InstallManager.cmd`** tray installer:
 
 ```powershell
 .\InstallManager.cmd -NoPause
@@ -14,7 +14,7 @@ Double-click **`InstallManager.cmd`** in the project root or run:
 .\InstallManager.cmd -InstallOnly -NoPause
 ```
 
-The installer creates a separate versioned Python runtime under the current user's local application data, verifies dependencies/package assets, adds a Start menu shortcut and opens the tray. It reuses the project icon. Double-click the icon to open the dashboard. Closing the window keeps the tray running; **Exit manager** closes it without stopping app services.
+The installer creates a separate versioned Python runtime under the current user's local application data, verifies dependencies/package assets, adds a Start menu shortcut and opens the tray. The title bar shows the manager runtime version. `InstallAndRun.cmd` opens the dashboard, including when this version is already running; `InstallManager.cmd` opens the tray unless given `-ShowWindow`. Double-click the icon to open the dashboard. Closing the window keeps the tray running; **Exit manager** closes it without stopping app services. The root launcher selects the optional broker only with explicit `-Broker`.
 
 Requirements: Windows, Windows PowerShell/Windows Forms, Python 3.11+ and the Windows `py` launcher. Python 3.13 is the default installer profile. No administrator rights are required. Codex CLI is optional: registered app services still work without automatic plugin inventory.
 
@@ -24,7 +24,7 @@ Use dedicated directories for isolated installation checks:
 .\InstallManager.cmd -InstallDirectory 'C:\Test\ManagerApp' -RegistryDirectory 'C:\Test\ManagerRegistry' -NoShortcuts -InstallOnly -NoPause
 ```
 
-The default registry is the Windows user Local AppData known folder plus `CodexMCPManager\Registry`. Python agents disable package redirection so a host-specific `LOCALAPPDATA` override cannot silently create a different registry. Use an explicit registry path when an app requires another trust boundary. Exit the manager before upgrading. Each install uses a new runtime and preserves the prior pointer/runtime. Existing logon startup selection is preserved on upgrades. The installer does not reinstall a Codex plugin or replace an MCP server environment. Native skill/plugin changes can still require a host reload.
+The default registry is the Windows user Local AppData known folder plus `CodexMCPManager\Registry`. Python agents disable package redirection so a host-specific `LOCALAPPDATA` override cannot silently create a different registry. Use an explicit registry path when an app requires another trust boundary. A matching installation is checked and reused. Exit the manager before upgrading or using `-Reinstall` to rebuild the same version. New installations use a new runtime and preserve the prior pointer/runtime. Existing logon startup selection is preserved on upgrades. The installer does not reinstall a Codex plugin or replace an MCP server environment. Native skill/plugin changes can still require a host reload.
 
 ## Status and versions
 
@@ -98,6 +98,8 @@ universal-tools-manager --registry 'C:\Test\ManagerRegistry' tray --show
 ```
 
 Register the owning service/supervisor for its entire lifetime. A stopped registration remains observable; a crashed/unreachable endpoint is offline. Restart of an offline process requires an app-owned surviving supervisor. A live supervisor may explicitly allow restarting its stopped worker; a closed/unreachable management endpoint never gains that permission. The manager never guesses a command or kills/relaunches a PID.
+
+The supervisor must also track the software it launches and close its owned resources when that owning instance ends, including native applications and worker/Node/shell descendants. Distinguish private launches, attached user applications and deliberate shared ownership; never close another owner's resources. The [developer lifecycle contract](server-development/sessions-and-recovery.md#track-owned-software-and-subprocesses) defines shutdown and acceptance requirements. Management registration and a successful restart receipt do not prove those requirements were implemented.
 
 The status callback must be fast and thread-safe, using a cached snapshot without attaching projects or contacting controllers. The framework adds its installed/running version unless the app supplies that component deliberately. Other bounded component versions can be added without changing the protocol.
 

@@ -5,6 +5,8 @@ param(
     [switch]$StartAtLogon,
     [switch]$InstallOnly,
     [switch]$NoShortcuts,
+    [switch]$Reinstall,
+    [switch]$ShowWindow,
     [switch]$NoPause
 )
 $ErrorActionPreference = 'Stop'
@@ -19,34 +21,57 @@ try {
         $RegistryDirectory.TrimEnd('\') -eq [IO.Path]::GetPathRoot($RegistryDirectory).TrimEnd('\')) { throw 'Use dedicated application directories.' }
     [void][IO.Directory]::CreateDirectory($InstallDirectory)
     $installLock = [IO.File]::Open((Join-Path $InstallDirectory 'install.lock'), 'OpenOrCreate', 'ReadWrite', 'None')
+    $projectMetadata = Get-Content -LiteralPath (Join-Path $ProjectRoot 'pyproject.toml') -Raw
+    $projectVersion = [regex]::Match($projectMetadata, '(?m)^version\s*=\s*"([^"\r\n]+)"').Groups[1].Value
+    if (!$projectVersion) { throw 'The package version is missing.' }
+    $pointerFile = Join-Path $InstallDirectory 'current.json'
+    $reuse = $false
+    if (!$Reinstall -and (Test-Path -LiteralPath $pointerFile)) {
+        try {
+            $current = Get-Content -LiteralPath $pointerFile -Raw | ConvertFrom-Json
+            if ($current.schema_version -eq 1 -and $current.version -eq $projectVersion -and
+                [IO.Path]::GetFullPath($current.registry) -eq $RegistryDirectory -and
+                (Test-Path -LiteralPath $current.python -PathType Leaf)) {
+                $doctor = & $current.python -B -m universal_tools.manager_cli doctor | ConvertFrom-Json
+                $reuse = $LASTEXITCODE -eq 0 -and $doctor.version -eq $projectVersion -and $doctor.windows -and $doctor.tray_assets_present
+            }
+        } catch { $reuse = $false }
+    }
     $managerLockPath = Join-Path $RegistryDirectory 'manager.lock'
-    if (Test-Path -LiteralPath $managerLockPath) {
+    if (!$reuse -and (Test-Path -LiteralPath $managerLockPath)) {
         try { $managerCheck = [IO.File]::Open($managerLockPath, 'Open', 'ReadWrite', 'None'); $managerCheck.Dispose() }
         catch { throw 'Exit MCP Service Manager from its tray menu before installing an update.' }
     }
-    $runtime = Join-Path $InstallDirectory (Join-Path 'runtimes' ([Guid]::NewGuid().ToString('N')))
-    Write-Host 'Installing MCP Service Manager in its own runtime...'
-    & py "-$PythonVersion" -m venv $runtime
-    if ($LASTEXITCODE -ne 0) { throw 'Could not create the manager runtime.' }
-    $python = Join-Path $runtime 'Scripts\python.exe'
-    & $python -m pip install -r (Join-Path $ProjectRoot 'requirements-lock.txt')
-    if ($LASTEXITCODE -ne 0) { throw 'Manager dependency installation failed.' }
-    & $python -m pip install --no-deps $ProjectRoot
-    if ($LASTEXITCODE -ne 0) { throw 'Manager package installation failed.' }
-    & $python -m pip check
-    if ($LASTEXITCODE -ne 0) { throw 'Manager dependency check failed.' }
-    $doctor = & $python -B -m universal_tools.manager_cli doctor | ConvertFrom-Json
-    if ($LASTEXITCODE -ne 0 -or !$doctor.windows -or !$doctor.tray_assets_present) { throw 'Manager installation verification failed.' }
-    $tray = Join-Path $runtime 'Lib\site-packages\universal_tools\manager_assets\Tray.ps1'
-    if (!(Test-Path -LiteralPath $tray)) { throw 'The tray application was not packaged.' }
-    $pointer = @{ schema_version = 1; python = $python; registry = $RegistryDirectory; version = $doctor.version }
-    $pointerFile = Join-Path $InstallDirectory 'current.json'
-    if (Test-Path -LiteralPath $pointerFile) {
-        Copy-Item -LiteralPath $pointerFile -Destination (Join-Path $InstallDirectory 'previous.json') -Force
+    if ($reuse) {
+        $python = $current.python
+        $runtime = Split-Path -Parent (Split-Path -Parent $python)
+        Write-Host "MCP Service Manager $projectVersion is already installed."
+    } else {
+        $runtime = Join-Path $InstallDirectory (Join-Path 'runtimes' ([Guid]::NewGuid().ToString('N')))
+        Write-Host 'Installing MCP Service Manager in its own runtime...'
+        & py "-$PythonVersion" -m venv $runtime
+        if ($LASTEXITCODE -ne 0) { throw 'Could not create the manager runtime.' }
+        $python = Join-Path $runtime 'Scripts\python.exe'
+        & $python -m pip install -r (Join-Path $ProjectRoot 'requirements-lock.txt')
+        if ($LASTEXITCODE -ne 0) { throw 'Manager dependency installation failed.' }
+        & $python -m pip install --no-deps $ProjectRoot
+        if ($LASTEXITCODE -ne 0) { throw 'Manager package installation failed.' }
+        & $python -m pip check
+        if ($LASTEXITCODE -ne 0) { throw 'Manager dependency check failed.' }
+        $doctor = & $python -B -m universal_tools.manager_cli doctor | ConvertFrom-Json
+        if ($LASTEXITCODE -ne 0 -or !$doctor.windows -or !$doctor.tray_assets_present) { throw 'Manager installation verification failed.' }
+        $tray = Join-Path $runtime 'Lib\site-packages\universal_tools\manager_assets\Tray.ps1'
+        if (!(Test-Path -LiteralPath $tray)) { throw 'The tray application was not packaged.' }
+        $pointer = @{ schema_version = 1; python = $python; registry = $RegistryDirectory; version = $doctor.version }
+        $pointerFile = Join-Path $InstallDirectory 'current.json'
+        if (Test-Path -LiteralPath $pointerFile) {
+            Copy-Item -LiteralPath $pointerFile -Destination (Join-Path $InstallDirectory 'previous.json') -Force
+        }
+        $temporary = Join-Path $InstallDirectory ('current-' + [Guid]::NewGuid().ToString('N') + '.json')
+        $pointer | ConvertTo-Json | Set-Content -LiteralPath $temporary -Encoding utf8
+        Move-Item -LiteralPath $temporary -Destination $pointerFile -Force
     }
-    $temporary = Join-Path $InstallDirectory ('current-' + [Guid]::NewGuid().ToString('N') + '.json')
-    $pointer | ConvertTo-Json | Set-Content -LiteralPath $temporary -Encoding utf8
-    Move-Item -LiteralPath $temporary -Destination $pointerFile -Force
+    $tray = Join-Path $runtime 'Lib\site-packages\universal_tools\manager_assets\Tray.ps1'
     if (!$NoShortcuts) {
         $shell = New-Object -ComObject WScript.Shell
         $shortcutPath = Join-Path ([Environment]::GetFolderPath('Programs')) 'MCP Service Manager.lnk'
@@ -64,7 +89,9 @@ try {
         }
     }
     if (!$InstallOnly) {
-        & $python -B -m universal_tools.manager_cli --registry $RegistryDirectory tray
+        $trayArguments = @('-B', '-m', 'universal_tools.manager_cli', '--registry', $RegistryDirectory, 'tray')
+        if ($ShowWindow) { $trayArguments += '--show' }
+        & $python @trayArguments
         if ($LASTEXITCODE -ne 0) { throw 'The manager could not start.' }
     }
     Write-Host "MCP Service Manager $($doctor.version) is installed."

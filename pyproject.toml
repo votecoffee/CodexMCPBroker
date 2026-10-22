@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-codex-tools"
-version = "0.18.1"
+version = "0.18.2"
 description = "Shared app MCP framework with an optional universal discovery broker"
 readme = "README.md"
 license = {file = "LICENSE"}
