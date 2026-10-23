@@ -76,7 +76,7 @@ Run `tests/test_sdk23.py` for typed pagination, form/URL capabilities, exact loc
 
 Run `tests/test_framework.py` against disposable state and synthetic MCP backends. Check retained-context deferral and owner denial, backend replacement after release, new inner tools with identical native frontend definitions and still-connected MCP client sessions, rejected hashes/reused revisions/failed startup, configuration restoration, hash checks before probing/dispatch, independent backend gates, and restart identity binding. Shared-adapter retirement and write reconciliation are explicit local app-admin APIs; verify their guards and that reconciliation leaves the original receipt/request-ID protection intact. These checks do not perform native work or establish Codex desktop activation.
 
-Package checks must include the framework module, current dependency metadata and license in the wheel. Verify installation from the wheel rather than relying only on an editable checkout. Python and .NET bindings, package-feed distribution, app dependency adoption and optional universal aggregation each need their own evidence; a source wheel is not a published feed release.
+Package checks must include the framework module, current dependency metadata and license in the wheel. Verify installation from the wheel rather than relying only on an editable checkout. Python and .NET bindings, package-feed distribution, app dependency adoption and host activation each need their own evidence; a source wheel is not a published feed release.
 
 ## Retired universal plugin profile
 
@@ -175,3 +175,14 @@ Run `python -m pytest -q tests/test_resources.py tests/test_resource_startup.py 
 Check app-only barrier resolution/reconciliation attestations, unchanged uncertain receipts, admission fencing on close and explicit release of native attachments before supervisor retirement. Compare `examples/resource-record.schema.json` with the runtime model. Native process metadata can briefly become inaccessible during Windows exit; verify termination with exact already-held handles and bound any fresh observation wait instead of treating an unknown status as permission to kill.
 
 For a manager-only Forms smoke test, use an isolated registry with synthetic already-stopped resource records, `-NoCodexInventory`, `-ShowWindow`, `-ExitAfterSeconds 6`, `-SmokeTestReport REPORT` and `-SmokeTestShowResources`. Verify the versioned title, visible resource dialog, six resource columns, expected row count and eligibility. The dialog writes `REPORT.resources.json` and closes without dispatching cleanup. The ordinary report must show a running monitor, received snapshot and the Owned resources button. Verify that all fixture UI/monitor processes exit afterward. No app endpoint, MCP session or engineering software participates. Actual app lifecycle/native acceptance remains separately required.
+
+## Windows installer and settings checks
+
+Run `tests/test_windows_launcher.py` for both root CMD entry points: invocation from another directory, quoted paths with spaces/metacharacters, forwarded options, success/failure exit codes and reuse without launching or replacing an installed manager. These tests use disposable stubs; also exercise a real isolated manager installation when changing packaging or installer behavior:
+
+```powershell
+.\InstallManager.cmd -InstallOnly -NoShortcuts -NoPause -InstallDirectory "$PWD\.local\manager-check\app" -RegistryDirectory "$PWD\.local\manager-check\registry"
+.\InstallAndRun.cmd -InstallOnly -NoShortcuts -NoPause -InstallDirectory "$PWD\.local\manager-check\app" -RegistryDirectory "$PWD\.local\manager-check\registry"
+```
+
+Check the isolated runtime's `pip check` and `python -B -m universal_tools.manager_cli doctor`, then verify the second call reused the same pointer/runtime without starting a tray. No normal Codex configuration, app registration or native software participates. App-owned settings writers require the separate byte/semantic/concurrency fixtures in the [installer guide](docs/server-development/installers-and-host-settings.md); this manager has no Codex-config writer.

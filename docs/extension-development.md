@@ -147,7 +147,7 @@ The general `MCP_PROFILE` accepts up to 64 skills, 512 files and 16 MiB per skil
 
 CLI `serve`, `app-serve` and `proxy` accept `--skill-package`, `--skill-profile mcp|openai-import`, `--skill-page-size` and `--skill-directory-read`. These options are local admin choices and are not automatically persisted to plugin configuration. Downstream selection/publication uses the embedding API.
 
-OpenAI currently imports MCP skills as submission-time snapshots. Updating those imported instructions requires scanning and submitting a new plugin version; live catalog publication does not remove that host requirement. See [official OpenAI importer documentation](https://developers.openai.com/plugins/build/mcp-server#import-skills-from-the-mcp-server). Neither protocol tests nor the import profile establish Codex desktop skill activation. Keep [native bundle composition](native-skill-bundles.md) available when packaged skills and reload are needed.
+OpenAI currently imports MCP skills as submission-time snapshots. Updating those imported instructions requires scanning and submitting a new plugin version; live catalog publication does not remove that host requirement. See [official OpenAI importer documentation](https://developers.openai.com/plugins/build/mcp-server#import-skills-from-the-mcp-server). Neither protocol tests nor the import profile establish Codex desktop skill activation. Ship native skills with each application's own plugin when packaged skills and reload are needed; the universal bundle composer is retired.
 
 ## Structural budgets and acceptance
 

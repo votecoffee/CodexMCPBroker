@@ -4,15 +4,23 @@
 
 Shared MCP application framework and Windows service manager
 
+This repository provides two reusable components. The actual MCP Servers are standalone applications, installed and maintained in their own repositories.
+
+| Component | Purpose | Installation |
+| --- | --- | --- |
+| Shared framework | Common backend lifecycle, sessions, resource ownership, policy and receipts for app developers. | A verified, version-pinned dependency in each adopting app. |
+| Windows management app | Tray dashboard for app-reported status, versions, pending updates, guarded restarts and owned-resource recovery. | `InstallAndRun.cmd` or `InstallManager.cmd`, independently of Codex and the servers. |
+| Standalone MCP Servers | Domain tools, native application adapters and each app's own Codex plugin and skills. | Each server's own installer; installing this project does not install those servers. |
+
 Build app-owned MCP hosts from one versioned dependency. Each application keeps its own Codex plugin, domain services, native software ownership and authorization. The shared framework standardizes backend discovery, controlled replacement, policy, sessions and durable operation receipts to reduce unnecessary Codex reloads.
 
-**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current framework and manager release is **26.1023.075532**, using **MCP Python SDK 2.3.0**.
+**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current framework and manager release is **26.1023.112948**, using **MCP Python SDK 2.3.0**.
 
 Releases use a fixed **`YY.MMDD.HHmmss`** timestamp in New York local time. The [versioning guide](docs/versioning.md) explains release stamping, package normalization and Windows/.NET version mapping. SDK and protocol versions retain their own numbering.
 
 This release includes bounded ledger lock admission and an opt-in experimental Windows contained stdio provider, previously developed as `0.21.0.dev1`. Real MCP Python SDK 2.3 fixtures now verify initialization, discovery, Unicode/result/error parity with the stock transport, failed startup and worker-crash cleanup, alongside harmless byte/lifecycle checks. Actual application, native-software and Codex-host integration remain separately assessed. Existing standalone app testing does not require this optional shared-host migration. Apps keep their reviewed dependency pins until a new package is separately verified and adopted.
 
-**Status: experimental and under active development. This tool is not mature or production-ready.** The framework is **not currently required** by the MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). Each app owns installation, migration and native/Codex acceptance. A package upgrade does not fix an app's resource leaks automatically. The durable [resource ownership API](docs/resource-ownership.md) and manager cleanup controls require explicit app adoption; management registration alone is not resource tracking.
+**Status: experimental and under active development. This tool is not mature or production-ready.** A separate broker or management-app installation is **not required** to use the standalone MCPServer repositories maintained under [votecoffee](https://github.com/votecoffee). An adopting app installs its own reviewed framework dependency. Each app owns installation, migration and native/Codex acceptance. A package upgrade does not fix an app's resource leaks automatically. The durable [resource ownership API](docs/resource-ownership.md) and manager cleanup controls require explicit app adoption; management registration alone is not resource tracking.
 
 The [SDK 2 feature guide](docs/sdk2-features.md) describes opt-in modern connections, ownership-bound approval continuations, catalog notifications, scoped discovery caches, SSE response budgets, tracing and skill resource snapshots. These features do not migrate existing integrations.
 
@@ -87,6 +95,8 @@ Setup installs a local framework development environment. It does not install a 
 Applications install and pin the shared framework in their own environments. No public package feed is implied; build and verify a local wheel. See the [framework package guide](docs/app-framework.md#package-management).
 
 Setup keeps its runtime and private development pointer under ignored `.local/`. The manager uses a separate installed runtime. Neither path installs or enables application plugins.
+
+App installer authors should follow the [installer and host-settings guide](docs/server-development/installers-and-host-settings.md), including byte-safe TOML updates, pinned-cache retention and disposable installer checks. The manager installer does not edit Codex settings.
 
 You can create a manager launcher shortcut without installing or starting anything by running `.\scripts\Create-LauncherShortcut.ps1`. Its generated `.local/InstallAndRun.lnk` stays ignored. Project icons live under `assets/`; the Windows ICO preserves all eight original sizes from 16 to 256 pixels.
 

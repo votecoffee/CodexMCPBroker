@@ -20,6 +20,7 @@ def launcher(tmp_path):
     scripts = project / "scripts"
     scripts.mkdir(parents=True)
     shutil.copyfile(ROOT / "InstallAndRun.cmd", project / "InstallAndRun.cmd")
+    shutil.copyfile(ROOT / "InstallManager.cmd", project / "InstallManager.cmd")
     shutil.copyfile(ROOT / "scripts/InstallAndRun.ps1", scripts / "InstallAndRun.ps1")
     for target in ("Manager",):
         (scripts / f"Install-{target}.ps1").write_text(
@@ -93,10 +94,18 @@ def test_incompatible_options_never_invoke_installer(launcher, tmp_path, shell, 
     assert not Path(env["LAUNCH_CAPTURE"]).exists()
 
 
-def test_root_cmd_preserves_installer_exit_code(launcher, tmp_path):
+@pytest.mark.parametrize("entrypoint", ["InstallAndRun.cmd", "InstallManager.cmd"])
+@pytest.mark.parametrize("exit_code", [0, 23])
+def test_root_cmd_forwards_paths_and_preserves_exit_code(launcher, tmp_path, entrypoint, exit_code):
     project, env = launcher
-    env["LAUNCH_EXIT"] = "23"
-    command = f'"{os.environ["COMSPEC"]}" /d /s /c ""{project / "InstallAndRun.cmd"}" -NoPause"'
+    env["LAUNCH_EXIT"] = str(exit_code)
+    destination = tmp_path / "manager app & settings"
+    registry = tmp_path / "private registry"
+    command = (
+        f'"{os.environ["COMSPEC"]}" /d /s /c ""{project / entrypoint}" -NoPause '
+        f'-InstallOnly -NoShortcuts -InstallDirectory "{destination}" '
+        f'-RegistryDirectory "{registry}""'
+    )
     result = subprocess.run(
         command,
         env=env,
@@ -105,8 +114,13 @@ def test_root_cmd_preserves_installer_exit_code(launcher, tmp_path):
         text=True,
         timeout=30,
     )
-    assert result.returncode == 23, result.stderr
-    assert Path(env["LAUNCH_CAPTURE"]).is_file()
+    assert result.returncode == exit_code, result.stderr
+    captured = json.loads(Path(env["LAUNCH_CAPTURE"]).read_text(encoding="utf-8-sig"))
+    assert captured["InstallDirectory"] == str(destination)
+    assert captured["RegistryDirectory"] == str(registry)
+    assert captured["InstallOnly"]["IsPresent"]
+    assert captured["NoShortcuts"]["IsPresent"]
+    assert captured["NoPause"]["IsPresent"]
 
 
 @pytest.mark.parametrize("shell", SHELLS)

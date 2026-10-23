@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-codex-tools"
-version = "26.1023.075532"
+version = "26.1023.112948"
 description = "Shared MCP application framework and Windows service manager"
 readme = "README.md"
 license = {file = "LICENSE"}

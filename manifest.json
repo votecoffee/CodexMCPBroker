@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "26.1023.075532",
+  "version": "26.1023.112948",
   "files": [
     {
       "path": ".gitattributes",
@@ -19,8 +19,8 @@
     },
     {
       "path": "APP_CONTRACT.md",
-      "size": 43394,
-      "sha256": "111ce0f55db5d85b3c23c96e3520575362e672c27d58fc303e1b4bcc607ec91c"
+      "size": 43106,
+      "sha256": "6740809aad6dd69839d30e217ba42f3d3f0872be9eb1b9cf68a216d11558d1d5"
     },
     {
       "path": "assets/icon-128.png",
@@ -80,7 +80,7 @@
     {
       "path": "docs/app-framework.md",
       "size": 22743,
-      "sha256": "23fa97e6e438f81a652279be4237e06397c3d982305abb8c437a55d26a18900e"
+      "sha256": "b4735370ce492f5101fc3ea144f1157c8ea04b91a9e5088b08f421d59f742095"
     },
     {
       "path": "docs/capability-catalog.md",
@@ -94,8 +94,8 @@
     },
     {
       "path": "docs/extension-development.md",
-      "size": 20868,
-      "sha256": "4712247280f72a20e6e248b9188e68c0de6a5a00ac3a4d1ebd51e8526112a363"
+      "size": 20896,
+      "sha256": "fdf1b995abec6e6aa6e7a991735a8acb80a3c9ea091d5c46da03ca98e4fb934f"
     },
     {
       "path": "docs/native-skill-bundles.md",
@@ -124,13 +124,18 @@
     },
     {
       "path": "docs/server-development/acceptance.md",
-      "size": 6434,
-      "sha256": "196b3f464cd47361b2106d282802a055f0df68e9a8747972911537725e6e2fe2"
+      "size": 6666,
+      "sha256": "688f41d0f890e8d75e17e697c33ac41135c925a2fff9c38655351cb199304fb2"
     },
     {
       "path": "docs/server-development/architecture.md",
       "size": 5557,
       "sha256": "4a307019b34b7f03af566e60f23abe391efc1a01e26855d513cf808c01b8f379"
+    },
+    {
+      "path": "docs/server-development/installers-and-host-settings.md",
+      "size": 6123,
+      "sha256": "41076e041538dccda48c2a957b2489702e3b01933b65159dff589fb670b3a93e"
     },
     {
       "path": "docs/server-development/quickstart.md",
@@ -139,13 +144,13 @@
     },
     {
       "path": "docs/server-development/README.md",
-      "size": 7273,
-      "sha256": "9a034bb18760e0b4ca7a4e233462733fb39afb625ef593a875ae37f683634541"
+      "size": 7443,
+      "sha256": "5d12c9001181980aebb7c40aaec1ff74a0c603af46685b60a2e9339389865304"
     },
     {
       "path": "docs/server-development/registration-and-discovery.md",
-      "size": 8473,
-      "sha256": "9e0e22053d8a6db9052389014f3da3fd263ab0b52db84a2ec7c31df9f1456b9c"
+      "size": 7934,
+      "sha256": "94ea3d2adfeb61c90356de73ea591f7daad83900ce47a6e49d9c6b58a891c628"
     },
     {
       "path": "docs/server-development/sessions-and-recovery.md",
@@ -329,18 +334,18 @@
     },
     {
       "path": "MIGRATION.md",
-      "size": 10757,
-      "sha256": "309ca2be597d53ca7347c33d455d816fcc40c1d6ab46c67b176652a4516e28e3"
+      "size": 10990,
+      "sha256": "56854a25e33c43e817763220827f1cec60397e8e40fbde6546163ff6cac559d1"
     },
     {
       "path": "pyproject.toml",
       "size": 1310,
-      "sha256": "355f3f889050c9dadb509fdd0f0ef8635f3cd77e398c37d3aa77f701ba199287"
+      "sha256": "eeb1a7c0623fa20495055ebd46f87cc82b34214dd029197d3ec16088313593a3"
     },
     {
       "path": "README.md",
-      "size": 37080,
-      "sha256": "9812711b423459b90220c4ff8bd03e3f62aa5edcb4fffa6ea032b408079c45f7"
+      "size": 38288,
+      "sha256": "bcd1247cf21a9814a04095aa118c380fae46522f4f5fb3e3ca17d7d9ec2240ba"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -410,7 +415,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 112,
-      "sha256": "cb66f97b6442ba108dbe4d08a924ef33a3bead7b4bdad085c11a598cd61722c6"
+      "sha256": "81b02d6f20cbca4f1415a1ae32a352045f5272abc51a4c3fe1cfb71a00984062"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -929,8 +934,8 @@
     },
     {
       "path": "tests/test_windows_launcher.py",
-      "size": 5687,
-      "sha256": "8642ed07cc7be3da157d155e2d310e57476240b0946d4e8e598f7ee49d5ecab9"
+      "size": 6466,
+      "sha256": "45b769c24b9418499233afdf9e5af4959561f00d6185fb156631c1757a1bbb9c"
     },
     {
       "path": "tests/test_workflow_integration.py",
@@ -939,8 +944,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 36792,
-      "sha256": "64f7b1d962f9034f605301625a10e34510ce7f7c972e8de07b3709903fc072c0"
+      "size": 38018,
+      "sha256": "060f3b3bb624d7a9442a248eb5ecde10eb6eec916df28d5f46b34026ea8a38c3"
     }
   ]
 }
