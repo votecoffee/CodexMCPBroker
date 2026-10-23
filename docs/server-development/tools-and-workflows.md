@@ -8,6 +8,8 @@ Use stable, specific tool names and object input schemas. Describe required targ
 
 Publish useful schemas through normal MCP tool listing, including pagination when needed. Keep schemas self-contained; the broker validates a bounded supported subset and does not fetch external schema references. Tool annotations are discovery information, not app authorization. Test actual emitted definitions rather than only the source decorators.
 
+Use the offline [catalog-quality checks](../catalog-quality.md) on a complete captured selected-profile catalog. Deterministic checks cover descriptions, schemas, references and hints. Optional TDQS-inspired reviews include full input/output schemas and sibling context; selection-only fixtures can measure a chosen model's decisions without executing engineering tools. Keep numeric grades advisory and separate from actual host discovery, lifecycle and native acceptance. Existing app packages are not automatically upgraded by this development feature.
+
 The broker uses explicit `readOnlyHint: true` for its read channel. False or unknown annotations use the write channel unless a separately reviewed exact legacy override applies. A read/export operation that creates artifacts may intentionally be write-capable. Never rename or reclassify it to avoid policy. `describe_tool.invocation` states the current channel and request-ID requirement.
 
 ## Bind a reviewed change to its target

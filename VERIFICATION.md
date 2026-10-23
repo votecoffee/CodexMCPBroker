@@ -2,6 +2,14 @@
 
 This guide describes repeatable checks for the public source. Keep machine-specific results, installed-plugin records, app compatibility captures and deployment history under ignored `.local/private-docs/` or outside the checkout.
 
+## Catalog quality profile
+
+Run `python -m pytest -q tests/test_catalog_quality.py` and lint/format the new quality modules. These offline fixtures check schema/description gates, local recursive and rejected remote references, finite JSON/shape budgets, detached snapshots, complete catalog/evaluator/rubric bindings, sibling invalidation, strict review/choice response coverage, exact half-up arithmetic and before/after changes. An in-process real SDK metadata listing is inspected without starting a server or invoking tools.
+
+Run `python -m universal_tools.quality_cli lint examples/quality-catalog.json --profile "Synthetic text-only offline profile"`, then export both review and choice requests using the example cases. Validate a separately retained synthetic response against the exported response schema and bindings; fixture scores are not a real evaluator result. Test an actual model only through an explicitly selected caller adapter without engineering executors. No routine quality check contacts a model/provider, starts an installed app, writes host settings or upgrades app pins.
+
+After changes, verify the console entry point and both quality modules in the wheel, inspect wheel RECORD/source parity, run the focused tests from a fresh source extraction and follow the manifest/Git byte checks below. See [catalog quality](docs/catalog-quality.md) for input limits, review contracts and the separate host/native acceptance boundary.
+
 ## Development environment
 
 From the repository root on Windows:
@@ -62,7 +70,7 @@ For an app-specific production-worker assessment, follow the [worker checklist](
 
 Inner catalog checks use opt-in synthetic providers with versioned, bounded metadata. They cover explicit read-only declarations, schema/reference checks, malformed/duplicate catalogs, detached snapshots, stale revisions, registration revocation, changed discovery definitions and private owner visibility through expiry and transport loss. Real stdio frontends and stdio/HTTP apps verify install/refresh without frontend definition changes, inner feature additions without changing outer tool revisions, native rejection of stale app revisions, global refresh without owner probing, invalid metadata without native context loss, and zero host prompts or fixture commits from metadata confirmation attempts. They do not establish that an existing app's native catalog implements the new normalized format.
 
-The workflow contribution reference checks run the example app through the unchanged fourteen-tool frontend in transient/exclusive modes. They verify lazy guide/reference retrieval, declared schema and actual content hashes, app rejection of stale revisions or wrong reference hashes, owner denial and publication changes without new outer definitions or app-plugin installation. The broker still treats app results as opaque task data; this profile is not native skill import or automatic profile validation. Validate the packaged Universal Tools skill and its references, then assess real app workflows in fresh chats with only that plugin enabled before claiming replacement of standalone skill behavior.
+The workflow contribution reference checks run the example app through the unchanged fourteen-tool frontend in transient/exclusive modes. They verify lazy guide/reference retrieval, declared schema and actual content hashes, app rejection of stale revisions or wrong reference hashes, owner denial and publication changes without new outer definitions or app-plugin installation. The broker still treats app results as opaque task data; this profile is not native skill import or automatic profile validation. Assess each app-owned plugin, skills and selected workflows in an actual host chat separately. The universal plugin and its skill composer are retired; routing fixtures do not replace standalone plugins or establish desktop tool activation.
 
 Provider deadline cases cover both stdio and a prestarted HTTP fixture. They record entry into the delayed provider before checking that its timeout evicts owned search hints and retains the recovery barrier. The stdio case allows cold process initialization; the HTTP case keeps a short operation budget after server startup. The separate initialize-timeout fixture includes HTTP client/certificate setup margin and requires receipt of `initialize` before asserting the stalled-handshake timeout and zero retries. An earlier setup failure cannot substitute for the intended in-flight phase.
 

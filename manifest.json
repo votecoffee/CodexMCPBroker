@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "26.1023.112948",
+  "version": "26.1023.132139",
   "files": [
     {
       "path": ".gitattributes",
@@ -88,6 +88,11 @@
       "sha256": "670c9e5e4350f68eb38a722fad99ae3270e9393a8ca41bb9584e8e4f7740fa8f"
     },
     {
+      "path": "docs/catalog-quality.md",
+      "size": 8894,
+      "sha256": "9d6a314c8530893ccceda8249aacdcec2eba2e70287be19915b9c15ed9e33a08"
+    },
+    {
       "path": "docs/deployment.md",
       "size": 9915,
       "sha256": "4a8b3b8c3582c346b6d75b2a7086bcb1cca985979fcfffb54b28573419263f76"
@@ -144,8 +149,8 @@
     },
     {
       "path": "docs/server-development/README.md",
-      "size": 7443,
-      "sha256": "5d12c9001181980aebb7c40aaec1ff74a0c603af46685b60a2e9339389865304"
+      "size": 7616,
+      "sha256": "05c2bdee21bc4ef267835ba74af474d08f41b3db64786a4894ace2f9919292c4"
     },
     {
       "path": "docs/server-development/registration-and-discovery.md",
@@ -159,8 +164,8 @@
     },
     {
       "path": "docs/server-development/tools-and-workflows.md",
-      "size": 6226,
-      "sha256": "f62b82f5242cd3c2f4487944b57118de7424b5a9ca9f3e0e6dabc6256f048396"
+      "size": 6783,
+      "sha256": "d440a2c86c0dcb39eab86ed20707803bb96e7e97656b74263ba42b4bb0f95747"
     },
     {
       "path": "docs/service-management.md",
@@ -258,6 +263,16 @@
       "sha256": "09c4b59a9c51a1443c1cb0a5af99e2b6849de9b9518c5f565784a0f1ceea6da1"
     },
     {
+      "path": "examples/quality-cases.json",
+      "size": 405,
+      "sha256": "3fe1edd3ba2ff85e09d65333faaafae8f42ef37fde4ac767150754286f071eee"
+    },
+    {
+      "path": "examples/quality-catalog.json",
+      "size": 1671,
+      "sha256": "48dccc964887ae9a3e382344ee3793e35f58f4ba40698e6894fd0d3495d36040"
+    },
+    {
       "path": "examples/resource-record.schema.json",
       "size": 5733,
       "sha256": "1a76e0618ea87222654d78ae4972a1b83b9d33f03acd09f38c1ba614bb95a4cc"
@@ -339,13 +354,13 @@
     },
     {
       "path": "pyproject.toml",
-      "size": 1310,
-      "sha256": "eeb1a7c0623fa20495055ebd46f87cc82b34214dd029197d3ec16088313593a3"
+      "size": 1371,
+      "sha256": "883eb2a63e9fc7fb0713751e5100471e378256842dd840be9706426943139609"
     },
     {
       "path": "README.md",
-      "size": 38288,
-      "sha256": "bcd1247cf21a9814a04095aa118c380fae46522f4f5fb3e3ca17d7d9ec2240ba"
+      "size": 38646,
+      "sha256": "4ef00a67c0977868832b394f4e8790c75ac540350ada0675d1535728340421c7"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -415,7 +430,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 112,
-      "sha256": "81b02d6f20cbca4f1415a1ae32a352045f5272abc51a4c3fe1cfb71a00984062"
+      "sha256": "3464278f5956bebdce16bd756a8e102c873aa67338fcebf127d3749400e0679c"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -441,6 +456,11 @@
       "path": "src/universal_tools/capabilities.py",
       "size": 7239,
       "sha256": "fa71fa72b031e8430e4c50a3c423e2748f258b15e847c157972c33f143587a07"
+    },
+    {
+      "path": "src/universal_tools/catalog_quality.py",
+      "size": 22325,
+      "sha256": "8cb9ece1bea2fa8db389a32b986b4a13475a2c078680d91253a9e618647732d9"
     },
     {
       "path": "src/universal_tools/cli.py",
@@ -556,6 +576,11 @@
       "path": "src/universal_tools/protocol_relay.py",
       "size": 16496,
       "sha256": "4b0b2371e9430b037e6693b1a2172810c32500cc1a23a34d731b49538ed21434"
+    },
+    {
+      "path": "src/universal_tools/quality_cli.py",
+      "size": 3241,
+      "sha256": "23b5f3af4a3a381bc8396f50c21a1ca072d402139589b0be44f6a655583ecfb2"
     },
     {
       "path": "src/universal_tools/redis_tasks.py",
@@ -706,6 +731,11 @@
       "path": "tests/test_capability_integration.py",
       "size": 12664,
       "sha256": "7ec98974194dd94c9bb06f0f965f1df0d59a1d7fa398ebe799b407a38d838f52"
+    },
+    {
+      "path": "tests/test_catalog_quality.py",
+      "size": 12843,
+      "sha256": "c98eb1e59b3afb173b077536791d34386c2782bf6007a1458e072add550f50e2"
     },
     {
       "path": "tests/test_core.py",
@@ -944,8 +974,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 38018,
-      "sha256": "060f3b3bb624d7a9442a248eb5ecde10eb6eec916df28d5f46b34026ea8a38c3"
+      "size": 39516,
+      "sha256": "b00aebc78453058efe554834725379522dc76980d7e0b4222b2435a70099a42d"
     }
   ]
 }

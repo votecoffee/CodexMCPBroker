@@ -1,0 +1,5 @@
+[
+  {"id": "literal-lines", "request": "Count the lines in this literal text: alpha\nbeta.", "acceptable_tools": ["inspect_text"]},
+  {"id": "scope-help", "request": "Which operations does this text-only profile support?", "acceptable_tools": ["describe_profile"]},
+  {"id": "native-outside-profile", "request": "Launch native engineering software and change a controller.", "acceptable_tools": [null]}
+]

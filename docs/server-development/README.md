@@ -18,6 +18,7 @@ CodexMCPBroker is experimental. **MCP protocol conformance, broker compatibility
 | [Durable resource ownership](../resource-ownership.md) | Track owned processes/software across abnormal exits and expose reviewed orphan cleanup without a plugin. |
 | [Deployment profiles](../deployment.md) | Select authenticated remote hosts or shared native SDK deployments with explicit ownership and infrastructure contracts. |
 | [Tool and workflow design](tools-and-workflows.md) | Design schemas, side-effect annotations, revisions, reviewed writes, jobs and results. |
+| [Catalog quality](../catalog-quality.md) | Lint captured selected-profile definitions and optionally review descriptions, catalog coherence and selection-only fixtures. |
 | [Sessions and recovery](sessions-and-recovery.md) | Choose transient, exclusive or shared mode and define resource ownership and loss behavior. |
 | [Registration and discovery](registration-and-discovery.md) | Register transports, manage dependencies and publish optional inner catalogs. |
 | [Installers and host settings](installers-and-host-settings.md) | Validate root CMD installers, preserve TOML bytes and retain active cached launchers through updates. |

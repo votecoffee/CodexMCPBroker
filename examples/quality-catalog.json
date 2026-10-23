@@ -1,0 +1,36 @@
+{
+  "tools": [
+    {
+      "name": "inspect_text",
+      "title": "Inspect supplied text",
+      "description": "Count lines in supplied literal text. Use for offline text inspection; returns a count without reading files, starting software or accessing a network. Use describe_profile for supported-scope guidance.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {"type": "string", "description": "Literal text to inspect, not a file path.", "maxLength": 16384}
+        },
+        "required": ["text"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "lines": {"type": "integer", "description": "Line count including a final unterminated line.", "minimum": 0}
+        },
+        "required": ["lines"]
+      },
+      "annotations": {"readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false}
+    },
+    {
+      "name": "describe_profile",
+      "description": "Describe this synthetic text-only profile and its limits. Use before inspection when scope is unclear; returns guidance only. It cannot start native software or inspect files. Use inspect_text to count literal text lines.",
+      "inputSchema": {"type": "object", "properties": {}, "additionalProperties": false},
+      "outputSchema": {
+        "type": "object",
+        "properties": {"guidance": {"type": "string", "description": "Selected-profile scope and limits."}},
+        "required": ["guidance"]
+      },
+      "annotations": {"readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false}
+    }
+  ]
+}

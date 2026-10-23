@@ -1,3 +1,3 @@
 """Shared MCP application framework and independent Windows service manager."""
 
-__version__ = "26.1023.112948"
+__version__ = "26.1023.132139"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-codex-tools"
-version = "26.1023.112948"
+version = "26.1023.132139"
 description = "Shared MCP application framework and Windows service manager"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -22,6 +22,7 @@ redis = ["redis==8.1.0"]
 [project.scripts]
 universal-tools = "universal_tools.cli:main"
 universal-tools-manager = "universal_tools.manager_cli:main"
+universal-tools-quality = "universal_tools.quality_cli:main"
 
 [tool.setuptools.package-data]
 universal_tools = ["manager_assets/*.ps1", "manager_assets/*.ico", "SDK_STDIO_LICENSE.txt"]

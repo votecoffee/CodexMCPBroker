@@ -14,7 +14,7 @@ This repository provides two reusable components. The actual MCP Servers are sta
 
 Build app-owned MCP hosts from one versioned dependency. Each application keeps its own Codex plugin, domain services, native software ownership and authorization. The shared framework standardizes backend discovery, controlled replacement, policy, sessions and durable operation receipts to reduce unnecessary Codex reloads.
 
-**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current framework and manager release is **26.1023.112948**, using **MCP Python SDK 2.3.0**.
+**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current framework and manager release is **26.1023.132139**, using **MCP Python SDK 2.3.0**.
 
 Releases use a fixed **`YY.MMDD.HHmmss`** timestamp in New York local time. The [versioning guide](docs/versioning.md) explains release stamping, package normalization and Windows/.NET version mapping. SDK and protocol versions retain their own numbering.
 
@@ -35,6 +35,8 @@ The [beta completion plan](ROADMAP.md) separates the implemented broker foundati
 The [adapter assessment](docs/adapter-assessment.md) covers session ownership, app-owned jobs and production feature workers, including refresh, reload and failure handling. Passing those checks with fake native providers still leaves Codex host and native acceptance to complete for each selected workflow.
 
 Building a new server? Start with the [MCP server developer guide](docs/server-development/README.md), including a read-only quickstart, shared-service architecture, state/recovery contracts, registration/discovery and a reusable acceptance record. The guide distinguishes MCP conformance from this broker's supported integration profile.
+
+The offline [catalog-quality tools](docs/catalog-quality.md) lint captured tool schemas/descriptions, export optional TDQS-inspired review requests, compare catalogs and check representative tool-selection fixtures. Scores are advisory and do not establish host/native readiness. These development tools do not update or execute the standalone MCP Servers.
 
 The optional [Windows tray manager](docs/service-management.md) displays installed/running/available versions, pending updates and app-reported health. Its default view groups instances by app and explicitly flags multiple responding instances. **Show instances and history** reveals exact processes and stopped/unreachable registrations; historical rows are not running servers. Run **`InstallManager.cmd`** to install it independently of the broker/plugin. Apps opt into `universal_tools.management` for live status and guarded restart controls. Other installed plugins appear as **Not reporting**, with restart disabled.
 
