@@ -2,7 +2,7 @@
 
 The architecture is a reusable app-owned MCP framework and independent Windows manager. Apps keep their own Codex plugins. The universal plugin, marketplace and skill-composition installer are retired; there is no universal plugin to install instead of app plugins. Retained routing components are framework internals and development fixtures.
 
-The current framework is 26.1022.173624, using MCP Python SDK 2.3.0 with a separate SDK 2.2 compatibility profile. It provides `universal_tools.framework`, durable [process/resource ownership](resource-ownership.md), an authenticated loopback reference host and optional Tasks, Skills, native protocol federation, Apps and OAuth/shared deployment profiles. See the [SDK support matrix](sdk-feature-support.md), [extension guide](extension-development.md) and [deployment guide](deployment.md). The framework remains experimental. Each app owns adoption and native/Codex acceptance.
+The current framework is 26.1023.072616, using MCP Python SDK 2.3.0 with a separate SDK 2.2 compatibility profile. It provides `universal_tools.framework`, durable [process/resource ownership](resource-ownership.md), an authenticated loopback reference host and optional Tasks, Skills, native protocol federation, Apps and OAuth/shared deployment profiles. See the [SDK support matrix](sdk-feature-support.md), [extension guide](extension-development.md) and [deployment guide](deployment.md). The framework remains experimental. Each app owns adoption and native/Codex acceptance.
 
 ## Stable front door, replaceable backends
 
@@ -114,7 +114,7 @@ The message adapter uses the pinned SDK's public JSON-RPC types and serializatio
 
 `allow_termination=True` declares that forced teardown of this private backend is safe. It does not save native documents, authorize a write, release shared native software or clear app journals. Apps must fence work and preserve dirty/uncertain barriers before close; refusal remains a retained recovery condition. Frontends created by Codex belong to Codex and require their own EOF/parent/lease handling, not relabelling as host-owned children.
 
-This source profile has harmless byte-echo/message-type and resource-policy checks. It is not yet a reviewed release wheel or proof of a real SDK server's handshake, app/native close, Codex display or shared-host migration. Keep unaccepted deployment routes disabled. Standalone profiles may be tested separately with their own approved process owners.
+This source profile has harmless byte-echo/message-type and resource-policy checks. Real SDK 2.3 client/server fixtures also check initialization, discovery, complete Unicode/result/error parity with the stock transport, failed startup and worker-crash cleanup through retained process handles. These fixture results do not establish an application's native close policy, Codex display or shared-host migration. Review the exact release wheel and each application's enabled paths before adoption; keep unaccepted deployment routes disabled. Standalone profiles may be tested separately with their own approved process owners.
 
 ## Publication and reload guards
 

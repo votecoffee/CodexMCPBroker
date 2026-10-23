@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "26.1022.173624",
+  "version": "26.1023.072616",
   "files": [
     {
       "path": ".gitattributes",
@@ -79,8 +79,8 @@
     },
     {
       "path": "docs/app-framework.md",
-      "size": 22465,
-      "sha256": "141023b830662086b46baa368791d0a0e89c993c9895dab30c6e1026fdab833e"
+      "size": 22738,
+      "sha256": "efaeec078664ba85e283f21052d7606f32ac70e78a42a8c563db5a6e53a44bd1"
     },
     {
       "path": "docs/capability-catalog.md",
@@ -114,8 +114,8 @@
     },
     {
       "path": "docs/sdk-feature-support.md",
-      "size": 10384,
-      "sha256": "f039498681087843e7bb83d775d836e7d868cde006772765172b3ed845b16bd0"
+      "size": 10472,
+      "sha256": "3c1a828486a0e1086a95a8aa22a9d19517934428ee5b73b8b42f3f87a8f89c88"
     },
     {
       "path": "docs/sdk2-features.md",
@@ -335,12 +335,12 @@
     {
       "path": "pyproject.toml",
       "size": 1310,
-      "sha256": "f2c188240bb5963a3d7cfac0a2176764c479ef91321e20db1980ffca7bb2f506"
+      "sha256": "ba7832ee6746b54c1eec118536346cd9ae0c70a039331b962016f33d491f0412"
     },
     {
       "path": "README.md",
-      "size": 36672,
-      "sha256": "16dee1def1466ea26199f22b6c1eec75c69b4d8385b6d28d3820d3f0b4b2dc2e"
+      "size": 36911,
+      "sha256": "f097501e2cb0fe94ebd8a137f8f8ba0447bf961b79f27e33d3e22e3cf3ab8603"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -410,7 +410,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 112,
-      "sha256": "61431115aa1046180030cae8858dcc7cd3c7cc7fb9214ab81e44ef6c55872c28"
+      "sha256": "e0aa46be1dfc0ddb11ece7f68d02b18d4d739614bad48fdeeefa76e9ec00e151"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -793,6 +793,11 @@
       "sha256": "3f0d61b6f838a31b5d75d6ce819d0a245aef3d87c93628dafd13858a0db4dc29"
     },
     {
+      "path": "tests/test_owned_stdio_sdk.py",
+      "size": 5545,
+      "sha256": "9f6f14c33dd8dbc2a76b1351de206b06a9fa9d307f132cba5ead867fdcf89ea3"
+    },
+    {
       "path": "tests/test_ownership.py",
       "size": 8606,
       "sha256": "9b1c14c2b38bc9be23371734b4d17f91c11470574dd3a2fcc1ab988e2a83e336"
@@ -929,8 +934,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 35404,
-      "sha256": "6010e80e99c9f553f7eb0abfd48eafc04f39988b993b0d3f3d16a73b01f9bf29"
+      "size": 36177,
+      "sha256": "594bd95e5cc9234313afc5d43b67a7d4b8c055c1bd12b508215bcb7637d57e18"
     }
   ]
 }
