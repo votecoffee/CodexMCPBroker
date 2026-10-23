@@ -168,6 +168,8 @@ Use `examples/managed_service.py` against a dedicated registry for native Forms 
 
 Read-only CLI inventory checks may inspect current installed plugin metadata without executing plugin launchers or changing configuration. Record machine-specific inventory/screenshots/results under ignored `.local/private-docs/`. Do not claim an installed plugin is running or restartable until an authorized management endpoint reports it.
 
+For an app adopting the [stable launcher contract](docs/server-development/installers-and-host-settings.md#required-stable-launcher-contract), use disposable installation/cache roots to prove cache-removal survival, immutable snapshot refusal, atomic/concurrent publication and old-client preservation. Then verify its actual saved route and a fresh host chat through the same stable entry. Keep app dependency pins and selected capabilities explicit; framework documentation/package checks do not deploy this contract into existing apps.
+
 ## Durable resource profile
 
 Development source: `python -m pytest -q tests/test_owned_stdio.py` starts only disposable byte-echo/sleep helpers, never MCP servers or native engineering software. Verify multi-megabyte binary/Unicode/backpressure, SDK message-type/ID preservation, true EOF, grandchild cleanup, attachment preservation, creation-handle binding, failed binding without execution, restricted inherited handles, owner crash/orphan review, bounded/redacted frames and one retained uncertain cleanup without replay. Real SDK handshake, app/Codex/native and release-wheel checks are separate acceptance gates.

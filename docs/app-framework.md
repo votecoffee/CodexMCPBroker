@@ -2,9 +2,11 @@
 
 The architecture is a reusable app-owned MCP framework and independent Windows manager. Apps keep their own Codex plugins. The universal plugin, marketplace and skill-composition installer are retired; there is no universal plugin to install instead of app plugins. Retained routing components are framework internals and development fixtures.
 
-The current framework is 26.1023.112948, using MCP Python SDK 2.3.0 with a separate SDK 2.2 compatibility profile. It provides `universal_tools.framework`, durable [process/resource ownership](resource-ownership.md), an authenticated loopback reference host and optional Tasks, Skills, native protocol federation, Apps and OAuth/shared deployment profiles. See the [SDK support matrix](sdk-feature-support.md), [extension guide](extension-development.md) and [deployment guide](deployment.md). The framework remains experimental. Each app owns adoption and native/Codex acceptance.
+The current framework is 26.1023.134226, using MCP Python SDK 2.3.0 with a separate SDK 2.2 compatibility profile. It provides `universal_tools.framework`, durable [process/resource ownership](resource-ownership.md), an authenticated loopback reference host and optional Tasks, Skills, native protocol federation, Apps and OAuth/shared deployment profiles. See the [SDK support matrix](sdk-feature-support.md), [extension guide](extension-development.md) and [deployment guide](deployment.md). The framework remains experimental. Each app owns adoption and native/Codex acceptance.
 
 ## Stable front door, replaceable backends
+
+Schema stability and launch-path stability are separate contracts. Every published app connection must use a [stable app-owned launcher and cwd](server-development/installers-and-host-settings.md#required-stable-launcher-contract) outside disposable host caches and development outputs. It selects reviewed immutable runtime bytes and preserves actual process/session ownership. Direct standalone SDK servers follow the same launch rule without requiring the optional framework host.
 
 ```mermaid
 flowchart LR

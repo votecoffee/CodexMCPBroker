@@ -14,7 +14,7 @@ This repository provides two reusable components. The actual MCP Servers are sta
 
 Build app-owned MCP hosts from one versioned dependency. Each application keeps its own Codex plugin, domain services, native software ownership and authorization. The shared framework standardizes backend discovery, controlled replacement, policy, sessions and durable operation receipts to reduce unnecessary Codex reloads.
 
-**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current framework and manager release is **26.1023.132139**, using **MCP Python SDK 2.3.0**.
+**There is no universal Codex plugin.** The former Universal Tools plugin, marketplace and installation/skill-aggregation commands are retired. The independent Windows manager needs no Codex plugin or MCP connection. The Python distribution and import names remain `universal-codex-tools` and `universal_tools` for existing application dependencies. Apps use `universal_tools.framework`. The current framework and manager release is **26.1023.134226**, using **MCP Python SDK 2.3.0**.
 
 Releases use a fixed **`YY.MMDD.HHmmss`** timestamp in New York local time. The [versioning guide](docs/versioning.md) explains release stamping, package normalization and Windows/.NET version mapping. SDK and protocol versions retain their own numbering.
 
@@ -98,7 +98,7 @@ Applications install and pin the shared framework in their own environments. No 
 
 Setup keeps its runtime and private development pointer under ignored `.local/`. The manager uses a separate installed runtime. Neither path installs or enables application plugins.
 
-App installer authors should follow the [installer and host-settings guide](docs/server-development/installers-and-host-settings.md), including byte-safe TOML updates, pinned-cache retention and disposable installer checks. The manager installer does not edit Codex settings.
+App installer authors must follow the [stable launcher contract](docs/server-development/installers-and-host-settings.md#required-stable-launcher-contract): host connections use app-owned entry paths and working directories outside disposable Codex caches, selecting reviewed immutable runtime bytes. The [installer and host-settings guide](docs/server-development/installers-and-host-settings.md) also covers byte-safe TOML updates, old-generation retention and disposable installer checks. Existing apps adopt this rule through their own reviewed rollout; changing framework guidance does not modify their installations. The manager installer does not edit Codex settings.
 
 You can create a manager launcher shortcut without installing or starting anything by running `.\scripts\Create-LauncherShortcut.ps1`. Its generated `.local/InstallAndRun.lnk` stays ignored. Project icons live under `assets/`; the Windows ICO preserves all eight original sizes from 16 to 256 pixels.
 

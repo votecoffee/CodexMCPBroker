@@ -82,7 +82,7 @@ Use the current [official OpenAI packaging documentation](https://developers.ope
 
 Publish current workflow guidance through app-owned MCP read tools or optional dynamic Skills resources. Keep native skills in the app's own plugin and bind them to the selected standalone route. Missing tools or a failed write must not make a skill loosen policy, install a different plugin or silently switch routes.
 
-Package installation, plugin enablement, direct-server enablement, optional framework registration and skill availability are separate checks. Verify the installed cached launcher's actual command, arguments, working directory and environment; keep one resolved route for the selected profile. The retired universal skill composer is not an installation path. Follow the [installer and host-settings guide](installers-and-host-settings.md) for TOML byte preservation, update ordering and disposable checks.
+Package installation, plugin enablement, direct-server enablement, optional framework registration and skill availability are separate checks. Publish and verify the [required stable app-owned launcher](installers-and-host-settings.md#required-stable-launcher-contract), with command, arguments, working directory and environment independent of disposable plugin caches; keep one resolved route for the selected profile. The retired universal skill composer is not an installation path. Follow the [installer and host-settings guide](installers-and-host-settings.md) for TOML byte preservation, update ordering and disposable checks.
 
 ## Make installation and failures observable
 

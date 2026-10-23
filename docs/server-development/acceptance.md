@@ -22,7 +22,7 @@ Record unsupported requirements as blockers. Mark a feature that is outside the 
 | Owned software and process lifetime | Explicit private/shared/attached inventory; bounded startup; clean close, EOF, failed startup and owner-death cleanup; no owned native/Node/shell descendants left behind; attached user apps and other clients preserved. See [resource ownership](sessions-and-recovery.md#track-owned-software-and-subprocesses). |
 | Payload and efficiency | Valid large and invalid inputs, encodings and JSON/base64 overhead, exact results/media, direct/cold/warm measurements with stated samples and competing frontends. |
 | Codex host | Actual fresh-chat discovery through the application's own plugin/connection; native skills/references, dynamic MCP guidance, tool selection, media, human forms, progress and failures. No universal plugin is installed. Protocol clients cannot establish UI behavior. |
-| Installation | Root CMD invocation with quoted paths, arguments and exit codes; disposable package installation; exact pins and cached-launcher bytes; valid on-disk TOML with preserved line endings/unrelated settings; upgrade interruption and referenced-cache retention; no automatic route switch with active/uncertain work. See [installer checks](installers-and-host-settings.md). |
+| Installation | Root CMD invocation with quoted paths, arguments and exit codes; disposable package installation; exact pins and stable app-owned launcher/runtime bytes; real cache-removal survival and atomic selection/update checks; valid on-disk TOML with preserved line endings/unrelated settings; upgrade interruption and old-generation retention; no automatic route switch with active/uncertain work. See the [required stable launcher contract](installers-and-host-settings.md#required-stable-launcher-contract). |
 | Native pilot | Separately authorized disposable targets, fresh app preflight/review, native acceptance/readback and failure reconciliation. Preserve original data and an available standalone route. |
 
 Use the detailed [adapter assessment](../adapter-assessment.md) and [migration guide](../../MIGRATION.md) for failure boundaries. Frozen fake-backed passes can justify a proposed pilot; they neither authorize migration nor prove native validity, runtime behavior, commissioning or safety acceptance.
@@ -44,6 +44,7 @@ Candidate session mode and native resource/alias contract:
 Write scope and required app approval:
 Required host capabilities and unsupported requirements:
 Standalone plugin, route-aware skills and installer choice:
+Stable launcher/cwd, immutable runtime selection and cache-removal proof:
 
 Metadata gate:
 Direct versus broker complete-result comparison:
