@@ -166,7 +166,7 @@ class ProcessDriver:
             if ctypes.get_last_error() == 87:
                 raise ProcessLookupError("recorded process no longer exists")
             raise ctypes.WinError(ctypes.get_last_error())
-        return ProcessHandle(self, handle, pid)
+        return ProcessHandle(self, handle, pid, allow_termination=terminate)
 
     def capture(self, pid):
         with self._open(pid) as handle:
@@ -195,17 +195,29 @@ class ProcessDriver:
         except (OSError, ValueError):
             return "unknown"
 
-    def open(self, identity):
+    def _verified_open(self, identity, *, terminate):
         if self.host_id is None or identity.get("host_id") != self.host_id:
             raise ValueError("resource belongs to a different or unverifiable host")
-        handle = self._open(identity["pid"], terminate=True)
+        handle = self._open(identity["pid"], terminate=terminate)
         try:
             if not handle.alive() or handle.identity != identity:
-                raise ProcessLookupError("process identity changed; refusing termination")
+                raise ProcessLookupError("process identity changed; refusing access")
             return handle
         except BaseException:
             handle.close()
             raise
+
+    def open(self, identity):
+        """Open a creation-checked handle for an explicitly authorized cleanup."""
+        return self._verified_open(identity, terminate=True)
+
+    def observe(self, identity):
+        """Pin one verified kernel object with query/wait rights and no termination.
+
+        Identity/image acquisition happens once. Later identity reads and waits do
+        not reopen the PID or repeat image queries during process shutdown.
+        """
+        return self._verified_open(identity, terminate=False)
 
     def create_suspended(
         self, argv, *, cwd=None, env=None, max_processes=32, show_window=False, stdio_handles=None
@@ -341,27 +353,41 @@ class ProcessDriver:
 
 
 class ProcessHandle:
-    def __init__(self, driver, handle, pid):
+    def __init__(self, driver, handle, pid, *, allow_termination=True):
         self.driver, self.handle, self.pid = driver, handle, pid
         self._identity = None
+        self._allow_termination = allow_termination
 
     @property
     def identity(self):
         if self._identity is None:
             self._identity = self.driver.capture_handle(self.handle, self.pid)
-        return self._identity
+        return dict(self._identity)
 
     def alive(self):
+        if self.handle is None:
+            raise ValueError("process handle is closed")
         result = self.driver.kernel.WaitForSingleObject(self.handle, 0)
         if result not in (0, 258):
             raise OSError("process wait failed")
         return result == 258
 
     def terminate(self):
+        if not self._allow_termination:
+            raise PermissionError("observation handles cannot terminate a process")
+        if self.handle is None:
+            raise ValueError("process handle is closed")
         checked(self.driver.kernel.TerminateProcess(self.handle, 1))
 
     def wait(self, milliseconds):
-        return self.driver.kernel.WaitForSingleObject(self.handle, milliseconds) == 0
+        if self.handle is None:
+            raise ValueError("process handle is closed")
+        if type(milliseconds) is not int or not 0 <= milliseconds < 2**32 - 1:
+            raise ValueError("process wait requires a bounded nonnegative millisecond count")
+        result = self.driver.kernel.WaitForSingleObject(self.handle, milliseconds)
+        if result not in (0, 258):
+            raise OSError("process wait failed")
+        return result == 0
 
     def close(self):
         if self.handle:

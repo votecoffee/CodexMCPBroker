@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "26.1023.072616",
+  "version": "26.1023.075532",
   "files": [
     {
       "path": ".gitattributes",
@@ -79,8 +79,8 @@
     },
     {
       "path": "docs/app-framework.md",
-      "size": 22738,
-      "sha256": "efaeec078664ba85e283f21052d7606f32ac70e78a42a8c563db5a6e53a44bd1"
+      "size": 22743,
+      "sha256": "23fa97e6e438f81a652279be4237e06397c3d982305abb8c437a55d26a18900e"
     },
     {
       "path": "docs/capability-catalog.md",
@@ -109,13 +109,13 @@
     },
     {
       "path": "docs/resource-ownership.md",
-      "size": 12433,
-      "sha256": "8fb300a8514e48bab4d12441157e7df97c91893bf02b4c72e08c35aa285fbf61"
+      "size": 15044,
+      "sha256": "12dc7ab023cafb26876d709fad9aee15b817cfc768003d964c84c8fc302b6c2e"
     },
     {
       "path": "docs/sdk-feature-support.md",
       "size": 10472,
-      "sha256": "3c1a828486a0e1086a95a8aa22a9d19517934428ee5b73b8b42f3f87a8f89c88"
+      "sha256": "fe3dc79990c41efc1ea59ca9a123112f912474ad8a90cafc6c8a59726f118e33"
     },
     {
       "path": "docs/sdk2-features.md",
@@ -335,12 +335,12 @@
     {
       "path": "pyproject.toml",
       "size": 1310,
-      "sha256": "ba7832ee6746b54c1eec118536346cd9ae0c70a039331b962016f33d491f0412"
+      "sha256": "355f3f889050c9dadb509fdd0f0ef8635f3cd77e398c37d3aa77f701ba199287"
     },
     {
       "path": "README.md",
-      "size": 36911,
-      "sha256": "f097501e2cb0fe94ebd8a137f8f8ba0447bf961b79f27e33d3e22e3cf3ab8603"
+      "size": 37080,
+      "sha256": "9812711b423459b90220c4ff8bd03e3f62aa5edcb4fffa6ea032b408079c45f7"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -410,7 +410,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 112,
-      "sha256": "e0aa46be1dfc0ddb11ece7f68d02b18d4d739614bad48fdeeefa76e9ec00e151"
+      "sha256": "cb66f97b6442ba108dbe4d08a924ef33a3bead7b4bdad085c11a598cd61722c6"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -624,8 +624,8 @@
     },
     {
       "path": "src/universal_tools/windows_resources.py",
-      "size": 17411,
-      "sha256": "3e8dbc785686980da7a5b67e1f91e04456fd11bcddcdd61c434b427d443a3050"
+      "size": 18749,
+      "sha256": "5bb09fca93ec7d2039126444fb6ee3835dbdd25aec8f4b8002716e183c6366b3"
     },
     {
       "path": "tests/fixtures/capability_mcp.py",
@@ -828,6 +828,11 @@
       "sha256": "8b48ed827ac836ec0758190ffe62096a4a52f0d86023e09e70037543ef467933"
     },
     {
+      "path": "tests/test_process_observation.py",
+      "size": 5111,
+      "sha256": "679613029cbf5ee9cb4512875e74eab0a4e851f5427bb01d9cd05f7fa65450ff"
+    },
+    {
       "path": "tests/test_progress.py",
       "size": 6741,
       "sha256": "9f399e6430d36fce314c2ec4a469f982effbcd5843f19f2157cad8b576bd543a"
@@ -934,8 +939,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 36177,
-      "sha256": "594bd95e5cc9234313afc5d43b67a7d4b8c055c1bd12b508215bcb7637d57e18"
+      "size": 36792,
+      "sha256": "64f7b1d962f9034f605301625a10e34510ce7f7c972e8de07b3709903fc072c0"
     }
   ]
 }

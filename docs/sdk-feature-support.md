@@ -1,6 +1,6 @@
 # MCP SDK feature support
 
-This matrix describes framework **26.1023.072616**, pinned to **MCP Python SDK 2.3.0**, with selected interoperability checks on **SDK 2.2.0**. SDK releases, protocol revisions and extension revisions are separate. It is a source/API coverage assessment, not a certification or claim that every combination passed in a real app/host. Applications keep their own plugins; the former universal plugin is retired.
+This matrix describes framework **26.1023.075532**, pinned to **MCP Python SDK 2.3.0**, with selected interoperability checks on **SDK 2.2.0**. SDK releases, protocol revisions and extension revisions are separate. It is a source/API coverage assessment, not a certification or claim that every combination passed in a real app/host. Applications keep their own plugins; the former universal plugin is retired.
 
 The app host accepts a scoped [session/stdio factory](app-framework.md#app-owned-session-and-transport-factories) across discovery, probes and retained/transient connections. Historical package 0.20.1 supplies selection only. Timestamp releases also include opt-in experimental [contained Windows stdio](app-framework.md#contained-stdio-development-profile) with harmless byte/message lifecycle checks and real SDK 2.3 initialize/discovery/result/error/EOF/crash/startup-failure fixture coverage. Application/native/Codex acceptance remains separate. A selected callable alone does not establish worker ownership.
 

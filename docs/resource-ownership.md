@@ -47,11 +47,31 @@ The launcher writes a launch reservation, creates the worker suspended with a pr
 
 The helper requires Windows 10/Server 2016 or later and the locked Windows dependencies. Its default background-worker profile inherits no standard streams. The development [owned stdio provider](app-framework.md#contained-stdio-development-profile) supplies narrowly inherited pipe handles through a separate opt-in profile. Apps integrating existing launchers must retain correct client EOF/parent cleanup and either add equivalent atomic containment or register their processes separately.
 
-The [session/transport factory API](app-framework.md#app-owned-session-and-transport-factories) lets an app select the same reviewed provider for every engine connection. Historical package 0.20.1 provides selection only; release 26.1022.173624 includes the opt-in experimental provider and still requires real SDK/application acceptance before enabling that route. Direct standalone lifecycle testing is a separate deployment scope.
+The [session/transport factory API](app-framework.md#app-owned-session-and-transport-factories) lets an app select the same reviewed provider for every engine connection. Historical package 0.20.1 provides selection only; timestamp releases include the opt-in experimental provider, with real SDK 2.3 fixture coverage. Application/native acceptance is still required before enabling an app route. Direct standalone lifecycle testing is a separate deployment scope.
 
 Membership is a snapshot of verifiable live processes, not a complete OS process-audit history. The job owns all contained descendants even between snapshots. Processes launched indirectly by another service, COM broker, WMI or another mechanism outside the job require separate explicit resource records and app-specific cleanup. Never assume an SDK connection or Windows parent relationship contains native software.
 
 The underlying Windows contracts are documented by Microsoft: [job objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects) and [process-creation job attributes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).
+
+## Observe a process without termination permission
+
+Use `ledger.driver.observe(identity)` for an existing full identity recorded by the app. It opens only synchronization and limited-query rights, checks creation identity and image once, and retains that kernel handle for the observation scope:
+
+```python
+with ledger.driver.observe(record.process.model_dump()) as observed:
+    recorded_identity = observed.identity  # Detached original-generation snapshot.
+    exited = observed.wait(25)  # A checked kernel signal, not a fresh PID lookup.
+```
+
+Known observations do not reopen the PID or repeat image queries. Those queries can fail during shutdown before the process handle signals. A retained handle cannot switch to a reused PID's new generation while it remains open. `alive()` and bounded `wait()` raise on invalid/closed handles; an unknown query or failed wait is never an exit proof. Initial capture denial or identity mismatch refuses the observation. `terminate()` is explicitly refused on observation handles; approved manager cleanup continues to use its separate identity-checked termination path.
+
+The recorded identity is historical evidence, not a claim that the process is currently alive. Keep the original checked handle until observations finish. Do not close/reassign it and then substitute another handle by PID. Whole-job process/memory bounds remain independent requirements; a root exit does not prove its descendants exited. Optional repeated image/module inventory may be unavailable without rewriting the original identity or inventing a successful essential check.
+
+## Own native applications before binding automation
+
+Where a native application supports explicit process creation, prefer the contained launcher before binding its automation object. A COM class activation or an apparently fresh PID alone does not close the crash window between activation and ownership registration. Bind only to the exact privately launched instance, and keep unrelated user/shared applications untouched.
+
+Tie each native lease to its requesting helper's generation. Helper loss, timeout or owner loss must close the appropriate private process tree. Keep workbook/project write intent and uncertain-effect evidence separate from the ability to clean up the owned job; terminating a private process does not establish rollback or authorize replay. Review fixed utility entry points and indirect COM/service/WMI launches explicitly. The process job covers inherited descendants; it does not imply ownership of an external service or an existing application.
 
 ## Track existing app-owned launchers or attachments
 
