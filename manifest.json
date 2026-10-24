@@ -1,6 +1,6 @@
 {
   "name": "CodexMCPBroker",
-  "version": "26.1023.134226",
+  "version": "26.1024.101211",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "AGENTS.md",
-      "size": 1798,
-      "sha256": "480818b65ae96ecd6e69ed2334340caf985bea675450d646305ddf27d7a93569"
+      "size": 2247,
+      "sha256": "15e7acbcd13c9d3daec053ee2cdaa33de613d5839fed072c9e0b19f1672b6dcf"
     },
     {
       "path": "APP_CONTRACT.md",
@@ -129,8 +129,8 @@
     },
     {
       "path": "docs/server-development/acceptance.md",
-      "size": 6875,
-      "sha256": "4cbc855d9be4326fa195c2139dccc871242de2e3af145185405fc8fb0e476cc0"
+      "size": 7451,
+      "sha256": "01d43a2d3f0bd278a66c1a3b1e8af8e28f60b05e3dce42e408b140a77b74ec61"
     },
     {
       "path": "docs/server-development/architecture.md",
@@ -138,9 +138,14 @@
       "sha256": "4a307019b34b7f03af566e60f23abe391efc1a01e26855d513cf808c01b8f379"
     },
     {
+      "path": "docs/server-development/connection-readiness.md",
+      "size": 11090,
+      "sha256": "f0af5bdf90ee340a6534e5d810a994633f8556b4a0cd72d38591c47f77f3e9ea"
+    },
+    {
       "path": "docs/server-development/installers-and-host-settings.md",
-      "size": 12039,
-      "sha256": "ec815ad08e5f1c2493f2dcfda8663588d6ef9a57e6a562417dc2f28378297b5d"
+      "size": 13206,
+      "sha256": "d69753ea3ddd447aec8b70a91c6bc1e90cb683083ff1f893c0014ec0382e50b4"
     },
     {
       "path": "docs/server-development/quickstart.md",
@@ -149,8 +154,8 @@
     },
     {
       "path": "docs/server-development/README.md",
-      "size": 7616,
-      "sha256": "05c2bdee21bc4ef267835ba74af474d08f41b3db64786a4894ace2f9919292c4"
+      "size": 8241,
+      "sha256": "df968ccef711e1a92a1c63f132e13bd35b30bca9abd40f2ff211e35bb308ec81"
     },
     {
       "path": "docs/server-development/registration-and-discovery.md",
@@ -159,8 +164,8 @@
     },
     {
       "path": "docs/server-development/sessions-and-recovery.md",
-      "size": 8092,
-      "sha256": "9474cfe56cd22a2ace2cc2368b7f411f0e75d5c14dd34975c9ff8f829098804d"
+      "size": 9096,
+      "sha256": "9ab595b1724cad73da0c3304a979aec1f1887d8d9c1b031c5538076c336d55dc"
     },
     {
       "path": "docs/server-development/tools-and-workflows.md",
@@ -355,12 +360,12 @@
     {
       "path": "pyproject.toml",
       "size": 1371,
-      "sha256": "cf46c678144afdac3b930abb59a971aa003e7ef7272bfd755ed133f74b80026a"
+      "sha256": "2dde144a32dca48a54bdb28d06c78842b5d16df7b0ab3523f6902e32172757b1"
     },
     {
       "path": "README.md",
-      "size": 39045,
-      "sha256": "8c55537f07d47fb2dfa9566044e6964ef25c4529424fddc744fda6857cc65024"
+      "size": 39476,
+      "sha256": "ec5327b43a4d9c8e743d603b0c47205b1795e978faf1a0e81ec734bfce7f6483"
     },
     {
       "path": "requirements-dev-lock.txt",
@@ -430,7 +435,7 @@
     {
       "path": "src/universal_tools/__init__.py",
       "size": 112,
-      "sha256": "845dd1aa8ac59d77fd45d43188c9aa6f945989a8249b4a388336f18ecaebe669"
+      "sha256": "6de7eab9535d761b7ffa9a8af82b6f5dae8cba8f8c548da7e823d21b6b945a2d"
     },
     {
       "path": "src/universal_tools/__main__.py",
@@ -974,8 +979,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "size": 40056,
-      "sha256": "063b1a44f08c2406b34cb9b11377a9bd5aa889bafca063b8ec47b162543263d8"
+      "size": 41196,
+      "sha256": "084fea13eaa000e99369ba238623fa4a49044092d188dd70770f41312d93c692"
     }
   ]
 }

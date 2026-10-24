@@ -33,6 +33,8 @@ The stable launcher verifies the selected snapshot and backend identities before
 
 The actual surviving supervisor must own its process tree and durable claims. A short-lived wrapper or registration helper cannot impersonate that owner. Stable launch paths do not replace process containment, startup admission, exact process identities, parent/EOF/crash cleanup or uncertain native-work barriers. The common experimental contained stdio provider is not mandatory; equivalent app-owned implementations need their own acceptance.
 
+The selected profile must also be compatible with the launcher's runtime and containment contract. An in-process offline loader cannot simply select an incompatible native runtime, and a one-process offline job cannot admit a native profile's workers. Generate installer/pilot settings through the production strict parser and verify the actual cold saved route under its hardened environment. Follow [connection readiness and recovery](connection-readiness.md) for concurrent chat admission, failed-start reservations, lock contention and original-wire checks.
+
 Publish updates in this order:
 
 1. Prepare and verify a new immutable snapshot/runtime and its exact dependency pins while the old selection remains available.
@@ -73,6 +75,8 @@ if parsed != expected_settings:
 ```
 
 Use a TOML-aware edit or a narrowly validated scalar span. A regular expression that scans table-looking lines can mistake multiline string contents for tables. Back up the exact original bytes; detect concurrent edits before publishing; serialize cooperating writers; publish atomically; then validate readback bytes and parsed settings. A no-op should leave the original bytes untouched. Abort on invalid input or an intervening edit, preserving evidence rather than restoring a stale global file over another app's changes.
+
+All installers writing the same host configuration must use the same publication lock, not separate per-app locks. On Windows, a cooperating profile can use `Local\CodexMcpSettingsPublication-v1` with a bounded ten-second acquisition. Hold it across the fresh read, exact backup, owned edits, temporary-byte validation, concurrent-edit check, atomic replace and readback; release it in `finally`. Abandoned ownership requires fresh parsing and validation, not trust in the previous writer's in-memory proposal. A lock coordinates participating writers; keep the concurrent-edit check for other editors.
 
 Regression fixtures should cover CRLF and LF originals, UTF-8 with and without BOM, non-ASCII paths, comments, literal/basic multiline values, a missing final newline, idempotence and unrelated plugin/server entries. Reproduce Windows text translation explicitly even when tests run on another platform. Assert no lone CR or doubled CR, valid on-disk TOML, expected settings and preservation of unrelated content. Include a concurrent-edit refusal case.
 

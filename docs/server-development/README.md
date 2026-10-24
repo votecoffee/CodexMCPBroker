@@ -22,6 +22,7 @@ CodexMCPBroker is experimental. **MCP protocol conformance, broker compatibility
 | [Sessions and recovery](sessions-and-recovery.md) | Choose transient, exclusive or shared mode and define resource ownership and loss behavior. |
 | [Registration and discovery](registration-and-discovery.md) | Register transports, manage dependencies and publish optional inner catalogs. |
 | [Installers and host settings](installers-and-host-settings.md) | Validate root CMD installers, preserve TOML bytes and retain active cached launchers through updates. |
+| [Connection readiness and recovery](connection-readiness.md) | Prevent idle-client capacity starvation, failed-start leaks, ledger lock races and false native/host readiness claims. |
 | [Acceptance and release](acceptance.md) | Run a staged test matrix and complete a reusable integration record. |
 
 The [app contract](../../APP_CONTRACT.md) and [service schema](../../examples/service.schema.json) describe the framework's retained routing engine. The [capability catalog contract](../capability-catalog.md) governs optional inner discovery. Historical universal plugin/coexistence/skill-composition documents are archived reference material, not current installation policy. Avoid copying limits into app code without versioning the integration profile.
@@ -37,6 +38,8 @@ The [app contract](../../APP_CONTRACT.md) and [service schema](../../examples/se
 | Full selected-workflow integration | Applicable profiles plus actual Codex host acceptance, supported standalone packaging/skills, performance criteria and separately authorized native acceptance. |
 
 Do not add a dependency on every optional MCP facility. Select the capabilities the workflow actually requires and check the broker's current support before choosing its interface.
+
+Before releasing a connection, apply the [connection readiness contract](connection-readiness.md). Test the expected open-chat workload through the actual saved stable launcher, not just a disposable two-client fixture. Separate connection slots from lazy worker/native admission, use production-parsed settings, retain original-wire and parent ownership, and distinguish source, deployment, host activation and native workflow evidence.
 
 ## Current broker boundary
 

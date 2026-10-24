@@ -16,6 +16,7 @@ Record unsupported requirements as blockers. Mark a feature that is outside the 
 | Metadata | Real discovery/version negotiation for the selected profile, complete paginated definitions and required capabilities. Legacy connections use initialization; modern connections carry version/capabilities per request. Check that metadata does not attach/operate native targets, prompt or expose private state. |
 | Actual adapter with fake providers | Keep original handlers, policy/review code and required pure workers; replace native providers below them. Compare direct/broker definitions and complete selected results. |
 | Session and resource behavior | Two frontends, owner denial, target/revision guards, refresh continuity, release/reacquisition, intentional shared visibility and alias handling. Exercise unsuitable modes when useful. |
+| Expected host demand | Actual cold startup/reconnect load and idle clients, each admission pool's scope and occupancy, lazy native/worker admission, bounded memory/process counts and meaningful excess-capacity refusal. A two-client pass does not establish availability for a host opening more connections. See [connection readiness](connection-readiness.md). |
 | Required writes/forms | Independent effect counts, exact candidate binding, consumed/stale plans, wrong hash, policy denial and approval accept/negative/decline/cancel/invalid/unsupported/late responses. Rejected paths make zero fixture effects. |
 | Failure and reconciliation | Queue versus in-flight timeout, worker versus adapter loss, lost reply after a recorded fake effect, original write receipt, durable barriers, explicit reconciliation and zero replay/cross-route retry. |
 | Required workers/jobs | Production IPC/generations/manifests, reload success/rejection, cleanup, job state after adapter release and cancellation acknowledgment versus actual outcome. |
@@ -45,6 +46,9 @@ Write scope and required app approval:
 Required host capabilities and unsupported requirements:
 Standalone plugin, route-aware skills and installer choice:
 Stable launcher/cwd, immutable runtime selection and cache-removal proof:
+Expected open-chat/reconnect demand and per-pool admission budgets:
+Source / installed / fresh-connection / concurrent / host / native readiness:
+Production-parsed settings and original-wire/parent-loss evidence:
 
 Metadata gate:
 Direct versus broker complete-result comparison:

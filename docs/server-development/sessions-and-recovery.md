@@ -14,6 +14,8 @@ All modes serialize calls to one registration. An exclusive registration has one
 
 Apps do not receive an authenticated Codex chat principal from the broker. Frontend affinity and broker context IDs are not native resource authorization. App-owned jobs and credentials still need their own access contract.
 
+Budget idle connections independently of expensive work. Metadata and guidance should not hold an exclusive native-worker lease for an entire chat. Test the expected simultaneous host workload and reconnect bursts, not only one pair of clients. Diagnose actual live versus stale occupancy before recovery; neither terminating peers nor increasing caps is a substitute for a bounded sharing/admission design. See [connection readiness](connection-readiness.md#budget-clients-separately-from-expensive-work).
+
 ## Define resource identity across routes
 
 Use a stable registration `resource_id` for broker routes that address the same native resource. Document aliases and their scope. The broker rejects known route/resource conflicts involving retained sessions; it cannot infer arbitrary equivalent endpoints or hold a lock inside the GUI or a direct client.
@@ -44,6 +46,8 @@ Implement cleanup for normal close, client EOF, cancelled/failed startup, partia
 Shutdown first fences new work and records outstanding operations, then closes owned resources through a bounded app-specific policy. Define how unsaved documents and interrupted writes are preserved or refused before a controlled shutdown; never silently save, discard, retry or transfer them to another route. After forced owner loss, retain the uncertain operation and recovery evidence outside ephemeral process state. A manager status callback must report cleanup failures and remaining owned resources from a cached inventory without opening software to discover them.
 
 The tray manager observes app-owned endpoints and requests an app-owned restart. It does not adopt arbitrary processes or enforce native application ownership. Framework dependency upgrades alone cannot fix an app's missing lifecycle tracking.
+
+Admission itself needs crash coverage. Test interruption between reservation, child creation, identity binding and resume; failed starts must not accumulate silent permanent slots. Shared ledger lock contention needs bounded acquisition before dispatch, without repeating the protected operation. Preserve unresolved records and original errors when cleanup also fails. The [startup contract](connection-readiness.md#make-admission-survive-failed-startup) describes the required negative cases.
 
 ## Treat loss separately from a normal app error
 
